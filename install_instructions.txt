@@ -1,0 +1,33 @@
+MANUAL STEPS REQUIRED:
+
+1. Install Homebrew (run this in your terminal):
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+   
+   Follow the prompts and enter your password when asked.
+
+2. After Homebrew is installed, add it to your PATH:
+   For Apple Silicon Macs:
+     echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+     eval "$(/opt/homebrew/bin/brew shellenv)"
+   
+   For Intel Macs:
+     echo 'eval "$(/usr/local/bin/brew shellenv)"' >> ~/.zprofile
+     eval "$(/usr/local/bin/brew shellenv)"
+
+3. Install PostgreSQL:
+   brew install postgresql@15
+
+4. Start PostgreSQL:
+   brew services start postgresql@15
+
+5. Create the database:
+   createdb fdic
+
+6. (Optional) Set a password for postgres user:
+   psql postgres
+   Then run: ALTER USER postgres WITH PASSWORD 'yourpassword';
+   Then: \q
+   
+   If you set a password, update config.py with it.
+
+After completing these steps, the automated setup will continue.

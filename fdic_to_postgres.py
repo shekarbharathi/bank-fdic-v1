@@ -170,7 +170,7 @@ class PostgresLoader:
         -- Financials table
         CREATE TABLE IF NOT EXISTS financials (
             id SERIAL PRIMARY KEY,
-            cert INTEGER REFERENCES institutions(cert),
+            cert INTEGER,  -- Removed foreign key constraint to allow historical data
             repdte DATE,
             asset NUMERIC,
             dep NUMERIC,
@@ -373,10 +373,11 @@ def main():
     logger.info("Creating database schema...")
     db_loader.create_tables()
     
-    # Example 1: Fetch and load all active institutions
-    logger.info("Fetching all active institutions...")
+    # Example 1: Fetch and load all institutions (active and inactive)
+    # We fetch all to ensure financial records have matching institutions
+    logger.info("Fetching all institutions (active and inactive)...")
     institutions = api_client.get_institutions(
-        filters="ACTIVE:1",
+        filters="",  # Fetch all institutions, not just active ones
         fields="CERT,NAME,CITY,STALP,STNAME,ZIP,ASSET,DEP,DEPDOM,BKCLASS,CHARTER,DATEUPDT,ACTIVE,FED_RSSD"
     )
     db_loader.upsert_institutions(institutions)
