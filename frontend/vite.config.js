@@ -11,10 +11,8 @@ export default defineConfig({
   preview: {
     port: 4173,
     host: true,
-    allowedHosts: [
-      'localhost',
-      '.railway.app',
-      '.up.railway.app'
-    ]
+    // Allow all hosts for Railway deployment
+    // Railway generates dynamic subdomains, so we need to allow all
+    strictPort: false
   }
 })
