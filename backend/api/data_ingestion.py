@@ -11,10 +11,19 @@ from typing import Dict, Any
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Add parent directory to path to access fdic_to_postgres.py
-parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add backend directory to path (fdic_to_postgres.py is now in backend/)
+backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # backend/
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+# Also try parent directory in case Railway includes it
+parent_dir = os.path.dirname(backend_dir)  # project root/
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
+
+logger.info(f"Backend dir: {backend_dir}")
+logger.info(f"Parent dir: {parent_dir}")
+logger.info(f"Python path: {sys.path[:3]}")
 
 
 @router.post("/api/data/ingest")
@@ -24,14 +33,16 @@ async def ingest_data() -> Dict[str, Any]:
     This endpoint runs the data ingestion script
     """
     try:
-        # Import the ingestion function directly
-        # First, add backend directory to path
-        backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if backend_dir not in sys.path:
-            sys.path.insert(0, backend_dir)
-        
-        # Now import fdic_to_postgres from parent
-        from fdic_to_postgres import FDICAPIClient, PostgresLoader
+        # Import fdic_to_postgres (now in backend/ directory)
+        # Try backend directory first, then parent directory as fallback
+        try:
+            from fdic_to_postgres import FDICAPIClient, PostgresLoader
+        except ImportError:
+            # Fallback: try importing from parent directory
+            parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            if parent_dir not in sys.path:
+                sys.path.insert(0, parent_dir)
+            from fdic_to_postgres import FDICAPIClient, PostgresLoader
         
         logger.info("Starting data ingestion via API endpoint...")
         
