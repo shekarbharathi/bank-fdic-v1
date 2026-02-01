@@ -1,4 +1,4 @@
-# Railway configuration file
+# Railway configuration file for backend service
 # This helps Railway understand your project structure
 
 [build]

@@ -1,0 +1,13 @@
+# Nixpacks configuration for backend service only
+# This file should be in the backend directory when deploying backend separately
+
+[phases.setup]
+nixPkgs = ["python39"]
+
+[phases.install]
+cmds = [
+  "pip install -r ../requirements.txt"
+]
+
+[start]
+cmd = "python -m uvicorn main:app --host 0.0.0.0 --port $PORT"

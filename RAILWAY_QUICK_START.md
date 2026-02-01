@@ -25,8 +25,9 @@ git push origin main
 1. **"+ New"** → **"GitHub Repo"** → Select your repo
 2. Railway auto-detects Python project
 3. **Settings** → **Deploy**:
-   - **Root Directory**: (leave empty)
-   - **Start Command**: `cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - **Root Directory**: `backend` (IMPORTANT: Set this to avoid building frontend)
+   - **Start Command**: `python -m uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - **Build Command**: (leave empty - Railway auto-detects)
 4. **Variables** tab → Add:
    ```
    LLM_PROVIDER=OPENAI

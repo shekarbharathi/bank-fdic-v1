@@ -50,9 +50,11 @@ Railway automatically provides a `DATABASE_URL` environment variable. The backen
 2. Select **"GitHub Repo"** → Select your repository
 3. Railway will auto-detect it's a Python project
 4. Configure the service:
-   - **Root Directory**: Leave empty (or set to project root)
-   - **Start Command**: `cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT`
-   - **Watch Paths**: `backend/**`
+   - **Root Directory**: `backend` (IMPORTANT: Set this to avoid building frontend)
+   - **Start Command**: `python -m uvicorn main:app --host 0.0.0.0 --port $PORT`
+   - **Watch Paths**: `backend/**` (optional)
+   
+   **Note**: Setting Root Directory to `backend` ensures Railway only sees Python files and won't try to build the frontend.
 
 ### Option B: Using Dockerfile
 
