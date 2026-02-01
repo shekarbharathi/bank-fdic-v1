@@ -1,5 +1,6 @@
 # Nixpacks configuration for backend service only
 # This file should be in the backend directory when deploying backend separately
+# When Root Directory is set to "backend", Railway will use this file
 
 [phases.setup]
 nixPkgs = ["python39"]
@@ -7,7 +8,7 @@ nixPkgs = ["python39"]
 [phases.install]
 cmds = [
   "pip install --upgrade pip setuptools wheel",
-  "pip install -r ../requirements.txt"
+  "pip install -r requirements.txt"
 ]
 
 [start]

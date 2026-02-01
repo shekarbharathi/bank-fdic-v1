@@ -1,11 +1,15 @@
 # Railway configuration file for backend service
 # This helps Railway understand your project structure
+# NOTE: If Root Directory is set to "backend", the startCommand should NOT include "cd backend"
 
 [build]
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+# If Root Directory is set to "backend", use this:
+startCommand = "python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+# If Root Directory is NOT set (project root), use this instead:
+# startCommand = "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
