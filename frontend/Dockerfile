@@ -33,8 +33,9 @@ COPY nginx.conf /tmp/nginx.conf.template
 RUN echo '#!/bin/sh' > /start-nginx.sh && \
     echo 'set -e' >> /start-nginx.sh && \
     echo 'PORT=${PORT:-80}' >> /start-nginx.sh && \
-    echo 'envsubst "$$PORT" < /tmp/nginx.conf.template > /etc/nginx/conf.d/default.conf' >> /start-nginx.sh && \
+    echo 'export PORT' >> /start-nginx.sh && \
     echo 'echo "Starting nginx on port $PORT"' >> /start-nginx.sh && \
+    echo 'sed "s/\${PORT}/$PORT/g" /tmp/nginx.conf.template > /etc/nginx/conf.d/default.conf' >> /start-nginx.sh && \
     echo 'exec nginx -g "daemon off;"' >> /start-nginx.sh && \
     chmod +x /start-nginx.sh
 
