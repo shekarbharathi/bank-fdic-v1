@@ -1,0 +1,11 @@
+# Railway configuration for frontend service using Dockerfile
+# This file helps Railway understand how to build and deploy the frontend
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.frontend"
+
+[deploy]
+startCommand = ""
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

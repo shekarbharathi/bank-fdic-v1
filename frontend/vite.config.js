@@ -11,8 +11,10 @@ export default defineConfig({
   preview: {
     port: 4173,
     host: true,
-    // Allow all hosts for Railway deployment
+    strictPort: false,
+    cors: true,
+    // Disable host checking - allow all hosts for Railway
     // Railway generates dynamic subdomains, so we need to allow all
-    strictPort: false
+    // This is set via command line flag in package.json scripts
   }
 })
