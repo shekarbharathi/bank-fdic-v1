@@ -4,8 +4,17 @@
 import axios from 'axios';
 
 // Use environment variable for API URL, fallback to relative path for production
-const API_BASE_URL = import.meta.env.VITE_API_URL || 
+// Remove trailing slash if present to avoid double slashes
+const rawUrl = import.meta.env.VITE_API_URL || 
   (import.meta.env.PROD ? '' : 'http://localhost:8000');
+const API_BASE_URL = rawUrl ? rawUrl.replace(/\/+$/, '') : '';
+
+// Debug: Log API URL (always log to help debug)
+console.log('API Configuration:', {
+  'VITE_API_URL (raw)': import.meta.env.VITE_API_URL,
+  'API_BASE_URL (final)': API_BASE_URL || '(empty - using relative path)',
+  'Environment': import.meta.env.MODE
+});
 
 const client = axios.create({
   baseURL: API_BASE_URL,
