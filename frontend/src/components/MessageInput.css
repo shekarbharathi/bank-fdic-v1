@@ -24,12 +24,23 @@
   line-height: 1.5;
   background: #ffffff;
   color: #000000;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  filter: none;
+  transition: border-color 0.2s;
 }
 
 .message-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  border-left-color: #d1d5db;
+  border-right-color: #9ca3af;
+  border-top-color: #d1d5db;
+  border-bottom-color: #9ca3af;
+  box-shadow: none !important;
+  -webkit-box-shadow: none !important;
+  -moz-box-shadow: none !important;
+  filter: none;
 }
 
 .message-input:disabled {
