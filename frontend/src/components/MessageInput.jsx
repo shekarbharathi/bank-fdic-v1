@@ -1,8 +1,23 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import './MessageInput.css';
 
 const MessageInput = ({ onSendMessage, disabled }) => {
   const [message, setMessage] = useState('');
+  const textareaRef = useRef(null);
+
+  // Auto-focus the textarea when component mounts
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+
+  // Re-focus after message is sent (when disabled becomes false)
+  useEffect(() => {
+    if (!disabled && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [disabled]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -23,6 +38,7 @@ const MessageInput = ({ onSendMessage, disabled }) => {
     <div className="message-input-container">
       <form onSubmit={handleSubmit} className="message-input-form">
         <textarea
+          ref={textareaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyPress={handleKeyPress}
