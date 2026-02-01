@@ -19,14 +19,14 @@
   padding: 0.75rem 1rem;
   text-align: left;
   font-weight: 600;
-  color: #374151;
+  color: #000000;
   border-bottom: 2px solid #e5e7eb;
 }
 
 .data-table td {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #e5e7eb;
-  color: #111827;
+  color: #000000;
 }
 
 .data-table tbody tr:hover {
@@ -44,34 +44,4 @@
   color: #6b7280;
   background: #f9fafb;
   border-top: 1px solid #e5e7eb;
-}
-
-@media (prefers-color-scheme: dark) {
-  .data-table-container {
-    border-color: #4b5563;
-  }
-
-  .data-table thead {
-    background: #374151;
-  }
-
-  .data-table th {
-    color: #d1d5db;
-    border-bottom-color: #4b5563;
-  }
-
-  .data-table td {
-    color: #f9fafb;
-    border-bottom-color: #4b5563;
-  }
-
-  .data-table tbody tr:hover {
-    background: #374151;
-  }
-
-  .table-footer {
-    background: #374151;
-    color: #9ca3af;
-    border-top-color: #4b5563;
-  }
 }

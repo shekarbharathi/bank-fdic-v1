@@ -18,7 +18,7 @@
 
 .empty-state h2 {
   margin: 0 0 1rem 0;
-  color: #111827;
+  color: #000000;
   font-size: 1.25rem;
 }
 
@@ -48,8 +48,8 @@
 
 .message-assistant {
   align-self: flex-start;
-  background: #f3f4f6;
-  color: #111827;
+  background: #f9fafb;
+  color: #000000;
 }
 
 .message-error {
@@ -130,22 +130,3 @@
   color: #991b1b;
 }
 
-@media (prefers-color-scheme: dark) {
-  .empty-state {
-    color: #9ca3af;
-  }
-
-  .empty-state h2 {
-    color: #f9fafb;
-  }
-
-  .message-assistant {
-    background: #374151;
-    color: #f9fafb;
-  }
-
-  .message-error {
-    background: #7f1d1d;
-    color: #fecaca;
-  }
-}

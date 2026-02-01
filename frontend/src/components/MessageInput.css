@@ -1,7 +1,7 @@
 .message-input-container {
   padding: 1rem;
   border-top: 1px solid #e5e7eb;
-  background: #ffffff;
+  background: transparent;
 }
 
 .message-input-form {
@@ -22,6 +22,8 @@
   min-height: 44px;
   max-height: 200px;
   line-height: 1.5;
+  background: #ffffff;
+  color: #000000;
 }
 
 .message-input:focus {
@@ -57,23 +59,3 @@
   cursor: not-allowed;
 }
 
-@media (prefers-color-scheme: dark) {
-  .message-input-container {
-    background: #1f2937;
-    border-top-color: #374151;
-  }
-
-  .message-input {
-    background: #374151;
-    border-color: #4b5563;
-    color: #f9fafb;
-  }
-
-  .message-input:focus {
-    border-color: #3b82f6;
-  }
-
-  .message-input:disabled {
-    background: #111827;
-  }
-}
