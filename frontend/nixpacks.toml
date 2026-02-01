@@ -15,6 +15,6 @@ cmds = [
 ]
 
 [start]
-# Use the start script which includes --allowed-hosts flag
-# This allows Railway subdomains to access the preview server
-cmd = "npm run start"
+# Use vite preview - it automatically serves from dist/ directory
+# First verify dist exists, then start preview server
+cmd = "ls -la dist && npm run preview -- --host 0.0.0.0 --port $PORT --allowed-hosts .railway.app,.up.railway.app,localhost,all"
