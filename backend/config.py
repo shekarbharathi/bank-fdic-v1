@@ -31,7 +31,7 @@ LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'openai').upper()  # OPENAI, ANTHROPIC,
 
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', '')
-OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-4')
+OPENAI_MODEL = os.getenv('OPENAI_MODEL', 'gpt-3.5-turbo')  # Default to gpt-3.5-turbo (more accessible)
 
 # Anthropic Configuration
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY', '')

@@ -25,7 +25,7 @@ Choose one of the following LLM providers and set the appropriate environment va
 ```bash
 export LLM_PROVIDER=OPENAI
 export OPENAI_API_KEY=your_openai_api_key_here
-export OPENAI_MODEL=gpt-4  # or gpt-3.5-turbo for faster/cheaper
+export OPENAI_MODEL=gpt-3.5-turbo  # Default, or use gpt-4 if you have access
 ```
 
 ### Option B: Anthropic Claude
@@ -60,7 +60,7 @@ To avoid setting environment variables each time, you can add them to your shell
 # Add to ~/.zshrc (or ~/.bashrc for bash)
 echo 'export LLM_PROVIDER=OPENAI' >> ~/.zshrc
 echo 'export OPENAI_API_KEY=your_key_here' >> ~/.zshrc
-echo 'export OPENAI_MODEL=gpt-4' >> ~/.zshrc
+echo 'export OPENAI_MODEL=gpt-3.5-turbo' >> ~/.zshrc
 
 # Reload shell configuration
 source ~/.zshrc
@@ -239,8 +239,8 @@ cd /Users/bharathishekar/coding/cursor/bank-fdic/bank-fdic-v1
 source venv/bin/activate
 export LLM_PROVIDER=OPENAI
 export OPENAI_API_KEY=your_key_here
-cd backend
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+export OPENAI_MODEL=gpt-3.5-turbo  # or gpt-4 if you have access
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Terminal 2 (Frontend):**

@@ -11,6 +11,5 @@ fi
 # Install/upgrade dependencies
 pip install -q -r requirements.txt
 
-# Run the backend server
-cd backend
-python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+# Run the backend server from project root (so backend module can be imported)
+python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
