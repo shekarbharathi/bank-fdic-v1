@@ -47,24 +47,47 @@ async def ingest_data() -> Dict[str, Any]:
         logger.info("Starting data ingestion via API endpoint...")
         
         # Get database connection from environment
+        # Railway provides DATABASE_URL automatically when PostgreSQL is connected
         DATABASE_URL = os.getenv('DATABASE_URL', '')
         
-        if DATABASE_URL:
-            import re
-            match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', DATABASE_URL)
-            if match:
-                user, password, host, port, dbname = match.groups()
-                DB_CONNECTION = (
-                    f"dbname={dbname} "
-                    f"user={user} "
-                    f"password={password} "
-                    f"host={host} "
-                    f"port={port}"
-                )
+        # Also check for individual database environment variables as fallback
+        if not DATABASE_URL:
+            # Try to construct from individual variables
+            db_name = os.getenv('PGDATABASE') or os.getenv('DB_NAME', 'railway')
+            db_user = os.getenv('PGUSER') or os.getenv('DB_USER', 'postgres')
+            db_password = os.getenv('PGPASSWORD') or os.getenv('DB_PASSWORD', '')
+            db_host = os.getenv('PGHOST') or os.getenv('DB_HOST', '')
+            db_port = os.getenv('PGPORT') or os.getenv('DB_PORT', '5432')
+            
+            if db_host:
+                # Construct DATABASE_URL from individual variables
+                DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
+                logger.info(f"Constructed DATABASE_URL from individual variables")
             else:
-                raise ValueError("Invalid DATABASE_URL format")
+                # Log all available env vars for debugging (without sensitive data)
+                env_vars = {k: v for k, v in os.environ.items() if 'DATABASE' in k or 'DB_' in k or 'PG' in k}
+                logger.error(f"DATABASE_URL not found. Available DB-related env vars: {list(env_vars.keys())}")
+                raise ValueError(
+                    "DATABASE_URL not found. Make sure PostgreSQL service is connected to backend service in Railway. "
+                    "Go to Railway Dashboard → Backend Service → Settings → Variables to check if DATABASE_URL exists."
+                )
+        
+        # Parse DATABASE_URL
+        import re
+        match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', DATABASE_URL)
+        if match:
+            user, password, host, port, dbname = match.groups()
+            DB_CONNECTION = (
+                f"dbname={dbname} "
+                f"user={user} "
+                f"password={password} "
+                f"host={host} "
+                f"port={port}"
+            )
+            logger.info(f"Connected to database: {dbname} on {host}:{port}")
         else:
-            raise ValueError("DATABASE_URL not found")
+            logger.error(f"Invalid DATABASE_URL format: {DATABASE_URL[:50]}...")
+            raise ValueError(f"Invalid DATABASE_URL format. Expected: postgresql://user:password@host:port/dbname")
         
         API_KEY = os.getenv('FDIC_API_KEY', None)
         
