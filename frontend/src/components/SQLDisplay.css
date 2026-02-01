@@ -1,0 +1,53 @@
+.sql-display {
+  margin-top: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.sql-toggle {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: #f3f4f6;
+  border: none;
+  text-align: left;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.sql-toggle:hover {
+  background: #e5e7eb;
+}
+
+.sql-code {
+  margin: 0;
+  padding: 1rem;
+  background: #1f2937;
+  color: #f9fafb;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-x: auto;
+}
+
+.sql-code code {
+  color: #f9fafb;
+}
+
+@media (prefers-color-scheme: dark) {
+  .sql-display {
+    border-color: #4b5563;
+  }
+
+  .sql-toggle {
+    background: #374151;
+    color: #d1d5db;
+  }
+
+  .sql-toggle:hover {
+    background: #4b5563;
+  }
+}

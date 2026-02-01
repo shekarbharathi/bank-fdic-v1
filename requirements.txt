@@ -3,3 +3,15 @@ psycopg2-binary>=2.9.9
 python-dateutil>=2.8.2
 pandas>=2.1.0  # Optional: for data manipulation
 sqlalchemy>=2.0.0  # Optional: for ORM approach
+
+# FastAPI and web server
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+python-multipart>=0.0.6
+
+# LLM providers (optional)
+openai>=1.0.0
+anthropic>=0.7.0
+
+# Pydantic for data validation
+pydantic>=2.0.0
