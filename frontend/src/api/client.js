@@ -10,11 +10,15 @@ const rawUrl = import.meta.env.VITE_API_URL ||
 const API_BASE_URL = rawUrl ? rawUrl.replace(/\/+$/, '') : '';
 
 // Debug: Log API URL (always log to help debug)
-console.log('API Configuration:', {
-  'VITE_API_URL (raw)': import.meta.env.VITE_API_URL,
-  'API_BASE_URL (final)': API_BASE_URL || '(empty - using relative path)',
-  'Environment': import.meta.env.MODE
-});
+// Using window.console to ensure it's not stripped in production
+if (typeof window !== 'undefined') {
+  window.console.log('=== API Configuration ===');
+  window.console.log('VITE_API_URL (raw):', import.meta.env.VITE_API_URL);
+  window.console.log('API_BASE_URL (final):', API_BASE_URL || '(empty - using relative path)');
+  window.console.log('Environment:', import.meta.env.MODE);
+  window.console.log('Full URL will be:', API_BASE_URL ? `${API_BASE_URL}/api/chat` : '/api/chat (relative)');
+  window.console.log('========================');
+}
 
 const client = axios.create({
   baseURL: API_BASE_URL,
