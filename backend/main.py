@@ -36,7 +36,20 @@ app.add_middleware(
 )
 
 # Include API routes
+# Note: The router already defines /chat, so with prefix="/api" it becomes /api/chat
 app.include_router(chat.router, prefix="/api", tags=["chat"])
+
+# Debug: List all routes on startup
+@app.on_event("startup")
+async def startup_event():
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("=== Registered Routes ===")
+    for route in app.routes:
+        if hasattr(route, 'methods') and hasattr(route, 'path'):
+            methods = list(route.methods) if hasattr(route, 'methods') else ['N/A']
+            logger.info(f"  {methods} {route.path}")
+    logger.info("========================")
 
 # Include data ingestion routes (optional - for triggering ingestion via API)
 try:
