@@ -189,7 +189,7 @@ See the SQL schema in `fdic_to_postgres.py` for complete table definitions.
 -- Top 10 banks by assets
 SELECT name, city, stalp, asset, dep
 FROM institutions
-WHERE active = 1
+WHERE active = 1 AND asset IS NOT NULL
 ORDER BY asset DESC
 LIMIT 10;
 

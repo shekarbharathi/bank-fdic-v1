@@ -84,7 +84,7 @@ Once data is loaded, try these queries:
 -- Get top 10 banks by assets
 SELECT name, city, stalp, asset, dep
 FROM institutions
-WHERE active = 1
+WHERE active = 1 AND asset IS NOT NULL
 ORDER BY asset DESC
 LIMIT 10;
 
