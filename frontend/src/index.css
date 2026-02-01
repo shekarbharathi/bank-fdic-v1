@@ -17,11 +17,24 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh; /* Dynamic viewport height for mobile */
   background: linear-gradient(to left, #ffffff, #fafafa);
   color: #000000;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 #root {
   width: 100%;
   height: 100vh;
+  height: 100dvh; /* Dynamic viewport height for mobile */
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 480px) {
+  body {
+    font-size: 14px;
+  }
 }

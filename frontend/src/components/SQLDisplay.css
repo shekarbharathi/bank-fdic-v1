@@ -37,3 +37,39 @@
   color: #000000;
 }
 
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .sql-display {
+    margin-top: 0.75rem;
+    border-radius: 0.375rem;
+  }
+
+  .sql-toggle {
+    padding: 0.4375rem 0.875rem;
+    font-size: 0.8125rem;
+  }
+
+  .sql-code {
+    padding: 0.75rem;
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sql-display {
+    margin-top: 0.5rem;
+    border-radius: 0.25rem;
+  }
+
+  .sql-toggle {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+  }
+
+  .sql-code {
+    padding: 0.5rem;
+    font-size: 0.75rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}

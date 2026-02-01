@@ -70,3 +70,48 @@
   cursor: not-allowed;
 }
 
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .message-input-container {
+    padding: 0.75rem;
+  }
+
+  .message-input-form {
+    gap: 0.5rem;
+  }
+
+  .message-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.625rem 0.875rem;
+    min-height: 44px; /* Touch target size */
+  }
+
+  .send-button {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9375rem;
+    min-height: 44px; /* Touch target size */
+  }
+}
+
+@media (max-width: 480px) {
+  .message-input-container {
+    padding: 0.5rem;
+  }
+
+  .message-input-form {
+    gap: 0.375rem;
+  }
+
+  .message-input {
+    font-size: 16px; /* Prevents zoom on iOS */
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+  }
+
+  .send-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    border-radius: 0.375rem;
+    min-width: 60px;
+  }
+}

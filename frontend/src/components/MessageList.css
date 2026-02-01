@@ -130,3 +130,66 @@
   color: #991b1b;
 }
 
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  .message-list {
+    gap: 1rem;
+    padding-bottom: 0.75rem;
+  }
+
+  .message {
+    max-width: 95%;
+    padding: 0.75rem;
+  }
+
+  .empty-state {
+    padding: 1.5rem 1rem;
+  }
+
+  .empty-state h2 {
+    font-size: 1.125rem;
+  }
+
+  .empty-state ul {
+    font-size: 0.875rem;
+    padding-left: 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .message-list {
+    gap: 0.75rem;
+  }
+
+  .message {
+    max-width: 98%;
+    padding: 0.625rem;
+    font-size: 0.9375rem;
+  }
+
+  .message-header {
+    font-size: 0.6875rem;
+  }
+
+  .message-content {
+    font-size: 0.9375rem;
+    line-height: 1.5;
+  }
+
+  .empty-state {
+    padding: 1rem 0.75rem;
+  }
+
+  .empty-state h2 {
+    font-size: 1rem;
+  }
+
+  .empty-state ul {
+    font-size: 0.8125rem;
+    padding-left: 1rem;
+  }
+
+  .empty-state li {
+    margin: 0.375rem 0;
+  }
+}
