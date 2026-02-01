@@ -38,6 +38,14 @@ app.add_middleware(
 # Include API routes
 app.include_router(chat.router, prefix="/api", tags=["chat"])
 
+# Include data ingestion routes (optional - for triggering ingestion via API)
+try:
+    from api import data_ingestion
+    app.include_router(data_ingestion.router, tags=["data"])
+except ImportError:
+    # Data ingestion endpoint not available
+    pass
+
 
 @app.get("/")
 async def root():
