@@ -32,7 +32,7 @@ git push origin main
    ```
    LLM_PROVIDER=OPENAI
    OPENAI_API_KEY=your_key_here
-   OPENAI_MODEL=gpt-3.5-turbo
+   OPENAI_MODEL=gpt-4o
    ```
 5. Copy the backend URL (e.g., `https://backend-production-xxxx.up.railway.app`)
 
