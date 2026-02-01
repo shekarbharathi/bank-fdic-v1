@@ -8,10 +8,17 @@ Usage from Railway CLI:
 import os
 import sys
 
+# Debug: Print current directory info
+print(f"Script file: {__file__}")
+print(f"Current working directory: {os.getcwd()}")
+print(f"Script directory: {os.path.dirname(os.path.abspath(__file__))}")
+
 # Add parent directory to path to access fdic_to_postgres.py
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+print(f"Parent directory: {parent_dir}")
 if parent_dir not in sys.path:
     sys.path.insert(0, parent_dir)
+    print(f"Added {parent_dir} to Python path")
 
 from fdic_to_postgres import FDICAPIClient, PostgresLoader
 import logging
