@@ -1,13 +1,26 @@
 """
 Database service for PostgreSQL connection and query execution
 """
+import os
+import sys
+
+# Handle imports for both Railway (backend as root) and local dev (project root)
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, backend_dir)
+
 import psycopg2
 from psycopg2 import pool
 from psycopg2.extras import RealDictCursor
 import asyncio
 from typing import List, Dict, Any, Optional
 import logging
-from backend.config import DB_CONNECTION, MAX_QUERY_EXECUTION_TIME, MAX_RESULT_ROWS
+
+# Try relative imports first (for Railway), fallback to absolute (for local dev)
+try:
+    from config import DB_CONNECTION, MAX_QUERY_EXECUTION_TIME, MAX_RESULT_ROWS
+except ImportError:
+    from backend.config import DB_CONNECTION, MAX_QUERY_EXECUTION_TIME, MAX_RESULT_ROWS
 
 logger = logging.getLogger(__name__)
 

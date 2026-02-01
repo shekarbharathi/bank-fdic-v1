@@ -2,14 +2,31 @@
 LLM provider abstraction for text-to-SQL conversion
 Supports OpenAI, Anthropic, and local models (Ollama)
 """
+import os
+import sys
+
+# Handle imports for both Railway (backend as root) and local dev (project root)
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, backend_dir)
+
 from abc import ABC, abstractmethod
 from typing import Optional
 import logging
-from backend.config import (
-    LLM_PROVIDER, OPENAI_API_KEY, OPENAI_MODEL,
-    ANTHROPIC_API_KEY, ANTHROPIC_MODEL,
-    LOCAL_MODEL_ENDPOINT, LOCAL_MODEL_NAME
-)
+
+# Try relative imports first (for Railway), fallback to absolute (for local dev)
+try:
+    from config import (
+        LLM_PROVIDER, OPENAI_API_KEY, OPENAI_MODEL,
+        ANTHROPIC_API_KEY, ANTHROPIC_MODEL,
+        LOCAL_MODEL_ENDPOINT, LOCAL_MODEL_NAME
+    )
+except ImportError:
+    from backend.config import (
+        LLM_PROVIDER, OPENAI_API_KEY, OPENAI_MODEL,
+        ANTHROPIC_API_KEY, ANTHROPIC_MODEL,
+        LOCAL_MODEL_ENDPOINT, LOCAL_MODEL_NAME
+    )
 
 logger = logging.getLogger(__name__)
 

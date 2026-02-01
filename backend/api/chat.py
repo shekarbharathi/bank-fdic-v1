@@ -1,12 +1,29 @@
 """
 Chat API endpoints
 """
+import os
+import sys
+
+# Handle imports for both Railway (backend as root) and local dev (project root)
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, backend_dir)
+
 from fastapi import APIRouter, HTTPException
-from backend.models.chat import ChatRequest, ChatResponse, HealthResponse
-from backend.services.database import DatabaseService
-from backend.services.text_to_sql import TextToSQLService
-from backend.services.response_formatter import ResponseFormatter
-from backend.config import LLM_PROVIDER
+
+# Try relative imports first (for Railway), fallback to absolute (for local dev)
+try:
+    from models.chat import ChatRequest, ChatResponse, HealthResponse
+    from services.database import DatabaseService
+    from services.text_to_sql import TextToSQLService
+    from services.response_formatter import ResponseFormatter
+    from config import LLM_PROVIDER
+except ImportError:
+    from backend.models.chat import ChatRequest, ChatResponse, HealthResponse
+    from backend.services.database import DatabaseService
+    from backend.services.text_to_sql import TextToSQLService
+    from backend.services.response_formatter import ResponseFormatter
+    from backend.config import LLM_PROVIDER
 
 router = APIRouter()
 

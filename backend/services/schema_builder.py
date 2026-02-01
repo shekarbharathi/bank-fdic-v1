@@ -1,8 +1,21 @@
 """
 Schema builder for generating database metadata for LLM context
 """
+import os
+import sys
+
+# Handle imports for both Railway (backend as root) and local dev (project root)
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, backend_dir)
+
 from typing import Dict, Any, Optional
-from backend.services.database import DatabaseService
+
+# Try relative imports first (for Railway), fallback to absolute (for local dev)
+try:
+    from services.database import DatabaseService
+except ImportError:
+    from backend.services.database import DatabaseService
 
 
 class SchemaBuilder:

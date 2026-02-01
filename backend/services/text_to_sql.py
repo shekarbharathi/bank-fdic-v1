@@ -1,12 +1,28 @@
 """
 Text-to-SQL service using LLM to convert natural language to SQL queries
 """
+import os
+import sys
+
+# Handle imports for both Railway (backend as root) and local dev (project root)
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sys.path.insert(0, backend_dir)
+
 import logging
 from typing import Optional
-from backend.services.llm_providers import get_llm_provider, LLMProvider
-from backend.services.schema_builder import SchemaBuilder
-from backend.services.sql_validator import SQLValidator
-from backend.services.database import DatabaseService
+
+# Try relative imports first (for Railway), fallback to absolute (for local dev)
+try:
+    from services.llm_providers import get_llm_provider, LLMProvider
+    from services.schema_builder import SchemaBuilder
+    from services.sql_validator import SQLValidator
+    from services.database import DatabaseService
+except ImportError:
+    from backend.services.llm_providers import get_llm_provider, LLMProvider
+    from backend.services.schema_builder import SchemaBuilder
+    from backend.services.sql_validator import SQLValidator
+    from backend.services.database import DatabaseService
 
 logger = logging.getLogger(__name__)
 
