@@ -11,10 +11,12 @@ cmds = [
 
 [phases.build]
 cmds = [
-  "npm run build"
+  "npm run build",
+  "ls -la dist || echo 'ERROR: dist directory not found after build'",
+  "ls -la dist/ | head -20 || echo 'ERROR: dist directory is empty'"
 ]
 
 [start]
 # Use vite preview - it automatically serves from dist/ directory
 # First verify dist exists, then start preview server
-cmd = "ls -la dist && npm run preview -- --host 0.0.0.0 --port $PORT --allowed-hosts .railway.app,.up.railway.app,localhost,all"
+cmd = "echo 'Checking dist directory...' && ls -la dist && echo 'Starting Vite preview...' && npm run preview -- --host 0.0.0.0 --port $PORT --allowed-hosts .railway.app,.up.railway.app,localhost,all"
