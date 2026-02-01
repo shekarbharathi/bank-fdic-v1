@@ -1,0 +1,21 @@
+# Files to ignore when deploying to Railway
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.log
+pipeline_state.json
+.env
+.env.local
+node_modules/
+frontend/node_modules/
+.git/
+.DS_Store
+*.md
+!README.md
+install_*.sh
+complete_setup.sh
+SETUP_INSTRUCTIONS.md
+install_instructions.txt

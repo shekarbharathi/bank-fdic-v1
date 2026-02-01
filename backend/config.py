@@ -4,27 +4,68 @@ Backend configuration for FDIC Chat Interface
 import os
 from typing import Optional
 
-# Database Configuration (reuse from parent config)
-try:
-    import sys
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    from config import DB_CONNECTION, DB_CONFIG
-except ImportError:
-    # Fallback if config.py not found
-    DB_CONFIG = {
-        'dbname': os.getenv('DB_NAME', 'fdic'),
-        'user': os.getenv('DB_USER', 'bharathishekar'),
-        'password': os.getenv('DB_PASSWORD', ''),
-        'host': os.getenv('DB_HOST', 'localhost'),
-        'port': os.getenv('DB_PORT', '5432')
-    }
-    DB_CONNECTION = (
-        f"dbname={DB_CONFIG['dbname']} "
-        f"user={DB_CONFIG['user']} "
-        f"password={DB_CONFIG['password']} "
-        f"host={DB_CONFIG['host']} "
-        f"port={DB_CONFIG['port']}"
-    )
+# Database Configuration
+# Railway provides DATABASE_URL, parse it if available
+DATABASE_URL = os.getenv('DATABASE_URL', '')
+
+if DATABASE_URL:
+    # Parse Railway's DATABASE_URL format: postgresql://user:password@host:port/dbname
+    import re
+    match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', DATABASE_URL)
+    if match:
+        user, password, host, port, dbname = match.groups()
+        DB_CONFIG = {
+            'dbname': dbname,
+            'user': user,
+            'password': password,
+            'host': host,
+            'port': port
+        }
+        DB_CONNECTION = (
+            f"dbname={dbname} "
+            f"user={user} "
+            f"password={password} "
+            f"host={host} "
+            f"port={port}"
+        )
+    else:
+        # Fallback to individual env vars
+        DB_CONFIG = {
+            'dbname': os.getenv('DB_NAME', 'fdic'),
+            'user': os.getenv('DB_USER', 'postgres'),
+            'password': os.getenv('DB_PASSWORD', ''),
+            'host': os.getenv('DB_HOST', 'localhost'),
+            'port': os.getenv('DB_PORT', '5432')
+        }
+        DB_CONNECTION = (
+            f"dbname={DB_CONFIG['dbname']} "
+            f"user={DB_CONFIG['user']} "
+            f"password={DB_CONFIG['password']} "
+            f"host={DB_CONFIG['host']} "
+            f"port={DB_CONFIG['port']}"
+        )
+else:
+    # Try to import from parent config (local development)
+    try:
+        import sys
+        sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from config import DB_CONNECTION, DB_CONFIG
+    except ImportError:
+        # Final fallback
+        DB_CONFIG = {
+            'dbname': os.getenv('DB_NAME', 'fdic'),
+            'user': os.getenv('DB_USER', 'postgres'),
+            'password': os.getenv('DB_PASSWORD', ''),
+            'host': os.getenv('DB_HOST', 'localhost'),
+            'port': os.getenv('DB_PORT', '5432')
+        }
+        DB_CONNECTION = (
+            f"dbname={DB_CONFIG['dbname']} "
+            f"user={DB_CONFIG['user']} "
+            f"password={DB_CONFIG['password']} "
+            f"host={DB_CONFIG['host']} "
+            f"port={DB_CONFIG['port']}"
+        )
 
 # LLM Configuration
 LLM_PROVIDER = os.getenv('LLM_PROVIDER', 'openai').upper()  # OPENAI, ANTHROPIC, LOCAL
@@ -46,4 +87,6 @@ MAX_QUERY_EXECUTION_TIME = int(os.getenv('MAX_QUERY_EXECUTION_TIME', '30'))  # s
 MAX_RESULT_ROWS = int(os.getenv('MAX_RESULT_ROWS', '1000'))
 
 # CORS Configuration
-CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:5173,http://localhost:3000').split(',')
+# Railway frontend URL will be set via environment variable
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
+CORS_ORIGINS = os.getenv('CORS_ORIGINS', f'{FRONTEND_URL},http://localhost:5173,http://localhost:3000').split(',')

@@ -1,0 +1,19 @@
+# Nixpacks configuration for Railway
+# This file helps Railway detect and build the application correctly
+
+[phases.setup]
+nixPkgs = ["python39", "nodejs-18_x"]
+
+[phases.install]
+cmds = [
+  "pip install -r requirements.txt",
+  "cd frontend && npm install"
+]
+
+[phases.build]
+cmds = [
+  "cd frontend && npm run build"
+]
+
+[start]
+cmd = "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"

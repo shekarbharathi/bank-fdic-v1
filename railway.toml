@@ -1,0 +1,16 @@
+# Railway configuration file
+# This helps Railway understand your project structure
+
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+# Health check (optional)
+[healthcheck]
+path = "/api/health"
+interval = 30
+timeout = 10
