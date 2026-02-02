@@ -8,7 +8,6 @@ const MessageList = ({ messages, isLoading }) => {
   if (messages.length === 0 && !isLoading) {
     return (
       <div className="empty-state">
-        <h2>Welcome to FDIC Bank Data Chat</h2>
         <p>Try asking questions like:</p>
         <ul>
           <li>"Which banks have the best capital ratios?"</li>
