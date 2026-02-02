@@ -43,7 +43,8 @@ pipeline_state.json
 # Environment variables
 .env
 .env.local
-.env.production
+# .env.production is committed (backend URL is not a secret)
+# .env.production
 .env.railway
 
 # OS
