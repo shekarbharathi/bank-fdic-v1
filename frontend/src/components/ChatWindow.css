@@ -7,6 +7,16 @@
   background: transparent;
 }
 
+.bank-statistics-link {
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.bank-statistics-link:hover {
+  text-decoration: underline;
+}
+
 .chat-header {
   padding: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
