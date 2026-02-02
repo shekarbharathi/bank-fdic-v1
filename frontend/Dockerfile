@@ -12,6 +12,12 @@ RUN npm ci
 COPY . ./
 
 # Build the application
+# Vite environment variables are replaced at build time
+# Railway automatically makes env vars available during Docker builds
+# The echo command will show in build logs if VITE_API_URL is available
+RUN echo "=== Build Environment Check ===" && \
+    echo "VITE_API_URL during build: ${VITE_API_URL:-NOT SET}" && \
+    echo "================================"
 RUN npm run build
 
 # Verify build output
