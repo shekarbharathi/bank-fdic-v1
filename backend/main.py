@@ -39,11 +39,14 @@ app.add_middleware(
 # Note: The router already defines /chat, so with prefix="/api" it becomes /api/chat
 app.include_router(chat.router, prefix="/api", tags=["chat"])
 
-# Debug: List all routes on startup
+# Debug: List all routes and CORS configuration on startup
 @app.on_event("startup")
 async def startup_event():
     import logging
     logger = logging.getLogger(__name__)
+    logger.info("=== CORS Configuration ===")
+    logger.info(f"CORS_ORIGINS: {CORS_ORIGINS}")
+    logger.info("==========================")
     logger.info("=== Registered Routes ===")
     for route in app.routes:
         if hasattr(route, 'methods') and hasattr(route, 'path'):

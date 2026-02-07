@@ -102,8 +102,19 @@ else:
         FRONTEND_URL,
         'http://localhost:5173',
         'http://localhost:3000',
-        'https://bankstatz.com',  # Custom domain
-        'https://www.bankstatz.com',  # www subdomain
     ]
-    # Remove duplicates while preserving order
-    CORS_ORIGINS = list(dict.fromkeys(CORS_ORIGINS))
+
+# Always include custom domain (bankstatz.com) to ensure it's allowed
+# This ensures the domain works even if CORS_ORIGINS env var doesn't include it
+required_origins = [
+    'https://bankstatz.com',
+    'https://www.bankstatz.com',
+]
+
+# Add required origins if not already present
+for origin in required_origins:
+    if origin not in CORS_ORIGINS:
+        CORS_ORIGINS.append(origin)
+
+# Remove duplicates while preserving order
+CORS_ORIGINS = list(dict.fromkeys(CORS_ORIGINS))
