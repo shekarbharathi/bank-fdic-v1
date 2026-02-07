@@ -16,6 +16,22 @@
   color: #6b7280;
 }
 
+.empty-state-subtitle {
+  margin: 0 0 1.5rem 0;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.empty-state-subtitle .bank-statistics-link {
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.empty-state-subtitle .bank-statistics-link:hover {
+  text-decoration: underline;
+}
+
 .empty-state h2 {
   margin: 0 0 1rem 0;
   color: #000000;

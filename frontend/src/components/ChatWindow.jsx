@@ -61,19 +61,6 @@ const ChatWindow = () => {
 
   return (
     <div className="chat-window">
-      <div className="chat-header">
-        <p>
-          Ask questions about FDIC published{' '}
-          <a
-            href="https://www.fdic.gov/analysis/bank-data-statistics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bank-statistics-link"
-          >
-            bank statistics
-          </a>
-        </p>
-      </div>
       <div className="chat-messages-container">
         <MessageList messages={messages} isLoading={isLoading} />
         <div ref={messagesEndRef} />

@@ -8,6 +8,17 @@ const MessageList = ({ messages, isLoading }) => {
   if (messages.length === 0 && !isLoading) {
     return (
       <div className="empty-state">
+        <p className="empty-state-subtitle">
+          Ask questions about FDIC published{' '}
+          <a
+            href="https://www.fdic.gov/analysis/bank-data-statistics"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bank-statistics-link"
+          >
+            bank statistics
+          </a>
+        </p>
         <p>Try asking questions like:</p>
         <ul>
           <li>"Which banks have the best capital ratios?"</li>
