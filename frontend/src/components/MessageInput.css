@@ -15,7 +15,7 @@
   left: 50%;
   transform: translate(-50%, 0);
   width: auto;
-  max-width: calc(66ch + 4rem); /* Form width + padding */
+  max-width: calc(132ch + 4rem); /* Form width + padding (doubled) */
   padding: 1rem 0;
 }
 
@@ -29,7 +29,7 @@
 .message-input-form {
   display: flex;
   gap: 0.75rem;
-  max-width: 66ch; /* ~10% wider than "What banks are in California with ROA greater than 1%?" (~60ch) */
+  max-width: 132ch; /* Double the previous width */
   width: 100%;
   margin: 0 auto;
   align-items: flex-end;
