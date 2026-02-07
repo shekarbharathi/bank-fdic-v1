@@ -30,16 +30,21 @@
 
 .message-input-form {
   display: flex;
-  gap: 0.75rem;
   width: 800px; /* Fixed width - approximately double the previous width */
   max-width: 100%; /* Allow it to shrink on smaller screens */
   margin: 0 auto;
-  align-items: flex-end;
+}
+
+.message-input-wrapper {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
 }
 
 .message-input {
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 3.5rem 0.75rem 1rem; /* Right padding for icon */
   border: 1px solid #d1d5db;
   border-radius: 9999px;
   font-size: 1rem;
@@ -55,6 +60,7 @@
   -moz-box-shadow: none !important;
   filter: none;
   transition: border-color 0.2s;
+  width: 100%;
 }
 
 .message-input:focus {
@@ -75,24 +81,37 @@
 }
 
 .send-button {
-  padding: 0.75rem 1.5rem;
-  background: #3b82f6;
-  color: white;
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.5rem;
+  background: transparent;
+  color: #9ca3af; /* Light gray for disabled state */
   border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
+  border-radius: 50%;
   cursor: pointer;
-  transition: background 0.2s;
-  min-height: 44px;
+  transition: color 0.2s, background-color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
 }
 
 .send-button:hover:not(:disabled) {
-  background: #2563eb;
+  background-color: #f3f4f6;
+  color: #6b7280; /* Darker gray on hover when enabled */
+}
+
+.send-button:not(:disabled) {
+  color: #6b7280; /* Darker gray for enabled state */
 }
 
 .send-button:disabled {
-  background: #9ca3af;
+  color: #d1d5db; /* Lighter gray for disabled state */
   cursor: not-allowed;
 }
 
@@ -102,20 +121,18 @@
     padding: 0.75rem;
   }
 
-  .message-input-form {
-    gap: 0.5rem;
-  }
-
   .message-input {
     font-size: 16px; /* Prevents zoom on iOS */
-    padding: 0.625rem 0.875rem;
+    padding: 0.625rem 3rem 0.625rem 0.875rem; /* Right padding for icon */
     min-height: 44px; /* Touch target size */
   }
 
   .send-button {
-    padding: 0.625rem 1.25rem;
-    font-size: 0.9375rem;
-    min-height: 44px; /* Touch target size */
+    right: 0.375rem;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
 }
 
@@ -124,20 +141,17 @@
     padding: 0.5rem;
   }
 
-  .message-input-form {
-    gap: 0.375rem;
-  }
-
   .message-input {
     font-size: 16px; /* Prevents zoom on iOS */
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 3rem 0.5rem 0.75rem; /* Right padding for icon */
     border-radius: 9999px;
   }
 
   .send-button {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-    border-radius: 0.375rem;
-    min-width: 60px;
+    right: 0.25rem;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
   }
 }
