@@ -61,8 +61,17 @@ const ChatWindow = () => {
 
   const hasMessages = messages.length > 0;
 
+  const handleReset = (e) => {
+    e.preventDefault();
+    setMessages([]);
+    setIsLoading(false);
+  };
+
   return (
     <div className="chat-window">
+      <a href="#" onClick={handleReset} className="home-link">
+        BankStatz
+      </a>
       <div className={`chat-messages-container ${hasMessages ? 'has-messages' : ''}`}>
         <MessageList messages={messages} isLoading={isLoading} hasInput={!hasMessages} />
         <div ref={messagesEndRef} />
