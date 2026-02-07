@@ -14,12 +14,18 @@
   padding: 2rem;
   text-align: center;
   color: #6b7280;
+  font-size: 1rem;
+}
+
+.empty-state p {
+  font-size: 1rem;
+  margin: 0;
 }
 
 .empty-state-subtitle {
   margin: 0 0 1.5rem 0;
   color: #6b7280;
-  font-size: 0.875rem;
+  font-size: 1rem;
 }
 
 .empty-state-subtitle .bank-statistics-link {
@@ -42,10 +48,12 @@
   text-align: left;
   margin: 1rem 0 0 0;
   padding-left: 1.5rem;
+  font-size: 1rem;
 }
 
 .empty-state li {
   margin: 0.5rem 0;
+  font-size: 1rem;
 }
 
 .message {
@@ -167,7 +175,7 @@
   }
 
   .empty-state ul {
-    font-size: 0.875rem;
+    font-size: 1rem;
     padding-left: 1.25rem;
   }
 }
@@ -201,7 +209,7 @@
   }
 
   .empty-state ul {
-    font-size: 0.8125rem;
+    font-size: 1rem;
     padding-left: 1rem;
   }
 
