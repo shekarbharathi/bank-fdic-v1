@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import './MessageInput.css';
 
-const MessageInput = ({ onSendMessage, disabled }) => {
+const MessageInput = ({ onSendMessage, disabled, isInEmptyState = false }) => {
   const [message, setMessage] = useState('');
   const textareaRef = useRef(null);
 
@@ -35,7 +35,7 @@ const MessageInput = ({ onSendMessage, disabled }) => {
   };
 
   return (
-    <div className="message-input-container">
+    <div className={`message-input-container ${isInEmptyState ? 'in-empty-state' : ''}`}>
       <form onSubmit={handleSubmit} className="message-input-form">
         <textarea
           ref={textareaRef}

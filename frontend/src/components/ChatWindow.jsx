@@ -59,13 +59,19 @@ const ChatWindow = () => {
     }
   };
 
+  const hasMessages = messages.length > 0;
+
   return (
     <div className="chat-window">
-      <div className="chat-messages-container">
-        <MessageList messages={messages} isLoading={isLoading} />
+      <div className={`chat-messages-container ${hasMessages ? 'has-messages' : ''}`}>
+        <MessageList messages={messages} isLoading={isLoading} hasInput={!hasMessages} />
         <div ref={messagesEndRef} />
       </div>
-      <MessageInput onSendMessage={handleSendMessage} disabled={isLoading} />
+      <MessageInput 
+        onSendMessage={handleSendMessage} 
+        disabled={isLoading} 
+        isInEmptyState={!hasMessages}
+      />
     </div>
   );
 };

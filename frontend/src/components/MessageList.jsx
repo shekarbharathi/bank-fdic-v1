@@ -4,7 +4,7 @@ import SQLDisplay from './SQLDisplay';
 import DataTable from './DataTable';
 import './MessageList.css';
 
-const MessageList = ({ messages, isLoading }) => {
+const MessageList = ({ messages, isLoading, hasInput }) => {
   if (messages.length === 0 && !isLoading) {
     return (
       <div className="empty-state">
@@ -26,6 +26,7 @@ const MessageList = ({ messages, isLoading }) => {
           <li>"Show me the top 10 banks by assets"</li>
           <li>"What banks are in California with ROA greater than 1%?"</li>
         </ul>
+        {hasInput && <div className="empty-state-input-spacer"></div>}
       </div>
     );
   }
