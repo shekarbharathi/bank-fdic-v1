@@ -89,4 +89,21 @@ MAX_RESULT_ROWS = int(os.getenv('MAX_RESULT_ROWS', '1000'))
 # CORS Configuration
 # Railway frontend URL will be set via environment variable
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:5173')
-CORS_ORIGINS = os.getenv('CORS_ORIGINS', f'{FRONTEND_URL},http://localhost:5173,http://localhost:3000').split(',')
+
+# Parse CORS_ORIGINS from environment variable or use defaults
+# CORS_ORIGINS should be a comma-separated list of allowed origins
+cors_origins_str = os.getenv('CORS_ORIGINS', '')
+if cors_origins_str:
+    # Use the provided CORS_ORIGINS, split by comma and strip whitespace
+    CORS_ORIGINS = [origin.strip() for origin in cors_origins_str.split(',') if origin.strip()]
+else:
+    # Default: include FRONTEND_URL and localhost URLs for development
+    CORS_ORIGINS = [
+        FRONTEND_URL,
+        'http://localhost:5173',
+        'http://localhost:3000',
+        'https://bankstatz.com',  # Custom domain
+        'https://www.bankstatz.com',  # www subdomain
+    ]
+    # Remove duplicates while preserving order
+    CORS_ORIGINS = list(dict.fromkeys(CORS_ORIGINS))
