@@ -15,7 +15,7 @@
   left: 50%;
   transform: translate(-50%, 0);
   width: auto;
-  max-width: calc(132ch + 4rem); /* Form width + padding (doubled) */
+  max-width: calc(800px + 4rem); /* Form width + padding */
   padding: 1rem 0;
 }
 
@@ -24,13 +24,15 @@
   transform: translate(0, 0);
   top: auto;
   left: auto;
+  width: 100%;
+  max-width: calc(800px + 4rem); /* Allow form to be wider */
 }
 
 .message-input-form {
   display: flex;
   gap: 0.75rem;
-  max-width: 132ch; /* Double the previous width */
-  width: 100%;
+  width: 800px; /* Fixed width - approximately double the previous width */
+  max-width: 100%; /* Allow it to shrink on smaller screens */
   margin: 0 auto;
   align-items: flex-end;
 }
