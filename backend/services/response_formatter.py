@@ -3,6 +3,7 @@ Response formatter for converting query results to natural language
 """
 from typing import List, Dict, Any, Optional
 import logging
+from decimal import Decimal
 
 logger = logging.getLogger(__name__)
 
@@ -72,52 +73,82 @@ class ResponseFormatter:
         ]
         return any(keyword in question_lower for keyword in actual_value_keywords)
     
-    def _format_number(self, val: float, show_actual: bool = False, is_dollar: bool = True) -> str:
+    def _to_float(self, val: Any) -> Optional[float]:
+        """
+        Convert various numeric types to float
+        
+        Args:
+            val: Value to convert (int, float, Decimal, string, etc.)
+            
+        Returns:
+            Float value or None if conversion fails
+        """
+        if val is None:
+            return None
+        if isinstance(val, (int, float)):
+            return float(val)
+        if isinstance(val, Decimal):
+            return float(val)
+        if isinstance(val, str):
+            try:
+                # Remove commas and try to parse
+                cleaned = val.replace(',', '').strip()
+                return float(cleaned)
+            except (ValueError, AttributeError):
+                return None
+        try:
+            return float(val)
+        except (ValueError, TypeError):
+            return None
+    
+    def _format_number(self, val: Any, show_actual: bool = False, is_dollar: bool = True) -> str:
         """
         Format a number according to rounding rules or show actual value
         
         Args:
-            val: Numeric value to format
+            val: Numeric value to format (int, float, Decimal, or string)
             show_actual: If True, show full number. If False, round to nearest unit.
             is_dollar: If True, add $ prefix. If False, format as regular number.
             
         Returns:
             Formatted string representation
         """
+        # Convert to float first
+        float_val = self._to_float(val)
+        if float_val is None:
+            return str(val)  # Return as string if can't convert
+        
         prefix = "$" if is_dollar else ""
         
         if show_actual:
             # Show actual value with comma separators
-            if isinstance(val, float):
-                if val.is_integer():
-                    return f"{prefix}{int(val):,}"
-                else:
-                    return f"{prefix}{val:,.2f}"
+            if float_val.is_integer():
+                return f"{prefix}{int(float_val):,}"
             else:
-                return f"{prefix}{val:,}"
+                return f"{prefix}{float_val:,.2f}"
         
-        abs_val = abs(val)
-        sign = "-" if val < 0 else ""
+        abs_val = abs(float_val)
+        sign = "-" if float_val < 0 else ""
         
         # Round to nearest unit with up to 2 decimals
         if abs_val >= 1_000_000_000_000:  # Trillions
-            rounded = round(val / 1_000_000_000_000, 2)
+            rounded = round(float_val / 1_000_000_000_000, 2)
             return f"{sign}{prefix}{abs(rounded):.2f}T"
         elif abs_val >= 1_000_000_000:  # Billions
-            rounded = round(val / 1_000_000_000, 2)
+            rounded = round(float_val / 1_000_000_000, 2)
             return f"{sign}{prefix}{abs(rounded):.2f}B"
         elif abs_val >= 1_000_000:  # Millions
-            rounded = round(val / 1_000_000, 2)
+            rounded = round(float_val / 1_000_000, 2)
             return f"{sign}{prefix}{abs(rounded):.2f}M"
         elif abs_val >= 1_000:  # Thousands
-            rounded = round(val / 1_000, 2)
+            rounded = round(float_val / 1_000, 2)
             return f"{sign}{prefix}{abs(rounded):.2f}K"
         else:
             # Less than 1000, show as-is with 2 decimals if float
-            if isinstance(val, float):
-                return f"{sign}{prefix}{abs_val:.2f}"
+            if float_val.is_integer():
+                return f"{sign}{prefix}{int(abs_val)}"
             else:
-                return f"{sign}{prefix}{abs_val}"
+                return f"{sign}{prefix}{abs_val:.2f}"
     
     def format_response(
         self,
@@ -188,10 +219,10 @@ class ResponseFormatter:
                     val = row.get(col)
                     if val is None:
                         values.append("N/A")
-                    elif isinstance(val, (int, float)):
+                    elif isinstance(val, (int, float, Decimal)) or (isinstance(val, str) and val.replace(',', '').replace('.', '').replace('-', '').isdigit()):
                         # Check if this looks like a dollar amount
                         col_lower = col.lower()
-                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet'])
+                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet', 'eqtot'])
                         values.append(self._format_number(val, show_actual, is_dollar))
                     else:
                         values.append(str(val))
@@ -230,10 +261,10 @@ class ResponseFormatter:
                     val = row.get(col)
                     if val is None:
                         values.append("N/A")
-                    elif isinstance(val, (int, float)):
+                    elif isinstance(val, (int, float, Decimal)) or (isinstance(val, str) and val.replace(',', '').replace('.', '').replace('-', '').isdigit()):
                         # Check if this looks like a dollar amount
                         col_lower = col.lower()
-                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet'])
+                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet', 'eqtot'])
                         values.append(self._format_number(val, show_actual, is_dollar))
                     else:
                         values.append(str(val))
@@ -282,10 +313,10 @@ class ResponseFormatter:
                     val = row.get(col)
                     if val is None:
                         values.append("N/A")
-                    elif isinstance(val, (int, float)):
+                    elif isinstance(val, (int, float, Decimal)) or (isinstance(val, str) and val.replace(',', '').replace('.', '').replace('-', '').isdigit()):
                         # Check if this looks like a dollar amount
                         col_lower = col.lower()
-                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet'])
+                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet', 'eqtot'])
                         values.append(self._format_number(val, show_actual, is_dollar))
                     else:
                         values.append(str(val))

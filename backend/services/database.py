@@ -93,8 +93,17 @@ class DatabaseService:
             # Fetch results with limit
             results = cur.fetchmany(MAX_RESULT_ROWS)
             
-            # Convert to list of dicts
-            rows = [dict(row) for row in results]
+            # Convert to list of dicts, converting Decimal to float for JSON serialization
+            from decimal import Decimal
+            rows = []
+            for row in results:
+                row_dict = {}
+                for key, value in dict(row).items():
+                    if isinstance(value, Decimal):
+                        row_dict[key] = float(value)
+                    else:
+                        row_dict[key] = value
+                rows.append(row_dict)
             
             cur.close()
             self.connection_pool.putconn(conn)
