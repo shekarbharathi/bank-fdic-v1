@@ -69,14 +69,20 @@ class SchemaBuilder:
         description += "Important Field Meanings:\n"
         description += "  - cert: Certificate number (unique bank identifier)\n"
         description += "  - name: Bank name\n"
-        description += "  - asset: Total assets in dollars\n"
-        description += "  - dep: Total deposits in dollars\n"
+        description += "  - asset: Total assets in THOUSANDS of dollars (multiply by 1000 for actual dollars)\n"
+        description += "  - dep: Total deposits in THOUSANDS of dollars (multiply by 1000 for actual dollars)\n"
+        description += "  - depdom: Domestic deposits in THOUSANDS of dollars (multiply by 1000 for actual dollars)\n"
+        description += "  - eqtot: Total equity capital in THOUSANDS of dollars (multiply by 1000 for actual dollars)\n"
+        description += "  - netinc: Net income in THOUSANDS of dollars (multiply by 1000 for actual dollars)\n"
         description += "  - roa: Return on assets (percentage)\n"
-        description += "  - eqtot: Total equity capital\n"
         description += "  - repdte: Report date (YYYY-MM-DD format)\n"
         description += "  - active: 1 if bank is active, 0 if inactive\n"
         description += "  - stalp: State abbreviation (2 letters)\n"
         description += "  - stname: Full state name\n"
+        description += "\n"
+        description += "IMPORTANT: When users ask about assets, deposits, or other dollar amounts, "
+        description += "you MUST multiply the database values by 1000 in your SQL query to show actual dollars. "
+        description += "For example: SELECT name, asset * 1000 as assets_dollars FROM institutions;\n"
         
         return description
     
@@ -91,20 +97,20 @@ class SchemaBuilder:
 Example SQL Queries:
 
 1. "Top 10 banks by assets":
-   SELECT name, city, stalp, asset, dep
+   SELECT name, city, stalp, asset * 1000 as assets_dollars, dep * 1000 as deposits_dollars
    FROM institutions
    WHERE active = 1 AND asset IS NOT NULL
    ORDER BY asset DESC
    LIMIT 10;
 
 2. "JPMorgan Chase deposit growth over time":
-   SELECT repdte, dep, asset, roa
+   SELECT repdte, dep * 1000 as deposits_dollars, asset * 1000 as assets_dollars, roa
    FROM financials
    WHERE cert = 628
    ORDER BY repdte DESC;
 
 3. "Banks in California with high ROA":
-   SELECT i.name, i.city, f.roa, f.asset, f.dep
+   SELECT i.name, i.city, f.roa, f.asset * 1000 as assets_dollars, f.dep * 1000 as deposits_dollars
    FROM institutions i
    JOIN financials f ON i.cert = f.cert
    WHERE i.stalp = 'CA'
@@ -114,7 +120,7 @@ Example SQL Queries:
    ORDER BY f.roa DESC;
 
 4. "Capital ratio for banks (equity/assets)":
-   SELECT i.name, f.eqtot / NULLIF(f.asset, 0) * 100 as capital_ratio, f.asset
+   SELECT i.name, f.eqtot / NULLIF(f.asset, 0) * 100 as capital_ratio, f.asset * 1000 as assets_dollars
    FROM institutions i
    JOIN financials f ON i.cert = f.cert
    WHERE i.active = 1
@@ -126,8 +132,8 @@ Example SQL Queries:
 5. "Deposit growth year over year":
    SELECT 
      f1.repdte as current_date,
-     f1.dep as current_deposits,
-     f2.dep as previous_deposits,
+     f1.dep * 1000 as current_deposits_dollars,
+     f2.dep * 1000 as previous_deposits_dollars,
      (f1.dep - f2.dep) / NULLIF(f2.dep, 0) * 100 as growth_pct
    FROM financials f1
    JOIN financials f2 ON f1.cert = f2.cert 

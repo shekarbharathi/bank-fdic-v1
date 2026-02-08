@@ -10,6 +10,50 @@ logger = logging.getLogger(__name__)
 class ResponseFormatter:
     """Format database query results into natural language responses"""
     
+    # Columns that store values in thousands of dollars
+    DOLLAR_COLUMNS_IN_THOUSANDS = {'asset', 'dep', 'depdom', 'eqtot', 'netinc', 'lnlsnet', 
+                                    'qbfasset', 'qbfdep', 'cost', 'assets_dollars', 'deposits_dollars',
+                                    'current_deposits_dollars', 'previous_deposits_dollars'}
+    
+    def _convert_thousands_to_dollars(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """
+        Convert dollar amounts from thousands to actual dollars.
+        Only converts if the column name suggests it's in thousands and hasn't been converted yet.
+        
+        Args:
+            results: Query results as list of dictionaries
+            
+        Returns:
+            Results with dollar amounts converted to actual dollars
+        """
+        if not results:
+            return results
+        
+        converted_results = []
+        for row in results:
+            converted_row = {}
+            for col, val in row.items():
+                col_lower = col.lower()
+                # Check if this is a dollar column that might be in thousands
+                # If column name contains "_dollars", it's already been converted by SQL
+                # If column is just "asset", "dep", etc., check if value seems like thousands
+                if col_lower in self.DOLLAR_COLUMNS_IN_THOUSANDS and isinstance(val, (int, float)) and val is not None:
+                    # If column name already indicates dollars, don't convert
+                    if '_dollars' in col_lower:
+                        converted_row[col] = val
+                    else:
+                        # Convert from thousands to actual dollars
+                        # Only convert if value seems reasonable for thousands (not already in billions)
+                        if abs(val) < 10_000_000:  # If less than 10 trillion in thousands, likely needs conversion
+                            converted_row[col] = val * 1000
+                        else:
+                            converted_row[col] = val
+                else:
+                    converted_row[col] = val
+            converted_results.append(converted_row)
+        
+        return converted_results
+    
     def format_response(
         self,
         user_question: str,
@@ -29,6 +73,9 @@ class ResponseFormatter:
         """
         if not results:
             return self._format_empty_response(user_question)
+        
+        # Convert dollar amounts from thousands to actual dollars
+        results = self._convert_thousands_to_dollars(results)
         
         # Detect question type and format accordingly
         question_lower = user_question.lower()
