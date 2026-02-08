@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
-import SQLDisplay from './SQLDisplay';
 import DataTable from './DataTable';
 import './MessageList.css';
 
@@ -54,7 +53,6 @@ const MessageList = ({ messages, isLoading, hasInput }) => {
             ) : (
               <>
                 <ReactMarkdown>{message.content}</ReactMarkdown>
-                {message.sql && <SQLDisplay sql={message.sql} />}
                 {message.data && message.data.length > 0 && (
                   <DataTable data={message.data} />
                 )}
