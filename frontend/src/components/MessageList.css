@@ -28,20 +28,72 @@
   margin: 0 0 1rem 0;
   color: #6b7280;
   font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
 }
 
-.empty-state p:not(.empty-state-subtitle) {
+.empty-state p:not(.empty-state-subtitle):not(.fdic-info-paragraph) {
   margin: 0 0 1rem 0;
 }
 
-.empty-state-subtitle .bank-statistics-link {
-  color: inherit;
+.chevron-button {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.chevron-button:hover {
+  opacity: 0.7;
+}
+
+.chevron-icon {
+  transition: transform 0.2s ease;
+  color: #6b7280;
+}
+
+.chevron-icon.expanded {
+  transform: rotate(180deg);
+}
+
+.fdic-info-paragraph {
+  margin: 0 0 1rem 0;
+  color: #6b7280;
+  font-size: 1rem;
+  text-align: left;
+  max-width: 600px;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    max-height: 500px;
+    transform: translateY(0);
+  }
+}
+
+.fdic-info-link {
+  color: #6b7280;
   text-decoration: underline;
   cursor: pointer;
 }
 
-.empty-state-subtitle .bank-statistics-link:hover {
-  text-decoration: underline;
+.fdic-info-link:hover {
+  opacity: 0.7;
 }
 
 .empty-state h2 {

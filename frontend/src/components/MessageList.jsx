@@ -1,23 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import DataTable from './DataTable';
 import './MessageList.css';
 
 const MessageList = ({ messages, isLoading, hasInput }) => {
+  const [isInfoExpanded, setIsInfoExpanded] = useState(false);
+
   if (messages.length === 0 && !isLoading) {
     return (
       <div className="empty-state">
         <p className="empty-state-subtitle">
-          Ask questions about FDIC published{' '}
-          <a
-            href="https://www.fdic.gov/analysis/bank-data-statistics"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bank-statistics-link"
+          Ask questions about FDIC published bank statistics{' '}
+          <button
+            className="chevron-button"
+            onClick={() => setIsInfoExpanded(!isInfoExpanded)}
+            aria-label={isInfoExpanded ? 'Collapse information' : 'Expand information'}
           >
-            bank statistics
-          </a>
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className={`chevron-icon ${isInfoExpanded ? 'expanded' : ''}`}
+            >
+              <path
+                d="M3 4.5L6 7.5L9 4.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
         </p>
+        {isInfoExpanded && (
+          <p className="fdic-info-paragraph">
+            FDIC publishes latest quarterly and historical data (up to 2022) about US banks. Data includes assets, deposits, return on assets (ROA), ROAPTX, net income, net interest margin, expenses, city and state of incorporation, etc. This data is publicly available for more than 27,800 banks out of which more than 4,300 are in active operations. Read more about FDIC published statistics{' '}
+            <a
+              href="https://www.fdic.gov/analysis/bank-data-statistics"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="fdic-info-link"
+            >
+              here
+            </a>
+            .
+          </p>
+        )}
         <p>Try asking questions like:</p>
         <ul>
           <li>"Which banks have the best capital ratios?"</li>
