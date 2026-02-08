@@ -215,44 +215,14 @@ class ResponseFormatter:
         show_actual: bool = False
     ) -> str:
         """Format response for ranking/top N queries"""
-        response = f"Here are the results:\n\n"
+        if not results:
+            return "No results found."
         
-        # Format as table
-        if results:
-            # Get column names
-            columns = list(results[0].keys())
-            
-            # Create header
-            response += "| " + " | ".join(columns) + " |\n"
-            response += "|" + "|".join(["---"] * len(columns)) + "|\n"
-            
-            # Add rows (limit to 20 for readability)
-            for i, row in enumerate(results[:20]):
-                values = []
-                for col in columns:
-                    val = row.get(col)
-                    if val is None:
-                        values.append("N/A")
-                    elif self._is_date_column(col):
-                        # Date columns: format as date string, don't apply number formatting
-                        if isinstance(val, str):
-                            values.append(val)
-                        else:
-                            # If it's a date object, convert to string
-                            values.append(str(val))
-                    elif isinstance(val, (int, float, Decimal)) or (isinstance(val, str) and val.replace(',', '').replace('.', '').replace('-', '').isdigit()):
-                        # Check if this looks like a dollar amount
-                        col_lower = col.lower()
-                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet', 'eqtot'])
-                        values.append(self._format_number(val, show_actual, is_dollar))
-                    else:
-                        values.append(str(val))
-                response += "| " + " | ".join(values) + " |\n"
-            
-            if len(results) > 20:
-                response += f"\n(Showing top 20 of {len(results)} results)"
-        
-        return response
+        count = len(results)
+        if count == 1:
+            return f"Found 1 result."
+        else:
+            return f"Found {count} results."
     
     def _format_trend_response(
         self,
@@ -261,44 +231,14 @@ class ResponseFormatter:
         show_actual: bool = False
     ) -> str:
         """Format response for trend/time series queries"""
-        response = "Here's the trend data:\n\n"
+        if not results:
+            return "No trend data found."
         
-        if results:
-            # Find date column
-            date_col = None
-            for col in results[0].keys():
-                if 'date' in col.lower() or 'repdte' in col.lower():
-                    date_col = col
-                    break
-            
-            # Format as table
-            columns = list(results[0].keys())
-            response += "| " + " | ".join(columns) + " |\n"
-            response += "|" + "|".join(["---"] * len(columns)) + "|\n"
-            
-            for row in results[:30]:  # Limit for trends
-                values = []
-                for col in columns:
-                    val = row.get(col)
-                    if val is None:
-                        values.append("N/A")
-                    elif self._is_date_column(col):
-                        # Date columns: format as date string, don't apply number formatting
-                        if isinstance(val, str):
-                            values.append(val)
-                        else:
-                            # If it's a date object, convert to string
-                            values.append(str(val))
-                    elif isinstance(val, (int, float, Decimal)) or (isinstance(val, str) and val.replace(',', '').replace('.', '').replace('-', '').isdigit()):
-                        # Check if this looks like a dollar amount
-                        col_lower = col.lower()
-                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet', 'eqtot'])
-                        values.append(self._format_number(val, show_actual, is_dollar))
-                    else:
-                        values.append(str(val))
-                response += "| " + " | ".join(values) + " |\n"
-        
-        return response
+        count = len(results)
+        if count == 1:
+            return f"Found 1 data point."
+        else:
+            return f"Found {count} data points showing the trend."
     
     def _format_count_response(
         self,
@@ -328,36 +268,11 @@ class ResponseFormatter:
         show_actual: bool = False
     ) -> str:
         """Format general response for other query types"""
-        response = "Here are the results:\n\n"
+        if not results:
+            return "No results found."
         
-        if results:
-            columns = list(results[0].keys())
-            response += "| " + " | ".join(columns) + " |\n"
-            response += "|" + "|".join(["---"] * len(columns)) + "|\n"
-            
-            for row in results[:50]:  # Limit general results
-                values = []
-                for col in columns:
-                    val = row.get(col)
-                    if val is None:
-                        values.append("N/A")
-                    elif self._is_date_column(col):
-                        # Date columns: format as date string, don't apply number formatting
-                        if isinstance(val, str):
-                            values.append(val)
-                        else:
-                            # If it's a date object, convert to string
-                            values.append(str(val))
-                    elif isinstance(val, (int, float, Decimal)) or (isinstance(val, str) and val.replace(',', '').replace('.', '').replace('-', '').isdigit()):
-                        # Check if this looks like a dollar amount
-                        col_lower = col.lower()
-                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet', 'eqtot'])
-                        values.append(self._format_number(val, show_actual, is_dollar))
-                    else:
-                        values.append(str(val))
-                response += "| " + " | ".join(values) + " |\n"
-            
-            if len(results) > 50:
-                response += f"\n(Showing 50 of {len(results)} results)"
-        
-        return response
+        count = len(results)
+        if count == 1:
+            return f"Found 1 result."
+        else:
+            return f"Found {count} results."
