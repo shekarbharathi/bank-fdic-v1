@@ -73,6 +73,20 @@ class ResponseFormatter:
         ]
         return any(keyword in question_lower for keyword in actual_value_keywords)
     
+    def _is_date_column(self, col_name: str) -> bool:
+        """
+        Check if a column name indicates it's a date column
+        
+        Args:
+            col_name: Column name to check
+            
+        Returns:
+            True if column appears to be a date column
+        """
+        col_lower = col_name.lower()
+        date_keywords = ['date', 'repdte', 'faildate', 'procdate', 'dateupdt']
+        return any(keyword in col_lower for keyword in date_keywords)
+    
     def _to_float(self, val: Any) -> Optional[float]:
         """
         Convert various numeric types to float
@@ -219,6 +233,13 @@ class ResponseFormatter:
                     val = row.get(col)
                     if val is None:
                         values.append("N/A")
+                    elif self._is_date_column(col):
+                        # Date columns: format as date string, don't apply number formatting
+                        if isinstance(val, str):
+                            values.append(val)
+                        else:
+                            # If it's a date object, convert to string
+                            values.append(str(val))
                     elif isinstance(val, (int, float, Decimal)) or (isinstance(val, str) and val.replace(',', '').replace('.', '').replace('-', '').isdigit()):
                         # Check if this looks like a dollar amount
                         col_lower = col.lower()
@@ -261,6 +282,13 @@ class ResponseFormatter:
                     val = row.get(col)
                     if val is None:
                         values.append("N/A")
+                    elif self._is_date_column(col):
+                        # Date columns: format as date string, don't apply number formatting
+                        if isinstance(val, str):
+                            values.append(val)
+                        else:
+                            # If it's a date object, convert to string
+                            values.append(str(val))
                     elif isinstance(val, (int, float, Decimal)) or (isinstance(val, str) and val.replace(',', '').replace('.', '').replace('-', '').isdigit()):
                         # Check if this looks like a dollar amount
                         col_lower = col.lower()
@@ -313,6 +341,13 @@ class ResponseFormatter:
                     val = row.get(col)
                     if val is None:
                         values.append("N/A")
+                    elif self._is_date_column(col):
+                        # Date columns: format as date string, don't apply number formatting
+                        if isinstance(val, str):
+                            values.append(val)
+                        else:
+                            # If it's a date object, convert to string
+                            values.append(str(val))
                     elif isinstance(val, (int, float, Decimal)) or (isinstance(val, str) and val.replace(',', '').replace('.', '').replace('-', '').isdigit()):
                         # Check if this looks like a dollar amount
                         col_lower = col.lower()

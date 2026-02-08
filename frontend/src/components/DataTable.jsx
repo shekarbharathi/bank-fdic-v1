@@ -5,8 +5,19 @@ const DataTable = ({ data }) => {
 
   const columns = Object.keys(data[0]);
 
+  const isDateColumn = (columnName) => {
+    const colLower = columnName.toLowerCase();
+    const dateKeywords = ['date', 'repdte', 'faildate', 'procdate', 'dateupdt'];
+    return dateKeywords.some(keyword => colLower.includes(keyword));
+  };
+
   const formatValue = (value, columnName = '') => {
     if (value === null || value === undefined) return 'N/A';
+    
+    // Skip number formatting for date columns
+    if (isDateColumn(columnName)) {
+      return String(value);
+    }
     
     // Convert to number if it's a string representation of a number
     let numValue = value;
