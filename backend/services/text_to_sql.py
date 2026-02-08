@@ -18,11 +18,13 @@ try:
     from services.schema_builder import SchemaBuilder
     from services.sql_validator import SQLValidator
     from services.database import DatabaseService
+    from services.bank_name_mapping import get_bank_name_mapping_text, get_bank_name_instructions
 except ImportError:
     from backend.services.llm_providers import get_llm_provider, LLMProvider
     from backend.services.schema_builder import SchemaBuilder
     from backend.services.sql_validator import SQLValidator
     from backend.services.database import DatabaseService
+    from backend.services.bank_name_mapping import get_bank_name_mapping_text, get_bank_name_instructions
 
 logger = logging.getLogger(__name__)
 
@@ -74,10 +76,16 @@ class TextToSQLService:
         # Build prompt with schema context
         schema_desc = await self._get_schema_context()
         examples = await self._get_example_queries()
+        bank_mapping = get_bank_name_mapping_text()
+        bank_instructions = get_bank_name_instructions()
         
         prompt = f"""You are a SQL expert for FDIC bank data. Convert the user's question to PostgreSQL SQL.
 
 {schema_desc}
+
+{bank_mapping}
+
+{bank_instructions}
 
 {examples}
 
@@ -90,6 +98,7 @@ Instructions:
 - Handle NULL values properly (use IS NOT NULL, COALESCE, NULLIF)
 - Use proper JOINs to combine data from multiple tables
 - Limit results appropriately (use LIMIT for top N queries)
+- When matching bank names, ALWAYS use ILIKE with % wildcards (e.g., name ILIKE '%JPMorgan Chase%')
 
 SQL Query:"""
         
