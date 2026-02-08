@@ -3,6 +3,15 @@ FastAPI application entry point for FDIC Bank Data Chat Interface
 """
 import os
 import sys
+import logging
+
+# Configure logging - set to DEBUG to see all debug logs in Railway
+log_level = os.getenv("LOG_LEVEL", "DEBUG").upper()
+logging.basicConfig(
+    level=getattr(logging, log_level, logging.DEBUG),
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
 
 # Add current directory to path for imports when running from backend directory
 if os.path.dirname(os.path.abspath(__file__)) not in sys.path:

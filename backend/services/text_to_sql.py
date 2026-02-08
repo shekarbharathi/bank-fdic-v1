@@ -102,9 +102,28 @@ Instructions:
 
 SQL Query:"""
         
+        # Debug: Log the prompt being sent to LLM
+        logger.debug("=" * 80)
+        logger.debug("LLM PROMPT PREPARED:")
+        logger.debug("=" * 80)
+        logger.debug(f"User Question: {user_question}")
+        logger.debug(f"Prompt Length: {len(prompt)} characters")
+        logger.debug("Full Prompt:")
+        logger.debug(prompt)
+        logger.debug("=" * 80)
+        
         try:
             # Generate SQL using LLM
             raw_response = await self.llm_provider.generate(prompt)
+            
+            # Debug: Log the raw response from LLM
+            logger.debug("=" * 80)
+            logger.debug("LLM RAW RESPONSE RECEIVED:")
+            logger.debug("=" * 80)
+            logger.debug(f"Response Length: {len(raw_response)} characters")
+            logger.debug("Full Response:")
+            logger.debug(raw_response)
+            logger.debug("=" * 80)
             
             # Extract SQL from markdown if present
             sql = self.sql_validator.extract_sql_from_markdown(raw_response)

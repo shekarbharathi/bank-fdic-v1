@@ -58,6 +58,16 @@ class OpenAIProvider(LLMProvider):
     async def generate(self, prompt: str) -> str:
         """Generate SQL query using OpenAI"""
         try:
+            # Debug: Log API call details
+            logger.debug("=" * 80)
+            logger.debug("OPENAI API CALL:")
+            logger.debug("=" * 80)
+            logger.debug(f"Model: {self.model}")
+            logger.debug(f"Temperature: 0.1")
+            logger.debug(f"Max Tokens: 500")
+            logger.debug(f"Prompt Length: {len(prompt)} characters")
+            logger.debug("=" * 80)
+            
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
@@ -67,7 +77,19 @@ class OpenAIProvider(LLMProvider):
                 temperature=0.1,  # Low temperature for consistent SQL generation
                 max_tokens=500
             )
-            return response.choices[0].message.content.strip()
+            
+            # Debug: Log API response metadata
+            logger.debug("=" * 80)
+            logger.debug("OPENAI API RESPONSE METADATA:")
+            logger.debug("=" * 80)
+            logger.debug(f"Model Used: {response.model}")
+            logger.debug(f"Usage - Prompt Tokens: {response.usage.prompt_tokens if hasattr(response.usage, 'prompt_tokens') else 'N/A'}")
+            logger.debug(f"Usage - Completion Tokens: {response.usage.completion_tokens if hasattr(response.usage, 'completion_tokens') else 'N/A'}")
+            logger.debug(f"Usage - Total Tokens: {response.usage.total_tokens if hasattr(response.usage, 'total_tokens') else 'N/A'}")
+            logger.debug("=" * 80)
+            
+            result = response.choices[0].message.content.strip()
+            return result
         except Exception as e:
             logger.error(f"OpenAI API error: {e}")
             raise
@@ -91,6 +113,16 @@ class AnthropicProvider(LLMProvider):
     async def generate(self, prompt: str) -> str:
         """Generate SQL query using Anthropic Claude"""
         try:
+            # Debug: Log API call details
+            logger.debug("=" * 80)
+            logger.debug("ANTHROPIC API CALL:")
+            logger.debug("=" * 80)
+            logger.debug(f"Model: {self.model}")
+            logger.debug(f"Temperature: 0.1")
+            logger.debug(f"Max Tokens: 500")
+            logger.debug(f"Prompt Length: {len(prompt)} characters")
+            logger.debug("=" * 80)
+            
             message = self.client.messages.create(
                 model=self.model,
                 max_tokens=500,
@@ -100,7 +132,19 @@ class AnthropicProvider(LLMProvider):
                     {"role": "user", "content": prompt}
                 ]
             )
-            return message.content[0].text.strip()
+            
+            # Debug: Log API response metadata
+            logger.debug("=" * 80)
+            logger.debug("ANTHROPIC API RESPONSE METADATA:")
+            logger.debug("=" * 80)
+            logger.debug(f"Model Used: {message.model}")
+            if hasattr(message, 'usage'):
+                logger.debug(f"Usage - Input Tokens: {message.usage.input_tokens if hasattr(message.usage, 'input_tokens') else 'N/A'}")
+                logger.debug(f"Usage - Output Tokens: {message.usage.output_tokens if hasattr(message.usage, 'output_tokens') else 'N/A'}")
+            logger.debug("=" * 80)
+            
+            result = message.content[0].text.strip()
+            return result
         except Exception as e:
             logger.error(f"Anthropic API error: {e}")
             raise
@@ -124,19 +168,39 @@ class LocalProvider(LLMProvider):
         
         try:
             url = f"{self.endpoint}/api/generate"
+            full_prompt = f"You are a SQL expert. Generate only SQL queries, no explanations.\n\n{prompt}"
             payload = {
                 "model": self.model_name,
-                "prompt": f"You are a SQL expert. Generate only SQL queries, no explanations.\n\n{prompt}",
+                "prompt": full_prompt,
                 "stream": False,
                 "options": {
                     "temperature": 0.1
                 }
             }
             
+            # Debug: Log API call details
+            logger.debug("=" * 80)
+            logger.debug("LOCAL OLLAMA API CALL:")
+            logger.debug("=" * 80)
+            logger.debug(f"Endpoint: {url}")
+            logger.debug(f"Model: {self.model_name}")
+            logger.debug(f"Temperature: 0.1")
+            logger.debug(f"Prompt Length: {len(full_prompt)} characters")
+            logger.debug("=" * 80)
+            
             async with self.session.post(url, json=payload) as response:
                 if response.status != 200:
                     raise Exception(f"Ollama API returned status {response.status}")
                 result = await response.json()
+                
+                # Debug: Log API response metadata
+                logger.debug("=" * 80)
+                logger.debug("LOCAL OLLAMA API RESPONSE METADATA:")
+                logger.debug("=" * 80)
+                logger.debug(f"Status: {response.status}")
+                logger.debug(f"Response Keys: {list(result.keys())}")
+                logger.debug("=" * 80)
+                
                 return result.get("response", "").strip()
         except Exception as e:
             logger.error(f"Local model error: {e}")
