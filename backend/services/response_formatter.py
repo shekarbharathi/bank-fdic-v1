@@ -54,6 +54,71 @@ class ResponseFormatter:
         
         return converted_results
     
+    def _should_show_actual_values(self, user_question: str) -> bool:
+        """
+        Check if user explicitly wants to see actual values
+        
+        Args:
+            user_question: User's question
+            
+        Returns:
+            True if user wants actual values, False otherwise
+        """
+        question_lower = user_question.lower()
+        actual_value_keywords = [
+            'actual values', 'actual value', 'exact', 'exact values',
+            'full number', 'full numbers', 'complete values', 'precise',
+            'show all digits', 'no rounding', 'unrounded'
+        ]
+        return any(keyword in question_lower for keyword in actual_value_keywords)
+    
+    def _format_number(self, val: float, show_actual: bool = False, is_dollar: bool = True) -> str:
+        """
+        Format a number according to rounding rules or show actual value
+        
+        Args:
+            val: Numeric value to format
+            show_actual: If True, show full number. If False, round to nearest unit.
+            is_dollar: If True, add $ prefix. If False, format as regular number.
+            
+        Returns:
+            Formatted string representation
+        """
+        prefix = "$" if is_dollar else ""
+        
+        if show_actual:
+            # Show actual value with comma separators
+            if isinstance(val, float):
+                if val.is_integer():
+                    return f"{prefix}{int(val):,}"
+                else:
+                    return f"{prefix}{val:,.2f}"
+            else:
+                return f"{prefix}{val:,}"
+        
+        abs_val = abs(val)
+        sign = "-" if val < 0 else ""
+        
+        # Round to nearest unit with up to 2 decimals
+        if abs_val >= 1_000_000_000_000:  # Trillions
+            rounded = round(val / 1_000_000_000_000, 2)
+            return f"{sign}{prefix}{abs(rounded):.2f}T"
+        elif abs_val >= 1_000_000_000:  # Billions
+            rounded = round(val / 1_000_000_000, 2)
+            return f"{sign}{prefix}{abs(rounded):.2f}B"
+        elif abs_val >= 1_000_000:  # Millions
+            rounded = round(val / 1_000_000, 2)
+            return f"{sign}{prefix}{abs(rounded):.2f}M"
+        elif abs_val >= 1_000:  # Thousands
+            rounded = round(val / 1_000, 2)
+            return f"{sign}{prefix}{abs(rounded):.2f}K"
+        else:
+            # Less than 1000, show as-is with 2 decimals if float
+            if isinstance(val, float):
+                return f"{sign}{prefix}{abs_val:.2f}"
+            else:
+                return f"{sign}{prefix}{abs_val}"
+    
     def format_response(
         self,
         user_question: str,
@@ -77,19 +142,22 @@ class ResponseFormatter:
         # Convert dollar amounts from thousands to actual dollars
         results = self._convert_thousands_to_dollars(results)
         
+        # Check if user wants actual values
+        show_actual = self._should_show_actual_values(user_question)
+        
         # Detect question type and format accordingly
         question_lower = user_question.lower()
         
         if any(word in question_lower for word in ['top', 'best', 'highest', 'largest']):
-            return self._format_ranking_response(user_question, results)
+            return self._format_ranking_response(user_question, results, show_actual)
         elif any(word in question_lower for word in ['trend', 'growth', 'over time', 'history']):
-            return self._format_trend_response(user_question, results)
+            return self._format_trend_response(user_question, results, show_actual)
         elif any(word in question_lower for word in ['count', 'how many', 'number']):
             return self._format_count_response(user_question, results)
         elif 'ratio' in question_lower or 'capital' in question_lower:
-            return self._format_ratio_response(user_question, results)
+            return self._format_ratio_response(user_question, results, show_actual)
         else:
-            return self._format_general_response(user_question, results)
+            return self._format_general_response(user_question, results, show_actual)
     
     def _format_empty_response(self, user_question: str) -> str:
         """Format response when no results found"""
@@ -98,7 +166,8 @@ class ResponseFormatter:
     def _format_ranking_response(
         self,
         user_question: str,
-        results: List[Dict[str, Any]]
+        results: List[Dict[str, Any]],
+        show_actual: bool = False
     ) -> str:
         """Format response for ranking/top N queries"""
         response = f"Here are the results:\n\n"
@@ -120,15 +189,10 @@ class ResponseFormatter:
                     if val is None:
                         values.append("N/A")
                     elif isinstance(val, (int, float)):
-                        # Format numbers
-                        if abs(val) >= 1_000_000_000:
-                            values.append(f"${val/1_000_000_000:.2f}B")
-                        elif abs(val) >= 1_000_000:
-                            values.append(f"${val/1_000_000:.2f}M")
-                        elif abs(val) >= 1_000:
-                            values.append(f"${val/1_000:.2f}K")
-                        else:
-                            values.append(f"${val:.2f}" if isinstance(val, float) else str(val))
+                        # Check if this looks like a dollar amount
+                        col_lower = col.lower()
+                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet'])
+                        values.append(self._format_number(val, show_actual, is_dollar))
                     else:
                         values.append(str(val))
                 response += "| " + " | ".join(values) + " |\n"
@@ -141,7 +205,8 @@ class ResponseFormatter:
     def _format_trend_response(
         self,
         user_question: str,
-        results: List[Dict[str, Any]]
+        results: List[Dict[str, Any]],
+        show_actual: bool = False
     ) -> str:
         """Format response for trend/time series queries"""
         response = "Here's the trend data:\n\n"
@@ -166,12 +231,10 @@ class ResponseFormatter:
                     if val is None:
                         values.append("N/A")
                     elif isinstance(val, (int, float)):
-                        if abs(val) >= 1_000_000_000:
-                            values.append(f"${val/1_000_000_000:.2f}B")
-                        elif abs(val) >= 1_000_000:
-                            values.append(f"${val/1_000_000:.2f}M")
-                        else:
-                            values.append(f"${val:.2f}" if isinstance(val, float) else str(val))
+                        # Check if this looks like a dollar amount
+                        col_lower = col.lower()
+                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet'])
+                        values.append(self._format_number(val, show_actual, is_dollar))
                     else:
                         values.append(str(val))
                 response += "| " + " | ".join(values) + " |\n"
@@ -193,15 +256,17 @@ class ResponseFormatter:
     def _format_ratio_response(
         self,
         user_question: str,
-        results: List[Dict[str, Any]]
+        results: List[Dict[str, Any]],
+        show_actual: bool = False
     ) -> str:
         """Format response for ratio/percentage queries"""
-        return self._format_ranking_response(user_question, results)
+        return self._format_ranking_response(user_question, results, show_actual)
     
     def _format_general_response(
         self,
         user_question: str,
-        results: List[Dict[str, Any]]
+        results: List[Dict[str, Any]],
+        show_actual: bool = False
     ) -> str:
         """Format general response for other query types"""
         response = "Here are the results:\n\n"
@@ -218,12 +283,10 @@ class ResponseFormatter:
                     if val is None:
                         values.append("N/A")
                     elif isinstance(val, (int, float)):
-                        if abs(val) >= 1_000_000_000:
-                            values.append(f"${val/1_000_000_000:.2f}B")
-                        elif abs(val) >= 1_000_000:
-                            values.append(f"${val/1_000_000:.2f}M")
-                        else:
-                            values.append(f"${val:.2f}" if isinstance(val, float) else str(val))
+                        # Check if this looks like a dollar amount
+                        col_lower = col.lower()
+                        is_dollar = any(dollar_word in col_lower for dollar_word in ['asset', 'dep', 'deposit', 'dollar', 'cost', 'income', 'equity', 'capital', 'netinc', 'lnlsnet'])
+                        values.append(self._format_number(val, show_actual, is_dollar))
                     else:
                         values.append(str(val))
                 response += "| " + " | ".join(values) + " |\n"
