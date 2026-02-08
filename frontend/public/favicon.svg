@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Bank building base -->
+  <rect x="20" y="40" width="24" height="20" fill="#6b7280" rx="2"/>
+  <!-- Bank columns -->
+  <rect x="24" y="32" width="3" height="8" fill="#6b7280"/>
+  <rect x="30" y="28" width="3" height="12" fill="#6b7280"/>
+  <rect x="36" y="32" width="3" height="8" fill="#6b7280"/>
+  <!-- Chart/graph overlay -->
+  <path d="M12 48 L18 44 L24 46 L30 40 L36 42 L42 38 L48 40" stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Chart dots -->
+  <circle cx="18" cy="44" r="2" fill="#3b82f6"/>
+  <circle cx="24" cy="46" r="2" fill="#3b82f6"/>
+  <circle cx="30" cy="40" r="2" fill="#3b82f6"/>
+  <circle cx="36" cy="42" r="2" fill="#3b82f6"/>
+  <circle cx="42" cy="38" r="2" fill="#3b82f6"/>
+  <circle cx="48" cy="40" r="2" fill="#3b82f6"/>
+</svg>
