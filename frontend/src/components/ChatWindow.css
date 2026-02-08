@@ -12,18 +12,20 @@
   position: fixed;
   top: 1rem;
   left: 1rem;
-  color: #000000;
+  color: #6b7280; /* Same color as "Ask questions about FDIC published" */
   text-decoration: none;
   font-size: 1rem;
   font-family: inherit;
   z-index: 100;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.3s ease;
   background: transparent;
 }
 
 .home-link:hover {
-  opacity: 0.7;
+  color: #6b7280;
+  text-shadow: 0 0 8px rgba(107, 114, 128, 0.4), 0 0 12px rgba(107, 114, 128, 0.3);
+  /* Subtle halo effect on hover */
 }
 
 .bank-statistics-link {
