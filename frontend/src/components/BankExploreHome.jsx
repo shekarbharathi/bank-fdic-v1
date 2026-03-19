@@ -482,7 +482,6 @@ Limit 20.`;
     <div className="bank-explore-page">
       <header className="bank-explore-header">
         <div className="bank-explore-title">BankStatz</div>
-        <div className="bank-explore-subtitle">Explore US banking data interactively</div>
       </header>
 
       <ChatFilterBox
