@@ -278,11 +278,6 @@ const BankExploreHome = () => {
   const [visibleMetricIds, setVisibleMetricIds] = useState([]);
 
   const [confirmation, setConfirmation] = useState('Okay, showing you the top 5 banks by total assets.');
-  const [suggestions, setSuggestions] = useState([
-    'most profitable banks',
-    'safest banks by capital ratio',
-    'banks in Texas',
-  ]);
 
   const [detailBank, setDetailBank] = useState(null);
   const [branchRows, setBranchRows] = useState([]);
@@ -330,53 +325,8 @@ Limit 20.`;
     []
   );
 
-  const computeSuggestionSet = useCallback(
-    ({ inferredRanking, inferredRegionAbbr, requestedMetrics }) => {
-      const next = [];
-
-      // Ranking suggestions: cycle through ranking types the user hasn't asked for.
-      const rankingToPrompt = {
-        size: `most valuable banks by assets (size)`,
-        profitability: `most profitable banks by ROA`,
-        safety: `safest banks by capital ratio`,
-      };
-
-      // Choose 1-2 ranking-focused suggestions.
-      const rankingOrder = ['profitability', 'safety', 'size'];
-      for (const rk of rankingOrder) {
-        if (rk !== inferredRanking) {
-          next.push(rankingToPrompt[rk]);
-          break;
-        }
-      }
-
-      for (const rk of ['safety', 'profitability', 'size']) {
-        if (next.length >= 3) break;
-        if (rk !== inferredRanking) {
-          const already = next.some((t) => t.toLowerCase().includes(rk === 'safety' ? 'capital' : rk === 'profitability' ? 'roa' : 'assets'));
-          if (!already) next.push(rankingToPrompt[rk]);
-        }
-      }
-
-      // Region suggestion.
-      if (inferredRegionAbbr) {
-        const regionName = stateNameByAbbr[inferredRegionAbbr] || inferredRegionAbbr;
-        next.push(`banks in ${regionName}`);
-      } else {
-        next.push('banks in Texas');
-      }
-
-      // Requested metrics nudges.
-      if (requestedMetrics.includes('roa') && next.length < 3) next.push('banks with high net interest margin (NIM)');
-      if (requestedMetrics.includes('capital_ratio') && next.length < 3) next.push('banks with strong deposits');
-
-      return next.slice(0, 3);
-    },
-    []
-  );
-
   const updateConfirmationFromIntent = useCallback(
-    ({ inferredRanking, inferredRegionAbbr, inferredLimit, requestedMetrics }) => {
+    ({ inferredRanking, inferredRegionAbbr, inferredLimit }) => {
       const regionName = inferredRegionAbbr ? stateNameByAbbr[inferredRegionAbbr] : null;
       const metricLabel =
         inferredRanking === 'size'
@@ -387,15 +337,8 @@ Limit 20.`;
 
       const regionPart = regionName ? ` in ${regionName}` : '';
       setConfirmation(`Okay, showing you the top ${inferredLimit} banks${regionPart} ranked by ${metricLabel}.`);
-      setSuggestions(
-        computeSuggestionSet({
-          inferredRanking,
-          inferredRegionAbbr,
-          requestedMetrics,
-        })
-      );
     },
-    [computeSuggestionSet]
+    []
   );
 
   const fetchTopByCriteria = useCallback(
@@ -549,7 +492,6 @@ Limit 20.`;
 
       const dir = nextSort?.direction === 'asc' ? 'low to high' : 'high to low';
       setConfirmation(`Okay, sorting by ${label} (${dir}).`);
-      setSuggestions(['most profitable banks', 'safest banks by capital ratio', 'banks in Texas']);
     },
     []
   );
@@ -565,15 +507,9 @@ Limit 20.`;
 
       const label = metricKey === 'roa' ? 'ROA (profitability)' : metricKey === 'capital_ratio' ? 'capital ratio (safety)' : metricKey;
       setConfirmation(`Okay, adding ${label} to the table.`);
-      setSuggestions(['try ranking by a different metric', 'show banks in California', 'compare two banks by double-clicking']);
     },
     []
   );
-
-  const handleSuggestionClick = useCallback((suggestionText) => {
-    // Suggestions should autofill input. (User can press Enter.)
-    setChatInput(suggestionText);
-  }, []);
 
   const showChatPanel = true;
 
@@ -591,16 +527,12 @@ Limit 20.`;
         isLoading={isLoading}
         disabled={false}
         placeholder="Show me..."
-        examples={['most profitable banks', 'banks in Texas']}
-        onExampleClick={(ex) => setChatInput(ex)}
       />
 
       <ChatResponsePanel
         isVisible={showChatPanel}
         isLoading={isLoading}
         confirmation={confirmation}
-        suggestions={suggestions}
-        onSuggestionClick={handleSuggestionClick}
         error={error}
       />
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './ChatFilterBox.css';
 
 const SendIcon = () => (
@@ -20,8 +20,6 @@ const ChatFilterBox = ({
   isLoading,
   disabled,
   placeholder = 'Show me...',
-  examples = [],
-  onExampleClick,
 }) => {
   const textareaRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -29,12 +27,6 @@ const ChatFilterBox = ({
   const isDisabled = disabled || isLoading;
   const trimmed = (value || '').trim();
   const canSubmit = !isDisabled && trimmed.length > 0;
-
-  const exampleChips = useMemo(() => {
-    // Ensure we always have at least a couple chips.
-    if (examples.length > 0) return examples;
-    return ["most profitable banks", "banks in Texas"];
-  }, [examples]);
 
   useEffect(() => {
     // Keep textarea height responsive (single-line -> multi-line).
@@ -100,22 +92,6 @@ const ChatFilterBox = ({
             )}
           </button>
         </form>
-      </div>
-
-      <div className="chat-filter-examples" aria-label="Example prompts">
-        <span className="chat-filter-examples-label">Try:</span>
-        {exampleChips.map((ex) => (
-          <button
-            key={ex}
-            type="button"
-            className="chat-filter-example-chip"
-            onClick={() => onExampleClick?.(ex)}
-            disabled={isLoading}
-            aria-label={`Example prompt: ${ex}`}
-          >
-            &quot;{ex}&quot;
-          </button>
-        ))}
       </div>
     </div>
   );
