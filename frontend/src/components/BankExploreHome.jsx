@@ -269,9 +269,6 @@ const BankExploreHome = () => {
 
   const [chatInput, setChatInput] = useState('');
 
-  const [limit, setLimit] = useState(5);
-  const [regionAbbr, setRegionAbbr] = useState(null);
-
   const [rankingCriteria, setRankingCriteria] = useState('size');
   const [sortState, setSortState] = useState({ key: 'assets', direction: 'desc' });
 
@@ -408,9 +405,6 @@ Limit 20.`;
       const nextRegionAbbr = extractStateAbbr(text);
       const inferredRanking = extractRankingCriteria(text);
       const requestedMetrics = extractRequestedMetrics(text);
-
-      setLimit(nextLimit);
-      setRegionAbbr(nextRegionAbbr);
       setRankingCriteria(inferredRanking);
       setError(null);
       setIsLoading(true);
@@ -461,18 +455,6 @@ Limit 20.`;
       }
     },
     [updateConfirmationFromIntent, visibleMetricIds]
-  );
-
-  const handleRankingCriteriaChange = useCallback(
-    async (nextCriteria) => {
-      setRankingCriteria(nextCriteria);
-      await fetchTopByCriteria({
-        nextRankingCriteria: nextCriteria,
-        nextRegionAbbr: regionAbbr,
-        nextLimit: limit,
-      });
-    },
-    [fetchTopByCriteria, limit, regionAbbr]
   );
 
   const handleSortChange = useCallback(
@@ -540,7 +522,6 @@ Limit 20.`;
         rankingCriteria={rankingCriteria}
         sortState={sortState}
         visibleMetricIds={visibleMetricIds}
-        onRankingCriteriaChange={handleRankingCriteriaChange}
         onSortChange={handleSortChange}
         onToggleMetric={handleToggleMetric}
         onOpenDetail={handleOpenDetail}

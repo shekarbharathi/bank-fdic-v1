@@ -142,7 +142,6 @@ const BankExplorerTable = ({
   rankingCriteria,
   sortState,
   visibleMetricIds,
-  onRankingCriteriaChange,
   onSortChange,
   onToggleMetric,
   onOpenDetail,
@@ -150,7 +149,6 @@ const BankExplorerTable = ({
 }) => {
   const [tooltip, setTooltip] = useState(null); // {x,y, content}
   const [activeCell, setActiveCell] = useState(null);
-  const [rankMenuOpen, setRankMenuOpen] = useState(false);
   const [metricPickerOpen, setMetricPickerOpen] = useState(false);
   const [columnWidths, setColumnWidths] = useState({});
 
@@ -187,16 +185,15 @@ const BankExplorerTable = ({
   }, [contextMenu]);
 
   useEffect(() => {
-    if (!metricPickerOpen && !rankMenuOpen) return;
+    if (!metricPickerOpen) return;
     const onDown = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
         setMetricPickerOpen(false);
-        setRankMenuOpen(false);
       }
     };
     window.addEventListener('mousedown', onDown);
     return () => window.removeEventListener('mousedown', onDown);
-  }, [metricPickerOpen, rankMenuOpen]);
+  }, [metricPickerOpen]);
 
   const sortedRows = useMemo(() => {
     if (!rows) return [];
@@ -278,49 +275,9 @@ const BankExplorerTable = ({
                 className="be-th be-th-rank"
                 style={{ width: columnWidths.rank ?? 72 }}
               >
-                <button
-                  type="button"
-                  className="be-rank-header"
-                  onClick={() => {
-                    setMetricPickerOpen(false);
-                    setRankMenuOpen((v) => !v);
-                  }}
-                  aria-label="Change ranking criteria"
-                >
+                <div className="be-rank-static" role="presentation">
                   <span className="be-rank-header-title">Rank</span>
                   <span className="be-rank-header-sub">{rankingLabel}</span>
-                </button>
-
-                <div className="be-rank-dropdown">
-                  <button
-                    type="button"
-                    className="be-rank-dropdown-btn"
-                    aria-label="Open ranking criteria menu"
-                    onClick={() => {
-                      setMetricPickerOpen(false);
-                      setRankMenuOpen((v) => !v);
-                    }}
-                  >
-                    ▼
-                  </button>
-                  {rankMenuOpen && (
-                    <div className="be-menu" role="menu" aria-label="Ranking criteria">
-                      {RANKING_OPTIONS.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          role="menuitemradio"
-                          className={`be-menu-item ${rankingCriteria === opt.id ? 'active' : ''}`}
-                          onClick={() => {
-                            onRankingCriteriaChange?.(opt.id);
-                            setRankMenuOpen(false);
-                          }}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
               </th>
@@ -351,7 +308,7 @@ const BankExplorerTable = ({
                 >
                   Assets
                 </button>
-                <MetricInfo metricKey="assets" />
+                {/* Assets info tooltip intentionally removed per UX request */}
                 <span className="be-sort-hint">{sortState?.key === 'assets' ? (sortState.direction === 'asc' ? '⬆' : '⬇') : ''}</span>
                 <div className="be-resizer" onMouseDown={(e) => startResize(e, 'assets')} aria-hidden="true" />
               </th>
@@ -387,7 +344,6 @@ const BankExplorerTable = ({
                   type="button"
                   className="be-add-col"
                   onClick={() => {
-                    setRankMenuOpen(false);
                     setMetricPickerOpen((v) => !v);
                   }}
                   aria-label="Add a column"
