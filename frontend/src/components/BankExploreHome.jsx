@@ -478,21 +478,6 @@ Limit 20.`;
     []
   );
 
-  const handleToggleMetric = useCallback(
-    (metricKey) => {
-      setVisibleMetricIds((prev) => {
-        const next = new Set(prev);
-        if (next.has(metricKey)) next.delete(metricKey);
-        else next.add(metricKey);
-        return Array.from(next);
-      });
-
-      const label = metricKey === 'roa' ? 'ROA (profitability)' : metricKey === 'capital_ratio' ? 'capital ratio (safety)' : metricKey;
-      setConfirmation(`Okay, adding ${label} to the table.`);
-    },
-    []
-  );
-
   const showChatPanel = true;
 
   return (
@@ -523,7 +508,6 @@ Limit 20.`;
         sortState={sortState}
         visibleMetricIds={visibleMetricIds}
         onSortChange={handleSortChange}
-        onToggleMetric={handleToggleMetric}
         onOpenDetail={handleOpenDetail}
         onRequestBranches={handleRequestBranches}
       />

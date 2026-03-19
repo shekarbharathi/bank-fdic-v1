@@ -143,13 +143,11 @@ const BankExplorerTable = ({
   sortState,
   visibleMetricIds,
   onSortChange,
-  onToggleMetric,
   onOpenDetail,
   onRequestBranches,
 }) => {
   const [tooltip, setTooltip] = useState(null); // {x,y, content}
   const [activeCell, setActiveCell] = useState(null);
-  const [metricPickerOpen, setMetricPickerOpen] = useState(false);
   const [columnWidths, setColumnWidths] = useState({});
 
   const [contextMenu, setContextMenu] = useState(null); // {x,y,row}
@@ -183,17 +181,6 @@ const BankExplorerTable = ({
     window.addEventListener('mousedown', onDown);
     return () => window.removeEventListener('mousedown', onDown);
   }, [contextMenu]);
-
-  useEffect(() => {
-    if (!metricPickerOpen) return;
-    const onDown = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setMetricPickerOpen(false);
-      }
-    };
-    window.addEventListener('mousedown', onDown);
-    return () => window.removeEventListener('mousedown', onDown);
-  }, [metricPickerOpen]);
 
   const sortedRows = useMemo(() => {
     if (!rows) return [];
@@ -261,9 +248,6 @@ const BankExplorerTable = ({
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   };
-
-  const METRIC_KEYS_ORDER = ['assets', ...visibleMetricIds];
-  const addableMetrics = Object.keys(METRIC_DEFS).filter((k) => k !== 'assets');
 
   return (
     <div className="be-wrap" ref={containerRef}>
@@ -339,49 +323,6 @@ const BankExplorerTable = ({
                   </th>
                 ))}
 
-              <th className="be-th be-th-add">
-                <button
-                  type="button"
-                  className="be-add-col"
-                  onClick={() => {
-                    setMetricPickerOpen((v) => !v);
-                  }}
-                  aria-label="Add a column"
-                >
-                  [+ Add Column]
-                </button>
-                {metricPickerOpen && (
-                  <div className="be-menu be-menu-metrics" role="menu" aria-label="Metric picker">
-                    {addableMetrics.map((metricKey) => {
-                      const isVisible = visibleMetricIds.includes(metricKey);
-                      return (
-                        <button
-                          key={metricKey}
-                          type="button"
-                          role="menuitemcheckbox"
-                          className={`be-menu-item ${isVisible ? 'active' : ''}`}
-                          onClick={() => onToggleMetric?.(metricKey)}
-                        >
-                          {isVisible ? '✓ ' : ''}
-                          {METRIC_DEFS[metricKey]?.label || metricKey}
-                        </button>
-                      );
-                    })}
-                    <div className="be-menu-divider" />
-                    <button
-                      type="button"
-                      className="be-menu-item"
-                      onClick={() => {
-                        // Simple reset to a minimal table.
-                        visibleMetricIds.length > 0 && visibleMetricIds.forEach((k) => onToggleMetric?.(k));
-                        setMetricPickerOpen(false);
-                      }}
-                    >
-                      Reset to core columns
-                    </button>
-                  </div>
-                )}
-              </th>
             </tr>
           </thead>
 
