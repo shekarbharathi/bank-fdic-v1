@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './BankExplorerTable.css';
 
-const RANKING_OPTIONS = [
-  { id: 'size', label: 'Size (Assets)', metricKey: 'assets' },
-  { id: 'profitability', label: 'Profitability (ROA)', metricKey: 'roa' },
-  { id: 'safety', label: 'Safety (Capital Ratio)', metricKey: 'capital_ratio' },
-];
-
 const METRIC_DEFS = {
   assets: {
     id: 'assets',
@@ -139,7 +133,6 @@ const MetricInfo = ({ metricKey }) => {
 
 const BankExplorerTable = ({
   rows,
-  rankingCriteria,
   sortState,
   visibleMetricIds,
   onSortChange,
@@ -166,10 +159,6 @@ const BankExplorerTable = ({
     // Only keep columns we know about.
     return cols.filter((k) => Boolean(METRIC_DEFS[k]));
   }, [visibleMetricIds]);
-
-  const rankingLabel = useMemo(() => {
-    return RANKING_OPTIONS.find((o) => o.id === rankingCriteria)?.label || 'Size (Assets)';
-  }, [rankingCriteria]);
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -261,7 +250,6 @@ const BankExplorerTable = ({
               >
                 <div className="be-rank-static" role="presentation">
                   <span className="be-rank-header-title">Rank</span>
-                  <span className="be-rank-header-sub">{rankingLabel}</span>
                 </div>
 
               </th>

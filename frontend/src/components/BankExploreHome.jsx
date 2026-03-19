@@ -269,7 +269,6 @@ const BankExploreHome = () => {
 
   const [chatInput, setChatInput] = useState('');
 
-  const [rankingCriteria, setRankingCriteria] = useState('size');
   const [sortState, setSortState] = useState({ key: 'assets', direction: 'desc' });
 
   const [visibleMetricIds, setVisibleMetricIds] = useState([]);
@@ -405,7 +404,6 @@ Limit 20.`;
       const nextRegionAbbr = extractStateAbbr(text);
       const inferredRanking = extractRankingCriteria(text);
       const requestedMetrics = extractRequestedMetrics(text);
-      setRankingCriteria(inferredRanking);
       setError(null);
       setIsLoading(true);
       setDetailBank(null);
@@ -504,7 +502,6 @@ Limit 20.`;
 
       <BankExplorerTable
         rows={rows}
-        rankingCriteria={rankingCriteria}
         sortState={sortState}
         visibleMetricIds={visibleMetricIds}
         onSortChange={handleSortChange}
