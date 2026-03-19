@@ -1,0 +1,214 @@
+.bank-explore-page {
+  min-height: 100vh;
+  background: linear-gradient(to left, #ffffff, #fafafa);
+  padding-bottom: 6rem; /* Space for compare overlay */
+}
+
+.bank-explore-header {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 0.5rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.bank-explore-title {
+  font-weight: 950;
+  font-size: 1.35rem;
+}
+
+.bank-explore-subtitle {
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.detail-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.95);
+  border-left: 1px solid rgba(229, 231, 235, 1);
+  transform: translateX(110%);
+  transition: transform 220ms ease;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+}
+
+.detail-panel.open {
+  transform: translateX(0%);
+}
+
+.detail-panel-shell {
+  padding: 1rem 1rem 1.25rem;
+  overflow-y: auto;
+}
+
+.detail-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(229, 231, 235, 1);
+}
+
+.detail-panel-title {
+  font-weight: 950;
+  font-size: 1.1rem;
+}
+
+.detail-panel-sub {
+  margin-top: 0.25rem;
+  color: #6b7280;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.detail-panel-close {
+  border: 1px solid rgba(229, 231, 235, 1);
+  background: #ffffff;
+  cursor: pointer;
+  border-radius: 12px;
+  padding: 0.35rem 0.6rem;
+  font-weight: 900;
+  color: #374151;
+  transition: transform 160ms ease;
+}
+
+.detail-panel-close:hover {
+  transform: translateY(-1px);
+}
+
+.detail-panel-body {
+  padding-top: 1rem;
+}
+
+.detail-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.detail-metric {
+  border: 1px solid rgba(229, 231, 235, 1);
+  background: rgba(249, 250, 251, 1);
+  border-radius: 16px;
+  padding: 0.7rem 0.75rem;
+}
+
+.detail-metric-label {
+  color: #6b7280;
+  font-weight: 850;
+  font-size: 0.85rem;
+}
+
+.detail-metric-value {
+  margin-top: 0.35rem;
+  font-weight: 950;
+  color: #111827;
+  word-break: break-word;
+}
+
+.detail-branch-section {
+  margin-top: 1rem;
+  border-top: 1px solid rgba(229, 231, 235, 1);
+  padding-top: 1rem;
+}
+
+.detail-branch-title {
+  font-weight: 950;
+  font-size: 1rem;
+}
+
+.detail-branch-actions {
+  margin-top: 0.55rem;
+}
+
+.detail-action {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border-radius: 14px;
+  border: 1px solid rgba(209, 213, 219, 1);
+  background: #ffffff;
+  cursor: pointer;
+  font-weight: 900;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+
+.detail-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  border-color: rgba(156, 163, 175, 1);
+  background-color: rgba(249, 250, 251, 1);
+}
+
+.detail-action:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.detail-loading {
+  margin-top: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #374151;
+  font-weight: 800;
+}
+
+.detail-branch-empty {
+  margin-top: 0.85rem;
+  color: #6b7280;
+  font-weight: 750;
+}
+
+.detail-branch-list {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.detail-branch-row {
+  border: 1px solid rgba(229, 231, 235, 1);
+  background: rgba(249, 250, 251, 1);
+  border-radius: 16px;
+  padding: 0.7rem 0.75rem;
+}
+
+.detail-branch-name {
+  font-weight: 950;
+}
+
+.detail-branch-address {
+  margin-top: 0.25rem;
+  color: #6b7280;
+  font-weight: 750;
+  font-size: 0.92rem;
+  word-break: break-word;
+}
+
+.detail-panel-empty {
+  padding-top: 1.5rem;
+  color: #6b7280;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+  .bank-explore-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detail-panel {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+

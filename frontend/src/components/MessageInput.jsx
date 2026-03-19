@@ -1,6 +1,26 @@
 import { useState, useRef, useEffect } from 'react';
 import './MessageInput.css';
 
+// Static icon component must live at module scope for linting.
+const SendIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    aria-hidden="true"
+  >
+    <path
+      d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const MessageInput = ({ onSendMessage, disabled, isInEmptyState = false }) => {
   const [message, setMessage] = useState('');
   const textareaRef = useRef(null);
@@ -36,25 +56,6 @@ const MessageInput = ({ onSendMessage, disabled, isInEmptyState = false }) => {
 
   const isSendDisabled = disabled || !message.trim();
   
-  // Send icon SVG
-  const SendIcon = () => (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-
   return (
     <div className={`message-input-container ${isInEmptyState ? 'in-empty-state' : ''}`}>
       <form onSubmit={handleSubmit} className="message-input-form">

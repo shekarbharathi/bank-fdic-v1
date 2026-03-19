@@ -1,3 +1,4 @@
+/* global module, process */
 // Serve configuration as alternative to Vite preview
 // This can be used with 'serve' package if Vite preview continues to have issues
 module.exports = {
