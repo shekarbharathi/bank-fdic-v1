@@ -9,7 +9,9 @@ if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
     backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.insert(0, backend_dir)
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, Tuple
+from pathlib import Path
+import csv
 
 # Try relative imports first (for Railway), fallback to absolute (for local dev)
 try:
@@ -24,6 +26,39 @@ class SchemaBuilder:
     def __init__(self, db_service: DatabaseService):
         self.db_service = db_service
         self._schema_cache: Optional[Dict[str, Any]] = None
+        self._fdic_dict_cache: Optional[List[Tuple[str, str]]] = None
+
+    def _load_fdic_field_descriptions(self) -> List[Tuple[str, str]]:
+        """Load FDIC field descriptions from generated catalog CSV."""
+        if self._fdic_dict_cache is not None:
+            return self._fdic_dict_cache
+
+        candidates = [
+            Path(__file__).resolve().parents[2] / "docs" / "data" / "fdic_field_reference.csv",
+            Path(__file__).resolve().parents[1] / "docs" / "data" / "fdic_field_reference.csv",
+            Path.cwd() / "docs" / "data" / "fdic_field_reference.csv",
+        ]
+        csv_path = None
+        for candidate in candidates:
+            if candidate.exists():
+                csv_path = candidate
+                break
+
+        if csv_path is None:
+            self._fdic_dict_cache = []
+            return self._fdic_dict_cache
+
+        rows: List[Tuple[str, str]] = []
+        with csv_path.open("r", encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                field_name = (row.get("field_name") or "").strip().upper()
+                title = (row.get("source_title") or row.get("human_readable_description") or "").strip()
+                if not field_name or not title:
+                    continue
+                rows.append((field_name, title))
+        self._fdic_dict_cache = rows
+        return rows
     
     async def get_schema_description(self) -> str:
         """
@@ -83,6 +118,23 @@ class SchemaBuilder:
         description += "IMPORTANT: When users ask about assets, deposits, or other dollar amounts, "
         description += "you MUST multiply the database values by 1000 in your SQL query to show actual dollars. "
         description += "For example: SELECT name, asset * 1000 as assets_dollars FROM institutions;\n"
+
+        # Include FDIC dictionary context for long-form full-field model.
+        description += "\nFull FDIC Field Model Guidance:\n"
+        description += "  - If present, table fdic_field_dictionary(field_name, title, description, data_type, call_report_line)\n"
+        description += "    contains canonical field meanings.\n"
+        description += "  - If present, table financials_kv(cert, repdte, field_name, value_num, value_text)\n"
+        description += "    stores all FDIC financial fields in long format.\n"
+        description += "  - For broad metric discovery, first lookup field_name in fdic_field_dictionary,\n"
+        description += "    then filter financials_kv by matching field_name.\n"
+
+        # Keep prompt size bounded but include many field descriptions for LLM grounding.
+        fdic_fields = self._load_fdic_field_descriptions()
+        if fdic_fields:
+            max_fields = 400
+            description += f"\nFDIC Field Dictionary Excerpt (first {min(max_fields, len(fdic_fields))} fields):\n"
+            for field_name, field_title in fdic_fields[:max_fields]:
+                description += f"  - {field_name}: {field_title}\n"
         
         return description
     
@@ -140,5 +192,39 @@ Example SQL Queries:
      AND f2.repdte = f1.repdte - INTERVAL '1 year'
    WHERE f1.cert = 628
    ORDER BY f1.repdte DESC;
+
+6. "Top banks by credit card loans using full FDIC field model":
+   SELECT i.name,
+          kv.value_num * 1000 AS credit_card_loans_dollars
+   FROM financials_kv kv
+   JOIN institutions i ON i.cert = kv.cert
+   WHERE kv.field_name = 'LNCRCD'
+     AND i.active = 1
+     AND kv.repdte = (
+       SELECT MAX(kv2.repdte) FROM financials_kv kv2
+       WHERE kv2.cert = kv.cert AND kv2.field_name = 'LNCRCD'
+     )
+   ORDER BY kv.value_num DESC
+   LIMIT 20;
+
+7. "Find field code for money market deposits then query latest values":
+   WITH mmda_field AS (
+     SELECT field_name
+     FROM fdic_field_dictionary
+     WHERE title ILIKE '%MMDA%' OR title ILIKE '%money market%'
+     ORDER BY field_name
+     LIMIT 1
+   )
+   SELECT i.name, kv.repdte, kv.value_num * 1000 AS metric_dollars
+   FROM financials_kv kv
+   JOIN mmda_field mf ON mf.field_name = kv.field_name
+   JOIN institutions i ON i.cert = kv.cert
+   WHERE i.active = 1
+     AND kv.repdte = (
+       SELECT MAX(kv2.repdte) FROM financials_kv kv2
+       WHERE kv2.cert = kv.cert AND kv2.field_name = kv.field_name
+     )
+   ORDER BY kv.value_num DESC
+   LIMIT 20;
 """
         return examples

@@ -1,0 +1,212 @@
+"""
+Full FDIC financial ingestion into dictionary + long-form table.
+
+Usage:
+    python3 backend/fdic_full_ingestion.py
+
+Notes:
+- Designed for Railway/Postgres.
+- Keeps existing curated financials table untouched.
+- Ingests full FDIC field set into financials_kv for scalable querying.
+"""
+
+from __future__ import annotations
+
+import csv
+import os
+from datetime import date
+from pathlib import Path
+from typing import Dict, Iterable, List, Tuple
+from urllib.request import urlopen
+
+import psycopg2
+from psycopg2.extras import execute_values
+import yaml
+
+try:
+    from fdic_to_postgres import FDICAPIClient
+except ImportError:
+    from backend.fdic_to_postgres import FDICAPIClient
+
+
+YAML_URL = "https://api.fdic.gov/banks/docs/risview_properties.yaml"
+CATALOG_PATH = Path(__file__).resolve().parents[1] / "docs" / "data" / "fdic_field_reference.csv"
+CHUNK_SIZE = 120
+
+
+def build_db_connection_from_env() -> str:
+    database_url = os.getenv("DATABASE_URL", "").strip()
+    if database_url:
+        # psycopg2 supports URL form directly
+        return database_url
+
+    db_name = os.getenv("PGDATABASE") or os.getenv("DB_NAME", "")
+    db_user = os.getenv("PGUSER") or os.getenv("DB_USER", "")
+    db_password = os.getenv("PGPASSWORD") or os.getenv("DB_PASSWORD", "")
+    db_host = os.getenv("PGHOST") or os.getenv("DB_HOST", "")
+    db_port = os.getenv("PGPORT") or os.getenv("DB_PORT", "5432")
+    if not all([db_name, db_user, db_host]):
+        raise ValueError("Missing database connection environment variables.")
+    return (
+        f"dbname={db_name} user={db_user} password={db_password} "
+        f"host={db_host} port={db_port}"
+    )
+
+
+def load_field_dictionary_records() -> List[Dict[str, str]]:
+    if CATALOG_PATH.exists():
+        with CATALOG_PATH.open("r", encoding="utf-8", newline="") as f:
+            return list(csv.DictReader(f))
+
+    # Fallback to YAML only
+    payload = yaml.safe_load(urlopen(YAML_URL, timeout=90).read().decode("utf-8"))
+    props = payload["properties"]["data"]["properties"]
+    rows = []
+    for field, meta in props.items():
+        rows.append(
+            {
+                "field_name": field,
+                "source_title": str(meta.get("title") or ""),
+                "source_definition": str(meta.get("description") or ""),
+                "data_type": str(meta.get("type") or "unknown"),
+                "call_report_line": "unknown",
+            }
+        )
+    return rows
+
+
+def chunked(items: List[str], size: int) -> Iterable[List[str]]:
+    for i in range(0, len(items), size):
+        yield items[i : i + size]
+
+
+def ensure_migration_applied(conn_string: str) -> None:
+    sql_path = Path(__file__).resolve().parent / "migrations" / "0002_fdic_full_field_model.sql"
+    sql = sql_path.read_text(encoding="utf-8")
+    with psycopg2.connect(conn_string) as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql)
+        conn.commit()
+
+
+def upsert_field_dictionary(conn_string: str, records: List[Dict[str, str]]) -> None:
+    sql = """
+    INSERT INTO fdic_field_dictionary (field_name, title, description, data_type, call_report_line)
+    VALUES %s
+    ON CONFLICT (field_name) DO UPDATE SET
+        title = EXCLUDED.title,
+        description = EXCLUDED.description,
+        data_type = EXCLUDED.data_type,
+        call_report_line = EXCLUDED.call_report_line,
+        updated_at = CURRENT_TIMESTAMP
+    """
+    values = []
+    for row in records:
+        values.append(
+            (
+                (row.get("field_name") or "").upper(),
+                row.get("source_title") or row.get("title") or "",
+                row.get("source_definition") or row.get("description") or "",
+                row.get("data_type") or "unknown",
+                row.get("call_report_line") or "unknown",
+            )
+        )
+    with psycopg2.connect(conn_string) as conn:
+        with conn.cursor() as cur:
+            execute_values(cur, sql, values, page_size=1000)
+        conn.commit()
+
+
+def to_numeric_or_text(value) -> Tuple[float, str]:
+    if value is None:
+        return None, None
+    if isinstance(value, (int, float)):
+        return float(value), None
+    sval = str(value).strip()
+    if sval == "":
+        return None, None
+    try:
+        return float(sval), None
+    except Exception:
+        return None, sval
+
+
+def ingest_financials_kv(
+    conn_string: str,
+    api_key: str,
+    min_repdte: str = "2001-01-01",
+) -> None:
+    client = FDICAPIClient(api_key=api_key or None)
+    dictionary_rows = load_field_dictionary_records()
+    all_fields = sorted({row["field_name"].upper() for row in dictionary_rows if row.get("field_name")})
+
+    id_fields = ["CERT", "REPDTE"]
+    field_chunks = list(chunked([f for f in all_fields if f not in set(id_fields)], CHUNK_SIZE))
+
+    with psycopg2.connect(conn_string) as conn:
+        for fields in field_chunks:
+            query_fields = ",".join(id_fields + fields)
+            rows = client.get_financials(
+                filters=f"REPDTE:[{min_repdte} TO *]",
+                fields=query_fields,
+            )
+
+            values = []
+            for row in rows:
+                data = row.get("data", {})
+                cert = data.get("CERT")
+                repdte = data.get("REPDTE")
+                if not cert or not repdte:
+                    continue
+
+                for field_name in fields:
+                    raw_val = data.get(field_name)
+                    num_val, text_val = to_numeric_or_text(raw_val)
+                    if num_val is None and text_val is None:
+                        continue
+                    values.append(
+                        (
+                            cert,
+                            repdte,
+                            field_name,
+                            num_val,
+                            text_val,
+                            date.today().isoformat(),
+                        )
+                    )
+
+            if not values:
+                continue
+
+            with conn.cursor() as cur:
+                execute_values(
+                    cur,
+                    """
+                    INSERT INTO financials_kv (
+                        cert, repdte, field_name, value_num, value_text, source_row_updated_at
+                    ) VALUES %s
+                    ON CONFLICT (cert, repdte, field_name) DO UPDATE SET
+                        value_num = EXCLUDED.value_num,
+                        value_text = EXCLUDED.value_text,
+                        source_row_updated_at = EXCLUDED.source_row_updated_at,
+                        updated_at = CURRENT_TIMESTAMP
+                    """,
+                    values,
+                    page_size=5000,
+                )
+            conn.commit()
+
+
+def main() -> None:
+    conn_string = build_db_connection_from_env()
+    api_key = os.getenv("FDIC_API_KEY", "")
+    ensure_migration_applied(conn_string)
+    records = load_field_dictionary_records()
+    upsert_field_dictionary(conn_string, records)
+    ingest_financials_kv(conn_string, api_key=api_key, min_repdte=os.getenv("FDIC_MIN_REPDTE", "2001-01-01"))
+    print("Full FDIC ingestion completed.")
+
+
+if __name__ == "__main__":
+    main()
+

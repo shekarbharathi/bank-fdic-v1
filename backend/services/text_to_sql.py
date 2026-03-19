@@ -99,6 +99,8 @@ Instructions:
 - Use proper JOINs to combine data from multiple tables
 - Limit results appropriately (use LIMIT for top N queries)
 - When matching bank names, ALWAYS use ILIKE with % wildcards (e.g., name ILIKE '%JPMorgan Chase%')
+- If available, prefer using fdic_field_dictionary for field lookup and financials_kv for full-field metrics
+- For dollar metrics from financials_kv.value_num, multiply by 1000 to return actual dollars
 
 SQL Query:"""
         
