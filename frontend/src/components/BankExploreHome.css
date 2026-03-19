@@ -25,6 +25,7 @@
   padding: 0 1rem 0.4rem;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 1rem;
 }
 
@@ -45,7 +46,7 @@
 
 .top-dataset-tab.active {
   color: #111827;
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .coming-soon-panel {
