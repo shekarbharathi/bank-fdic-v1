@@ -3,10 +3,12 @@ import './ChatResponsePanel.css';
 const ChatResponsePanel = ({
   isVisible,
   isLoading,
-  confirmation,
   error,
 }) => {
-  if (!isVisible && !isLoading) return null;
+  if (!isVisible && !isLoading && !error) return null;
+
+  // If we're neither loading nor showing an error, we intentionally render nothing.
+  if (!isLoading && !error) return null;
 
   return (
     <div className="chat-response" aria-live="polite">
@@ -23,9 +25,7 @@ const ChatResponsePanel = ({
           <span>Top 5 Banks...</span>
         </div>
       ) : (
-        <>
-          <div className="chat-response-confirmation">💬 {confirmation}</div>
-        </>
+        null
       )}
     </div>
   );

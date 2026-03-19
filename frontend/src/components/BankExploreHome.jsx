@@ -277,7 +277,7 @@ const BankExploreHome = () => {
 
   const [visibleMetricIds, setVisibleMetricIds] = useState([]);
 
-  const [confirmation, setConfirmation] = useState('Okay, showing you the top 5 banks by total assets.');
+  const [, setConfirmation] = useState('Okay, showing you the top 5 banks by total assets.');
 
   const [detailBank, setDetailBank] = useState(null);
   const [branchRows, setBranchRows] = useState([]);
@@ -532,7 +532,6 @@ Limit 20.`;
       <ChatResponsePanel
         isVisible={showChatPanel}
         isLoading={isLoading}
-        confirmation={confirmation}
         error={error}
       />
 
