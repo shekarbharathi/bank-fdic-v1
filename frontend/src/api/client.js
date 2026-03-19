@@ -21,32 +21,34 @@ if (typeof window !== 'undefined') {
 }
 
 // #region agent log
-try {
-  fetch('http://127.0.0.1:7350/ingest/152fb36c-8b60-412e-91e5-51df2bbb09a0', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Debug-Session-Id': '073e07',
-    },
-    body: JSON.stringify({
-      sessionId: '073e07',
-      runId: 'pre-debug',
-      hypothesisId: 'H1_api_base_url_misconfigured',
-      location: 'frontend/src/api/client.js:1',
-      message: 'Resolved API base URL used by axios',
-      data: {
-        VITE_API_URL_raw: import.meta.env.VITE_API_URL || null,
-        API_BASE_URL_final: API_BASE_URL || null,
-        computedChatEndpoint: API_BASE_URL ? `${API_BASE_URL}/api/chat` : '/api/chat',
-        windowHost: typeof window !== 'undefined' ? window.location.host : null,
+if (!import.meta.env.PROD) {
+  try {
+    fetch('http://127.0.0.1:7350/ingest/152fb36c-8b60-412e-91e5-51df2bbb09a0', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Debug-Session-Id': '073e07',
       },
-      timestamp: Date.now(),
-    }),
-  }).catch((e) => {
+      body: JSON.stringify({
+        sessionId: '073e07',
+        runId: 'pre-debug',
+        hypothesisId: 'H1_api_base_url_misconfigured',
+        location: 'frontend/src/api/client.js:1',
+        message: 'Resolved API base URL used by axios',
+        data: {
+          VITE_API_URL_raw: import.meta.env.VITE_API_URL || null,
+          API_BASE_URL_final: API_BASE_URL || null,
+          computedChatEndpoint: API_BASE_URL ? `${API_BASE_URL}/api/chat` : '/api/chat',
+          windowHost: typeof window !== 'undefined' ? window.location.host : null,
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch((e) => {
+      void e;
+    });
+  } catch (e) {
     void e;
-  });
-} catch (e) {
-  void e;
+  }
 }
 // #endregion
 
