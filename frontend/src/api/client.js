@@ -42,8 +42,12 @@ try {
       },
       timestamp: Date.now(),
     }),
-  }).catch(() => {});
-} catch (_) {}
+  }).catch((e) => {
+    void e;
+  });
+} catch (e) {
+  void e;
+}
 // #endregion
 
 const client = axios.create({

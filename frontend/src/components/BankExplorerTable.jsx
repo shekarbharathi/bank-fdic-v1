@@ -277,7 +277,6 @@ const BankExplorerTable = ({
                 >
                   Bank Name
                 </button>
-                <span className="be-sort-hint">{sortState?.key === 'bank_name' ? (sortState.direction === 'asc' ? '⬆' : '⬇') : ''}</span>
                 <div className="be-resizer" onMouseDown={(e) => startResize(e, 'bank_name')} aria-hidden="true" />
               </th>
               <th
@@ -293,7 +292,6 @@ const BankExplorerTable = ({
                   Assets
                 </button>
                 {/* Assets info tooltip intentionally removed per UX request */}
-                <span className="be-sort-hint">{sortState?.key === 'assets' ? (sortState.direction === 'asc' ? '⬆' : '⬇') : ''}</span>
                 <div className="be-resizer" onMouseDown={(e) => startResize(e, 'assets')} aria-hidden="true" />
               </th>
 
@@ -403,15 +401,6 @@ const BankExplorerTable = ({
                     aria-label={`Assets for ${row.bank_name}`}
                   >
                     <span className="be-cell-metric-value">{formatMetricValue('assets', row.assets)}</span>
-                    <span
-                      className={`be-trend be-trend-${(() => {
-                        const t = row.assets_growth_pct !== undefined ? getTrend(row.assets_growth_pct) : null;
-                        return t?.tone || 'flat';
-                      })()}`}
-                      aria-hidden="true"
-                    >
-                      {row.assets_growth_pct !== undefined ? getTrend(row.assets_growth_pct).arrow : '➜'}
-                    </span>
                   </button>
                 </td>
 

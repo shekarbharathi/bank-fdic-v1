@@ -38,6 +38,7 @@
 
 .be-th-rank {
   padding-right: 0.6rem;
+  text-transform: none; /* Keep Rank header casing consistent with other headers */
 }
 
 .be-th-add {

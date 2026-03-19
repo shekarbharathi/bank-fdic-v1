@@ -26,8 +26,12 @@ try {
       },
       timestamp: Date.now(),
     }),
-  }).catch(() => {});
-} catch (_) {}
+  }).catch((e) => {
+    void e;
+  });
+} catch (e) {
+  void e;
+}
 // #endregion
 
 createRoot(document.getElementById('root')).render(
