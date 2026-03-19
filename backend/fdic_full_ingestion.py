@@ -14,12 +14,14 @@ from __future__ import annotations
 
 import csv
 import os
+import time
 from datetime import date
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 from urllib.request import urlopen
 
 import psycopg2
+from psycopg2 import OperationalError, InterfaceError
 from psycopg2.extras import execute_values
 import yaml
 
@@ -32,6 +34,9 @@ except ImportError:
 YAML_URL = "https://api.fdic.gov/banks/docs/risview_properties.yaml"
 CATALOG_PATH = Path(__file__).resolve().parents[1] / "docs" / "data" / "fdic_field_reference.csv"
 CHUNK_SIZE = 120
+WRITE_BATCH_SIZE = int(os.getenv("FDIC_WRITE_BATCH_SIZE", "20000"))
+DB_MAX_RETRIES = int(os.getenv("FDIC_DB_MAX_RETRIES", "5"))
+DB_RETRY_SLEEP_SEC = float(os.getenv("FDIC_DB_RETRY_SLEEP_SEC", "2.0"))
 
 
 def build_db_connection_from_env() -> str:
@@ -89,6 +94,50 @@ def ensure_migration_applied(conn_string: str) -> None:
         conn.commit()
 
 
+def _connect(conn_string: str):
+    return psycopg2.connect(
+        conn_string,
+        connect_timeout=20,
+        keepalives=1,
+        keepalives_idle=30,
+        keepalives_interval=10,
+        keepalives_count=5,
+    )
+
+
+def _upsert_values_with_retry(conn_string: str, values: List[Tuple]) -> None:
+    for attempt in range(1, DB_MAX_RETRIES + 1):
+        try:
+            with _connect(conn_string) as conn:
+                with conn.cursor() as cur:
+                    execute_values(
+                        cur,
+                        """
+                        INSERT INTO financials_kv (
+                            cert, repdte, field_name, value_num, value_text, source_row_updated_at
+                        ) VALUES %s
+                        ON CONFLICT (cert, repdte, field_name) DO UPDATE SET
+                            value_num = EXCLUDED.value_num,
+                            value_text = EXCLUDED.value_text,
+                            source_row_updated_at = EXCLUDED.source_row_updated_at,
+                            updated_at = CURRENT_TIMESTAMP
+                        """,
+                        values,
+                        page_size=2000,
+                    )
+                conn.commit()
+            return
+        except (OperationalError, InterfaceError) as exc:
+            if attempt >= DB_MAX_RETRIES:
+                raise
+            sleep_seconds = DB_RETRY_SLEEP_SEC * attempt
+            print(
+                f"[warn] DB write failed (attempt {attempt}/{DB_MAX_RETRIES}): {exc}. "
+                f"Retrying in {sleep_seconds:.1f}s..."
+            )
+            time.sleep(sleep_seconds)
+
+
 def upsert_field_dictionary(conn_string: str, records: List[Dict[str, str]]) -> None:
     sql = """
     INSERT INTO fdic_field_dictionary (field_name, title, description, data_type, call_report_line)
@@ -111,7 +160,7 @@ def upsert_field_dictionary(conn_string: str, records: List[Dict[str, str]]) -> 
                 row.get("call_report_line") or "unknown",
             )
         )
-    with psycopg2.connect(conn_string) as conn:
+    with _connect(conn_string) as conn:
         with conn.cursor() as cur:
             execute_values(cur, sql, values, page_size=1000)
         conn.commit()
@@ -142,59 +191,53 @@ def ingest_financials_kv(
 
     id_fields = ["CERT", "REPDTE"]
     field_chunks = list(chunked([f for f in all_fields if f not in set(id_fields)], CHUNK_SIZE))
+    chunk_start = int(os.getenv("FDIC_FIELD_CHUNK_START", "0"))
+    chunk_end = int(os.getenv("FDIC_FIELD_CHUNK_END", str(len(field_chunks))))
 
-    with psycopg2.connect(conn_string) as conn:
-        for fields in field_chunks:
-            query_fields = ",".join(id_fields + fields)
-            rows = client.get_financials(
-                filters=f"REPDTE:[{min_repdte} TO *]",
-                fields=query_fields,
-            )
+    for chunk_idx, fields in enumerate(field_chunks):
+        if chunk_idx < chunk_start or chunk_idx >= chunk_end:
+            continue
+        print(f"[info] Processing field chunk {chunk_idx + 1}/{len(field_chunks)}")
+        query_fields = ",".join(id_fields + fields)
+        rows = client.get_financials(
+            filters=f"REPDTE:[{min_repdte} TO *]",
+            fields=query_fields,
+        )
 
-            values = []
-            for row in rows:
-                data = row.get("data", {})
-                cert = data.get("CERT")
-                repdte = data.get("REPDTE")
-                if not cert or not repdte:
-                    continue
-
-                for field_name in fields:
-                    raw_val = data.get(field_name)
-                    num_val, text_val = to_numeric_or_text(raw_val)
-                    if num_val is None and text_val is None:
-                        continue
-                    values.append(
-                        (
-                            cert,
-                            repdte,
-                            field_name,
-                            num_val,
-                            text_val,
-                            date.today().isoformat(),
-                        )
-                    )
-
-            if not values:
+        values = []
+        for row in rows:
+            data = row.get("data", {})
+            cert = data.get("CERT")
+            repdte = data.get("REPDTE")
+            if not cert or not repdte:
                 continue
 
-            with conn.cursor() as cur:
-                execute_values(
-                    cur,
-                    """
-                    INSERT INTO financials_kv (
-                        cert, repdte, field_name, value_num, value_text, source_row_updated_at
-                    ) VALUES %s
-                    ON CONFLICT (cert, repdte, field_name) DO UPDATE SET
-                        value_num = EXCLUDED.value_num,
-                        value_text = EXCLUDED.value_text,
-                        source_row_updated_at = EXCLUDED.source_row_updated_at,
-                        updated_at = CURRENT_TIMESTAMP
-                    """,
-                    values,
-                    page_size=5000,
+            for field_name in fields:
+                raw_val = data.get(field_name)
+                num_val, text_val = to_numeric_or_text(raw_val)
+                if num_val is None and text_val is None:
+                    continue
+                values.append(
+                    (
+                        cert,
+                        repdte,
+                        field_name,
+                        num_val,
+                        text_val,
+                        date.today().isoformat(),
+                    )
                 )
-            conn.commit()
+
+        if not values:
+            continue
+
+        for i in range(0, len(values), WRITE_BATCH_SIZE):
+            batch = values[i : i + WRITE_BATCH_SIZE]
+            _upsert_values_with_retry(conn_string, batch)
+            print(
+                f"[info] Wrote {min(i + WRITE_BATCH_SIZE, len(values))}/{len(values)} "
+                f"rows for chunk {chunk_idx + 1}"
+            )
 
 
 def main() -> None:
