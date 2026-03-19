@@ -263,6 +263,7 @@ const normalizeBankRows = (rawRows) => {
 };
 
 const BankExploreHome = () => {
+  const [activeTopTab, setActiveTopTab] = useState('banks');
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -483,123 +484,149 @@ Limit 20.`;
       <header className="bank-explore-header">
         <div className="bank-explore-title">BankStatz</div>
       </header>
+      <nav className="top-dataset-tabs" aria-label="Dataset type">
+        <button
+          type="button"
+          className={`top-dataset-tab ${activeTopTab === 'banks' ? 'active' : ''}`}
+          onClick={() => setActiveTopTab('banks')}
+          aria-pressed={activeTopTab === 'banks'}
+        >
+          Banks
+        </button>
+        <button
+          type="button"
+          className={`top-dataset-tab ${activeTopTab === 'credit-unions' ? 'active' : ''}`}
+          onClick={() => setActiveTopTab('credit-unions')}
+          aria-pressed={activeTopTab === 'credit-unions'}
+        >
+          Credit Unions
+        </button>
+      </nav>
 
-      <ChatFilterBox
-        value={chatInput}
-        onChange={setChatInput}
-        onSubmit={handleChatSubmit}
-        isLoading={isLoading}
-        disabled={false}
-        placeholder="Show me..."
-      />
+      {activeTopTab === 'banks' ? (
+        <>
+          <ChatFilterBox
+            value={chatInput}
+            onChange={setChatInput}
+            onSubmit={handleChatSubmit}
+            isLoading={isLoading}
+            disabled={false}
+            placeholder="Show me..."
+          />
 
-      <ChatResponsePanel
-        isVisible={showChatPanel}
-        isLoading={isLoading}
-        error={error}
-      />
+          <ChatResponsePanel
+            isVisible={showChatPanel}
+            isLoading={isLoading}
+            error={error}
+          />
 
-      <BankExplorerTable
-        rows={rows}
-        sortState={sortState}
-        visibleMetricIds={visibleMetricIds}
-        onSortChange={handleSortChange}
-        onOpenDetail={handleOpenDetail}
-        onRequestBranches={handleRequestBranches}
-      />
+          <BankExplorerTable
+            rows={rows}
+            sortState={sortState}
+            visibleMetricIds={visibleMetricIds}
+            onSortChange={handleSortChange}
+            onOpenDetail={handleOpenDetail}
+            onRequestBranches={handleRequestBranches}
+          />
 
-      <aside className={`detail-panel ${detailBank ? 'open' : ''}`} aria-label="Bank detail panel">
-        <div className="detail-panel-shell">
-          <div className="detail-panel-header">
-            <div>
-              <div className="detail-panel-title">{detailBank?.bank_name || 'Bank Details'}</div>
-              <div className="detail-panel-sub">
-                {detailBank ? `${detailBank.city || ''}${detailBank.stalp ? `, ${detailBank.stalp}` : ''}` : 'Click a bank name to explore.'}
-              </div>
-            </div>
-            <button
-              type="button"
-              className="detail-panel-close"
-              onClick={() => setDetailBank(null)}
-              aria-label="Close details"
-            >
-              ✕
-            </button>
-          </div>
-
-          {detailBank ? (
-            <div className="detail-panel-body">
-              <div className="detail-metrics">
-                <div className="detail-metric">
-                  <div className="detail-metric-label">Rank</div>
-                  <div className="detail-metric-value">{detailBank.__rank ?? '—'}</div>
-                </div>
-                <div className="detail-metric">
-                  <div className="detail-metric-label">Assets</div>
-                  <div className="detail-metric-value">{detailBank.assets !== undefined && detailBank.assets !== null ? `$${Number(detailBank.assets).toFixed(0)}` : 'N/A'}</div>
-                </div>
-                <div className="detail-metric">
-                  <div className="detail-metric-label">ROA</div>
-                  <div className="detail-metric-value">{detailBank.roa !== null ? `${detailBank.roa.toFixed(2)}%` : 'N/A'}</div>
-                </div>
-                <div className="detail-metric">
-                  <div className="detail-metric-label">Capital Ratio</div>
-                  <div className="detail-metric-value">
-                    {detailBank.capital_ratio !== null ? `${Number(detailBank.capital_ratio).toFixed(2)}%` : 'N/A'}
+          <aside className={`detail-panel ${detailBank ? 'open' : ''}`} aria-label="Bank detail panel">
+            <div className="detail-panel-shell">
+              <div className="detail-panel-header">
+                <div>
+                  <div className="detail-panel-title">{detailBank?.bank_name || 'Bank Details'}</div>
+                  <div className="detail-panel-sub">
+                    {detailBank ? `${detailBank.city || ''}${detailBank.stalp ? `, ${detailBank.stalp}` : ''}` : 'Click a bank name to explore.'}
                   </div>
                 </div>
-                <div className="detail-metric">
-                  <div className="detail-metric-label">Deposits</div>
-                  <div className="detail-metric-value">{detailBank.deposits !== null ? `$${Number(detailBank.deposits).toFixed(0)}` : 'N/A'}</div>
-                </div>
-                <div className="detail-metric">
-                  <div className="detail-metric-label">Report Date</div>
-                  <div className="detail-metric-value">{detailBank.report_date || '—'}</div>
-                </div>
+                <button
+                  type="button"
+                  className="detail-panel-close"
+                  onClick={() => setDetailBank(null)}
+                  aria-label="Close details"
+                >
+                  ✕
+                </button>
               </div>
 
-              <div className="detail-branch-section">
-                <div className="detail-branch-title">Branches</div>
-                <div className="detail-branch-actions">
-                  <button
-                    type="button"
-                    className="detail-action"
-                    onClick={() => handleRequestBranches(detailBank)}
-                    disabled={branchLoading}
-                    aria-label="View branches for this bank"
-                  >
-                    {branchLoading ? 'Loading...' : 'View Branches'}
-                  </button>
-                </div>
-
-                {branchLoading ? (
-                  <div className="detail-loading">
-                    <span className="spinner" aria-hidden="true" />
-                    <span>Fetching locations...</span>
-                  </div>
-                ) : branchRows.length === 0 ? (
-                  <div className="detail-branch-empty">No branches loaded yet. Click “View Branches”.</div>
-                ) : (
-                  <div className="detail-branch-list" role="list">
-                    {branchRows.slice(0, 12).map((b, idx) => (
-                      <div key={`${b.name || 'branch'}-${idx}`} className="detail-branch-row" role="listitem">
-                        <div className="detail-branch-name">{b.name || 'Branch'}</div>
-                        <div className="detail-branch-address">
-                          {[b.address, b.city, b.stalp, b.zip].filter(Boolean).join(', ')}
-                        </div>
+              {detailBank ? (
+                <div className="detail-panel-body">
+                  <div className="detail-metrics">
+                    <div className="detail-metric">
+                      <div className="detail-metric-label">Rank</div>
+                      <div className="detail-metric-value">{detailBank.__rank ?? '—'}</div>
+                    </div>
+                    <div className="detail-metric">
+                      <div className="detail-metric-label">Assets</div>
+                      <div className="detail-metric-value">{detailBank.assets !== undefined && detailBank.assets !== null ? `$${Number(detailBank.assets).toFixed(0)}` : 'N/A'}</div>
+                    </div>
+                    <div className="detail-metric">
+                      <div className="detail-metric-label">ROA</div>
+                      <div className="detail-metric-value">{detailBank.roa !== null ? `${detailBank.roa.toFixed(2)}%` : 'N/A'}</div>
+                    </div>
+                    <div className="detail-metric">
+                      <div className="detail-metric-label">Capital Ratio</div>
+                      <div className="detail-metric-value">
+                        {detailBank.capital_ratio !== null ? `${Number(detailBank.capital_ratio).toFixed(2)}%` : 'N/A'}
                       </div>
-                    ))}
+                    </div>
+                    <div className="detail-metric">
+                      <div className="detail-metric-label">Deposits</div>
+                      <div className="detail-metric-value">{detailBank.deposits !== null ? `$${Number(detailBank.deposits).toFixed(0)}` : 'N/A'}</div>
+                    </div>
+                    <div className="detail-metric">
+                      <div className="detail-metric-label">Report Date</div>
+                      <div className="detail-metric-value">{detailBank.report_date || '—'}</div>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  <div className="detail-branch-section">
+                    <div className="detail-branch-title">Branches</div>
+                    <div className="detail-branch-actions">
+                      <button
+                        type="button"
+                        className="detail-action"
+                        onClick={() => handleRequestBranches(detailBank)}
+                        disabled={branchLoading}
+                        aria-label="View branches for this bank"
+                      >
+                        {branchLoading ? 'Loading...' : 'View Branches'}
+                      </button>
+                    </div>
+
+                    {branchLoading ? (
+                      <div className="detail-loading">
+                        <span className="spinner" aria-hidden="true" />
+                        <span>Fetching locations...</span>
+                      </div>
+                    ) : branchRows.length === 0 ? (
+                      <div className="detail-branch-empty">No branches loaded yet. Click “View Branches”.</div>
+                    ) : (
+                      <div className="detail-branch-list" role="list">
+                        {branchRows.slice(0, 12).map((b, idx) => (
+                          <div key={`${b.name || 'branch'}-${idx}`} className="detail-branch-row" role="listitem">
+                            <div className="detail-branch-name">{b.name || 'Branch'}</div>
+                            <div className="detail-branch-address">
+                              {[b.address, b.city, b.stalp, b.zip].filter(Boolean).join(', ')}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="detail-panel-empty">
+                  Every row is clickable. Open a bank to see details, or right-click a row for Compare and View Branches.
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="detail-panel-empty">
-              Every row is clickable. Open a bank to see details, or right-click a row for Compare and View Branches.
-            </div>
-          )}
-        </div>
-      </aside>
+          </aside>
+        </>
+      ) : (
+        <section className="coming-soon-panel" aria-live="polite">
+          Coming Soon
+        </section>
+      )}
     </div>
   );
 };

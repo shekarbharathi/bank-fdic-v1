@@ -19,6 +19,44 @@
   font-size: 1.35rem;
 }
 
+.top-dataset-tabs {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.top-dataset-tab {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+  transition: color 180ms ease, opacity 180ms ease;
+}
+
+.top-dataset-tab:hover {
+  color: #374151;
+}
+
+.top-dataset-tab.active {
+  color: #111827;
+  font-weight: 700;
+}
+
+.coming-soon-panel {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.2rem 1rem;
+  color: #6b7280;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
 .bank-explore-subtitle {
   color: #6b7280;
   font-weight: 700;
