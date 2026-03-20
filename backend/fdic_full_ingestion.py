@@ -105,6 +105,28 @@ def _connect(conn_string: str):
     )
 
 
+def enforce_ten_year_lookback(min_repdte: str) -> str:
+    """
+    Clamp min report date to no older than 10 years from today.
+    If parsing fails, fallback to the 10-year cutoff.
+    """
+    today = date.today()
+    try:
+        ten_year_cutoff = today.replace(year=today.year - 10)
+    except ValueError:
+        # Leap-day fallback (e.g., Feb 29 -> Feb 28)
+        ten_year_cutoff = today.replace(month=2, day=28, year=today.year - 10)
+
+    try:
+        requested = date.fromisoformat(min_repdte)
+    except Exception:
+        return ten_year_cutoff.isoformat()
+
+    if requested < ten_year_cutoff:
+        return ten_year_cutoff.isoformat()
+    return requested.isoformat()
+
+
 def _upsert_values_with_retry(conn_string: str, values: List[Tuple]) -> None:
     for attempt in range(1, DB_MAX_RETRIES + 1):
         try:
@@ -243,10 +265,18 @@ def ingest_financials_kv(
 def main() -> None:
     conn_string = build_db_connection_from_env()
     api_key = os.getenv("FDIC_API_KEY", "")
+    requested_min_repdte = os.getenv("FDIC_MIN_REPDTE", "2001-01-01")
+    min_repdte = enforce_ten_year_lookback(requested_min_repdte)
+    if min_repdte != requested_min_repdte:
+        print(
+            f"[info] FDIC_MIN_REPDTE={requested_min_repdte} capped to "
+            f"10-year lookback start {min_repdte}"
+        )
+
     ensure_migration_applied(conn_string)
     records = load_field_dictionary_records()
     upsert_field_dictionary(conn_string, records)
-    ingest_financials_kv(conn_string, api_key=api_key, min_repdte=os.getenv("FDIC_MIN_REPDTE", "2001-01-01"))
+    ingest_financials_kv(conn_string, api_key=api_key, min_repdte=min_repdte)
     print("Full FDIC ingestion completed.")
 
 
