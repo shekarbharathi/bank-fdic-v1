@@ -3,39 +3,60 @@ Backend configuration for FDIC Chat Interface
 """
 import os
 from typing import Optional
+from urllib.parse import urlparse, unquote
 
 # Database Configuration
 # Railway provides DATABASE_URL, parse it if available
 DATABASE_URL = os.getenv('DATABASE_URL', '')
 
+
+def _parse_database_url(url: str) -> Optional[dict]:
+    """
+    Parse postgres/postgresql URLs including postgres://, query strings (?sslmode=require),
+    and URL-encoded credentials. Returns dict with dbname, user, password, host, port or None.
+    """
+    parsed = urlparse(url.strip())
+    if parsed.scheme not in ("postgres", "postgresql"):
+        return None
+    if not parsed.hostname:
+        return None
+    path = (parsed.path or "").lstrip("/")
+    dbname = path.split("?", 1)[0] if path else ""
+    user = unquote(parsed.username) if parsed.username else ""
+    password = unquote(parsed.password) if parsed.password else ""
+    host = parsed.hostname
+    port = str(parsed.port or 5432)
+    if not all([dbname, user, host]):
+        return None
+    return {
+        "dbname": dbname,
+        "user": user,
+        "password": password,
+        "host": host,
+        "port": port,
+    }
+
+
 if DATABASE_URL:
-    # Parse Railway's DATABASE_URL format: postgresql://user:password@host:port/dbname
-    import re
-    match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', DATABASE_URL)
-    if match:
-        user, password, host, port, dbname = match.groups()
+    parsed_cfg = _parse_database_url(DATABASE_URL)
+    if parsed_cfg:
         DB_CONFIG = {
-            'dbname': dbname,
-            'user': user,
-            'password': password,
-            'host': host,
-            'port': port
+            "dbname": parsed_cfg["dbname"],
+            "user": parsed_cfg["user"],
+            "password": parsed_cfg["password"],
+            "host": parsed_cfg["host"],
+            "port": parsed_cfg["port"],
         }
-        DB_CONNECTION = (
-            f"dbname={dbname} "
-            f"user={user} "
-            f"password={password} "
-            f"host={host} "
-            f"port={port}"
-        )
+        # psycopg2 accepts the URL directly (preserves ?sslmode= etc.)
+        DB_CONNECTION = DATABASE_URL.strip()
     else:
-        # Fallback to individual env vars
+        # Fallback to individual env vars only if URL is present but unparsable
         DB_CONFIG = {
-            'dbname': os.getenv('DB_NAME', 'fdic'),
-            'user': os.getenv('DB_USER', 'postgres'),
-            'password': os.getenv('DB_PASSWORD', ''),
-            'host': os.getenv('DB_HOST', 'localhost'),
-            'port': os.getenv('DB_PORT', '5432')
+            "dbname": os.getenv("DB_NAME", "fdic"),
+            "user": os.getenv("DB_USER", "postgres"),
+            "password": os.getenv("DB_PASSWORD", ""),
+            "host": os.getenv("DB_HOST", "localhost"),
+            "port": os.getenv("DB_PORT", "5432"),
         }
         DB_CONNECTION = (
             f"dbname={DB_CONFIG['dbname']} "
