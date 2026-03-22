@@ -1,15 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import './ChatFilterBox.css';
 
-const SendIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="chat-filter-send-svg">
-    <path
-      d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+const SendIcon = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true" className="chat-filter-send-svg">
+    <path d="M2 2L23 12L2 22V14L16 12L2 10V2Z" fill="currentColor" />
+    <path d="M2 14L9 12.5L8 17Z" fill="currentColor" opacity="0.35" />
   </svg>
 );
 
