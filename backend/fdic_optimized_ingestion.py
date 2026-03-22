@@ -130,12 +130,27 @@ def _to_num(v) -> Optional[float]:
 
 
 def ensure_migration(conn_string: str) -> None:
-    sql_path = Path(__file__).resolve().parent / "migrations" / "0003_optimized_financials.sql"
+    migrations_dir = Path(__file__).resolve().parent / "migrations"
     with psycopg2.connect(conn_string) as conn:
         with conn.cursor() as cur:
-            cur.execute(sql_path.read_text(encoding="utf-8"))
-        conn.commit()
-    print("[info] Migration 0003 applied.")
+            cur.execute(
+                "SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='financials'"
+            )
+            financials_exists = cur.fetchone() is not None
+
+        if not financials_exists:
+            sql_path = migrations_dir / "0003_optimized_financials.sql"
+            with conn.cursor() as cur:
+                cur.execute(sql_path.read_text(encoding="utf-8"))
+            conn.commit()
+            print("[info] Migration 0003 applied.")
+
+        sql_path = migrations_dir / "0004_fix_numeric_overflow.sql"
+        if sql_path.exists():
+            with conn.cursor() as cur:
+                cur.execute(sql_path.read_text(encoding="utf-8"))
+            conn.commit()
+            print("[info] Migration 0004 applied.")
 
 
 def build_fields_string() -> str:
@@ -251,6 +266,14 @@ def ingest_institutions(conn_string: str, api_key: Optional[str] = None) -> None
             execute_values(cur, sql, values, page_size=1000)
         conn.commit()
     print(f"[info] Upserted {len(values)} institutions (ACTIVE:1).")
+
+
+def main() -> None:
+    conn_string = build_db_connection()
+    api_key = os.getenv("FDIC_API_KEY") or None
+    ensure_migration(conn_string)
+    ingest_institutions(conn_string, api_key=api_key)
+    ingest(conn_string, api_key=api_key)
 
 
 if __name__ == "__main__":

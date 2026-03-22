@@ -63,14 +63,14 @@ CREATE TABLE financials (
     netinc BIGINT,
     sc BIGINT,
 
-    -- GROUP 6: Profitability Ratios (percentage, NUMERIC)
-    roa NUMERIC(5,2),
-    roaptx NUMERIC(5,2),
-    nimy NUMERIC(5,2),
+    -- GROUP 6: Profitability Ratios (percentage, NUMERIC - 10,2 for FDIC basis pts / outliers)
+    roa NUMERIC(10,2),
+    roaptx NUMERIC(10,2),
+    nimy NUMERIC(10,2),
 
     -- GROUP 7: Asset Quality & Safety
-    elnatr NUMERIC(5,2),
-    eq NUMERIC(5,2),
+    elnatr NUMERIC(10,2),
+    eq NUMERIC(10,2),
     rbct BIGINT,
     rbcrwaj BIGINT,
     lnatres BIGINT,
