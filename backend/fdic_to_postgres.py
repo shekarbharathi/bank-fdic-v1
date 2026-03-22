@@ -349,21 +349,25 @@ class PostgresLoader:
 
 def main():
     """Example usage: Full data pipeline"""
-    
-    # Configuration - try to import from config.py, otherwise use defaults
+    import os
+
+    # DB: import only DB_CONNECTION from config (FDIC API key is not on config.py).
+    # Importing a missing API_KEY used to raise ImportError and silently fell back to localhost.
     try:
-        from config import DB_CONNECTION, API_KEY
+        from config import DB_CONNECTION
     except ImportError:
-        import os
-        # Fallback to environment variables or defaults
-        DB_CONNECTION = (
-            f"dbname={os.getenv('DB_NAME', 'fdic')} "
-            f"user={os.getenv('DB_USER', 'postgres')} "
-            f"password={os.getenv('DB_PASSWORD', 'yourpassword')} "
-            f"host={os.getenv('DB_HOST', 'localhost')} "
-            f"port={os.getenv('DB_PORT', '5432')}"
-        )
-        API_KEY = os.getenv('FDIC_API_KEY', None)
+        database_url = os.getenv("DATABASE_URL", "").strip()
+        if database_url:
+            DB_CONNECTION = database_url
+        else:
+            DB_CONNECTION = (
+                f"dbname={os.getenv('DB_NAME', 'fdic')} "
+                f"user={os.getenv('DB_USER', 'postgres')} "
+                f"password={os.getenv('DB_PASSWORD', 'yourpassword')} "
+                f"host={os.getenv('DB_HOST', 'localhost')} "
+                f"port={os.getenv('DB_PORT', '5432')}"
+            )
+    API_KEY = os.getenv("FDIC_API_KEY", None)
     
     # Initialize clients
     api_client = FDICAPIClient(api_key=API_KEY)
