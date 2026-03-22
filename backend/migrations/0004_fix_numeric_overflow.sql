@@ -1,9 +1,9 @@
--- Migration 0004: Fix NUMERIC(5,2) overflow for ratio columns
--- FDIC may return values > 999.99 (e.g. basis points); widen to NUMERIC(10,2)
+-- Migration 0004: Fix NUMERIC overflow for ratio columns
+-- FDIC may return very large values; use NUMERIC(18,4) to avoid overflow
 
 ALTER TABLE financials
-  ALTER COLUMN roa TYPE NUMERIC(10,2),
-  ALTER COLUMN roaptx TYPE NUMERIC(10,2),
-  ALTER COLUMN nimy TYPE NUMERIC(10,2),
-  ALTER COLUMN elnatr TYPE NUMERIC(10,2),
-  ALTER COLUMN eq TYPE NUMERIC(10,2);
+  ALTER COLUMN roa TYPE NUMERIC(18,4),
+  ALTER COLUMN roaptx TYPE NUMERIC(18,4),
+  ALTER COLUMN nimy TYPE NUMERIC(18,4),
+  ALTER COLUMN elnatr TYPE NUMERIC(18,4),
+  ALTER COLUMN eq TYPE NUMERIC(18,4);
