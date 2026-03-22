@@ -268,7 +268,7 @@ const BankExploreHome = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const [chatInput, setChatInput] = useState('');
+  const [chatInput, setChatInput] = useState('top 5 banks');
 
   const [sortState, setSortState] = useState({ key: 'assets', direction: 'desc' });
 
@@ -442,8 +442,6 @@ Limit 20.`;
           inferredLimit: nextLimit,
           requestedMetrics,
         });
-
-        setChatInput('');
       } catch (e) {
         setError(
           e?.message ||

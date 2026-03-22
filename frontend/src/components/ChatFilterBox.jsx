@@ -81,9 +81,8 @@ const ChatFilterBox = ({
             aria-label="Send message"
           >
             {isLoading ? (
-              <span className="chat-filter-loading">
+              <span className="chat-filter-loading" aria-label="Processing">
                 <span className="spinner" aria-hidden="true" />
-                <span>Top 5 Banks...</span>
               </span>
             ) : (
               <span className="chat-filter-send-icon" aria-hidden="true">
