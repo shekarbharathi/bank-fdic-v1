@@ -8,6 +8,12 @@ Notes:
 - Designed for Railway/Postgres.
 - Keeps existing curated financials table untouched.
 - Ingests full FDIC field set into financials_kv for scalable querying.
+
+Environment:
+- FDIC_MIN_REPDTE: earliest report date to fetch (YYYY-MM-DD). Default 2001-01-01.
+- FDIC_MAX_LOOKBACK_YEARS: if set (e.g. 2), never fetch older than today minus N years
+  (uses max(FDIC_MIN_REPDTE, today-N years)). Recommended for disk limits.
+- After that, dates are still capped by enforce_ten_year_lookback (max 10 years).
 """
 
 from __future__ import annotations
@@ -103,6 +109,44 @@ def _connect(conn_string: str):
         keepalives_interval=10,
         keepalives_count=5,
     )
+
+
+def date_years_ago(years: int) -> date:
+    """Calendar-based N years before today (handles Feb 29)."""
+    today = date.today()
+    try:
+        return today.replace(year=today.year - years)
+    except ValueError:
+        return today.replace(month=2, day=28, year=today.year - years)
+
+
+def resolve_requested_min_repdte() -> str:
+    """
+    Combine FDIC_MIN_REPDTE with optional FDIC_MAX_LOOKBACK_YEARS.
+    Example: MAX_LOOKBACK_YEARS=2 with MIN=2001-01-01 -> ~2 years ago.
+    """
+    raw = os.getenv("FDIC_MIN_REPDTE", "2001-01-01").strip()
+    max_years_str = os.getenv("FDIC_MAX_LOOKBACK_YEARS", "").strip()
+    if not max_years_str:
+        return raw
+    try:
+        n = int(max_years_str)
+    except ValueError:
+        raise ValueError(f"FDIC_MAX_LOOKBACK_YEARS must be an integer, got {max_years_str!r}") from None
+    if n < 0:
+        raise ValueError("FDIC_MAX_LOOKBACK_YEARS must be non-negative")
+    floor = date_years_ago(n)
+    try:
+        requested = date.fromisoformat(raw)
+    except Exception:
+        requested = floor
+    effective = max(requested, floor)
+    if effective.isoformat() != raw:
+        print(
+            f"[info] FDIC_MAX_LOOKBACK_YEARS={n} -> earliest ingest date {effective.isoformat()} "
+            f"(max of FDIC_MIN_REPDTE and {n}y floor)"
+        )
+    return effective.isoformat()
 
 
 def enforce_ten_year_lookback(min_repdte: str) -> str:
@@ -265,12 +309,12 @@ def ingest_financials_kv(
 def main() -> None:
     conn_string = build_db_connection_from_env()
     api_key = os.getenv("FDIC_API_KEY", "")
-    requested_min_repdte = os.getenv("FDIC_MIN_REPDTE", "2001-01-01")
+    requested_min_repdte = resolve_requested_min_repdte()
     min_repdte = enforce_ten_year_lookback(requested_min_repdte)
     if min_repdte != requested_min_repdte:
         print(
-            f"[info] FDIC_MIN_REPDTE={requested_min_repdte} capped to "
-            f"10-year lookback start {min_repdte}"
+            f"[info] After 10-year cap: using start date {min_repdte} "
+            f"(was {requested_min_repdte})"
         )
 
     ensure_migration_applied(conn_string)
