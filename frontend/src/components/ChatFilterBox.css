@@ -66,6 +66,7 @@
 
 .chat-filter-send {
   border: none;
+  outline: none;
   background: transparent;
   cursor: pointer;
   padding: 0.35rem 0.4rem;
@@ -76,6 +77,9 @@
   align-items: center;
   justify-content: center;
   min-width: 54px;
+  appearance: none;
+  -webkit-appearance: none;
+  box-shadow: none;
 }
 
 .chat-filter-send:hover:not(:disabled) {
@@ -86,6 +90,22 @@
 
 .chat-filter-send:disabled {
   cursor: not-allowed;
+  color: #9ca3af;
+}
+
+.chat-filter-send:focus {
+  outline: none;
+}
+
+.chat-filter-send-icon {
+  color: #6b7280;
+}
+
+.chat-filter-send:hover:not(:disabled) .chat-filter-send-icon {
+  color: #374151;
+}
+
+.chat-filter-send:disabled .chat-filter-send-icon {
   color: #9ca3af;
 }
 
