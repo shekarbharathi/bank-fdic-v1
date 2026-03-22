@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import './ChatFilterBox.css';
 
 const SendIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="chat-filter-send-svg">
     <path
       d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
       stroke="currentColor"

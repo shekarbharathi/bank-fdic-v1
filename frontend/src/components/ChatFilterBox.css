@@ -65,9 +65,9 @@
 }
 
 .chat-filter-send {
-  border: none;
+  border: 0;
   outline: none;
-  background: transparent;
+  background-color: #e5e7eb;
   cursor: pointer;
   padding: 0.35rem 0.4rem;
   border-radius: 12px;
@@ -79,11 +79,12 @@
   min-width: 54px;
   appearance: none;
   -webkit-appearance: none;
+  -moz-appearance: none;
   box-shadow: none;
 }
 
 .chat-filter-send:hover:not(:disabled) {
-  background-color: rgba(243, 244, 246, 1);
+  background-color: #d1d5db;
   color: #374151;
   transform: translateY(-1px);
 }
@@ -91,22 +92,35 @@
 .chat-filter-send:disabled {
   cursor: not-allowed;
   color: #9ca3af;
-}
-
-.chat-filter-send:focus {
-  outline: none;
+  background-color: #e5e7eb;
 }
 
 .chat-filter-send-icon {
   color: #6b7280;
+  display: flex;
 }
 
-.chat-filter-send:hover:not(:disabled) .chat-filter-send-icon {
+.chat-filter-send-svg {
+  color: inherit;
+}
+
+.chat-filter-send:hover:not(:disabled) .chat-filter-send-icon,
+.chat-filter-send:hover:not(:disabled) .chat-filter-send-svg {
   color: #374151;
 }
 
-.chat-filter-send:disabled .chat-filter-send-icon {
+.chat-filter-send:disabled .chat-filter-send-icon,
+.chat-filter-send:disabled .chat-filter-send-svg {
   color: #9ca3af;
+}
+
+/* Override any browser/default button border */
+.chat-filter-send,
+.chat-filter-send:focus,
+.chat-filter-send:active,
+.chat-filter-send:focus-visible {
+  border: 0 !important;
+  outline: none !important;
 }
 
 .chat-filter-loading {
@@ -125,6 +139,11 @@
   border-top-color: rgba(59, 130, 246, 1);
   border-radius: 9999px;
   animation: spin 0.8s linear infinite;
+}
+
+.chat-filter-send .spinner {
+  border-color: rgba(156, 163, 175, 0.4);
+  border-top-color: #6b7280;
 }
 
 @keyframes spin {
