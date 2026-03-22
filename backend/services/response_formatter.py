@@ -12,9 +12,14 @@ class ResponseFormatter:
     """Format database query results into natural language responses"""
     
     # Columns that store values in thousands of dollars
-    DOLLAR_COLUMNS_IN_THOUSANDS = {'asset', 'dep', 'depdom', 'eqtot', 'netinc', 'lnlsnet', 
-                                    'qbfasset', 'qbfdep', 'cost', 'assets_dollars', 'deposits_dollars',
-                                    'current_deposits_dollars', 'previous_deposits_dollars'}
+    DOLLAR_COLUMNS_IN_THOUSANDS = {
+        'asset', 'dep', 'depdom', 'eqtot', 'netinc', 'lnlsnet',
+        'earna', 'ilndom', 'chbal', 'dpmmd', 'dpsav', 'brttrans', 'p2215',
+        'lncrcd', 'lnre', 'lnci', 'lnresre', 'intinc', 'intexp', 'nonii', 'nonix', 'sc',
+        'rbct', 'rbcrwaj', 'lnatres',
+        'qbfasset', 'qbfdep', 'cost', 'assets_dollars', 'deposits_dollars',
+        'current_deposits_dollars', 'previous_deposits_dollars',
+    }
     
     def _convert_thousands_to_dollars(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """

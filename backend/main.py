@@ -71,6 +71,13 @@ except ImportError:
     # Data ingestion endpoint not available
     pass
 
+# Include field metadata routes (for UI grouping)
+try:
+    from api import metadata
+    app.include_router(metadata.router, prefix="/api", tags=["metadata"])
+except ImportError:
+    pass
+
 
 @app.get("/")
 async def root():
