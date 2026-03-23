@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { chatAPI } from '../api/client';
 import ChatFilterBox from './ChatFilterBox';
 import ChatResponsePanel from './ChatResponsePanel';
@@ -263,6 +263,7 @@ const normalizeBankRows = (rawRows) => {
 };
 
 const BankExploreHome = () => {
+  const chatFilterRef = useRef(null);
   const [activeTopTab, setActiveTopTab] = useState('banks');
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -387,6 +388,7 @@ Limit 20.`;
         setError(e?.message || 'Failed to load banks');
       } finally {
         setIsLoading(false);
+        setTimeout(() => chatFilterRef.current?.focus(), 0);
       }
     },
     [updateConfirmationFromIntent]
@@ -449,6 +451,7 @@ Limit 20.`;
         );
       } finally {
         setIsLoading(false);
+        setTimeout(() => chatFilterRef.current?.focus(), 0);
       }
     },
     [updateConfirmationFromIntent, visibleMetricIds]
@@ -504,6 +507,7 @@ Limit 20.`;
       {activeTopTab === 'banks' ? (
         <>
           <ChatFilterBox
+            ref={chatFilterRef}
             value={chatInput}
             onChange={setChatInput}
             onSubmit={handleChatSubmit}

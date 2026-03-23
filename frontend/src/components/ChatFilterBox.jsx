@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import './ChatFilterBox.css';
 
 const SendIcon = ({ size = 18 }) => (
@@ -8,16 +8,20 @@ const SendIcon = ({ size = 18 }) => (
   </svg>
 );
 
-const ChatFilterBox = ({
+const ChatFilterBox = forwardRef(({
   value,
   onChange,
   onSubmit,
   isLoading,
   disabled,
   placeholder = 'Show me...',
-}) => {
+}, ref) => {
   const textareaRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
+
+  useImperativeHandle(ref, () => ({
+    focus: () => textareaRef.current?.focus(),
+  }));
 
   const isDisabled = disabled || isLoading;
   const trimmed = (value || '').trim();
@@ -89,7 +93,9 @@ const ChatFilterBox = ({
       </div>
     </div>
   );
-};
+});
+
+ChatFilterBox.displayName = 'ChatFilterBox';
 
 export default ChatFilterBox;
 
