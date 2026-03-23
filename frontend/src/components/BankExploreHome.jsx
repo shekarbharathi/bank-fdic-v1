@@ -264,6 +264,7 @@ const normalizeBankRows = (rawRows) => {
 
 const BankExploreHome = () => {
   const chatFilterRef = useRef(null);
+  const shouldFocusAfterLoad = useRef(false);
   const [activeTopTab, setActiveTopTab] = useState('banks');
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -388,7 +389,7 @@ Limit 20.`;
         setError(e?.message || 'Failed to load banks');
       } finally {
         setIsLoading(false);
-        setTimeout(() => chatFilterRef.current?.focus(), 0);
+        shouldFocusAfterLoad.current = true;
       }
     },
     [updateConfirmationFromIntent]
@@ -451,11 +452,21 @@ Limit 20.`;
         );
       } finally {
         setIsLoading(false);
-        setTimeout(() => chatFilterRef.current?.focus(), 0);
+        shouldFocusAfterLoad.current = true;
       }
     },
     [updateConfirmationFromIntent, visibleMetricIds]
   );
+
+  useEffect(() => {
+    if (!isLoading && shouldFocusAfterLoad.current && activeTopTab === 'banks') {
+      shouldFocusAfterLoad.current = false;
+      const focusChatbox = () => {
+        document.getElementById('bank-chat-filter-input')?.focus();
+      };
+      requestAnimationFrame(() => requestAnimationFrame(focusChatbox));
+    }
+  }, [isLoading, activeTopTab]);
 
   const handleSortChange = useCallback(
     (nextSort) => {
