@@ -69,6 +69,13 @@ const rankingCriteriaLabels = {
   safety: 'capital ratio',
 };
 
+const SUGGESTION_OPTIONS = [
+  'Show me the top 10 banks by assets',
+  'Which banks have the best capital ratios?',
+  'top 10 banks in California with ROA greater than 1%?',
+  'top 5 banks in texas less than 50 billion in assets',
+];
+
 const extractTopN = (text) => {
   const m = String(text || '').match(/top\s+(\d{1,3})/i);
   if (!m) return 5;
@@ -269,6 +276,8 @@ const BankExploreHome = () => {
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [viewMode, setViewMode] = useState('table'); // 'table' | 'scalar' | 'suggestions'
+  const [scalarValue, setScalarValue] = useState(null);
 
   const [chatInput, setChatInput] = useState('top 5 banks');
 
@@ -358,6 +367,8 @@ Limit 20.`;
 
         const normalized = normalizeBankRows(res?.data);
         setRows(normalized);
+        setViewMode('table');
+        setScalarValue(null);
 
         // Ensure the ranking metric is visible (progressive exploration).
         const metricKey =
@@ -413,13 +424,37 @@ Limit 20.`;
       setDetailBank(null);
       setBranchRows([]);
       setBranchLoading(false);
+      setViewMode('table');
+      setScalarValue(null);
 
       try {
-        const prompt = buildExplorePrompt({ userText: text, limit: nextLimit });
-        const res = await chatAPI.sendMessage(prompt);
-        if (res?.error) throw new Error(res?.error || 'Backend error');
+        const res = await chatAPI.sendMessage(text?.trim() || text);
 
-        const normalized = normalizeBankRows(res?.data);
+        if (res?.error) {
+          setViewMode('suggestions');
+          setRows([]);
+          setScalarValue(null);
+          return;
+        }
+
+        const data = res?.data;
+        if (!Array.isArray(data)) {
+          setViewMode('suggestions');
+          setRows([]);
+          setScalarValue(null);
+          return;
+        }
+
+        const isScalar = data.length === 1 && data[0] && Object.keys(data[0]).length === 1;
+        if (isScalar) {
+          const val = Object.values(data[0])[0];
+          setViewMode('scalar');
+          setScalarValue(val);
+          setRows([]);
+          return;
+        }
+
+        const normalized = normalizeBankRows(data);
         setRows(normalized);
 
         // Update visible columns to reflect what the user asked for.
@@ -446,16 +481,23 @@ Limit 20.`;
           requestedMetrics,
         });
       } catch (e) {
-        setError(
-          e?.message ||
-            "I couldn't load that right now. Try something like “most profitable banks” or “banks in California”."
-        );
+        setViewMode('suggestions');
+        setRows([]);
+        setScalarValue(null);
       } finally {
         setIsLoading(false);
         shouldFocusAfterLoad.current = true;
       }
     },
     [updateConfirmationFromIntent, visibleMetricIds]
+  );
+
+  const handleSuggestionClick = useCallback(
+    (optionText) => {
+      setChatInput(optionText);
+      handleChatSubmit(optionText);
+    },
+    [handleChatSubmit]
   );
 
   useEffect(() => {
@@ -538,6 +580,34 @@ Limit 20.`;
             error={error}
           />
 
+          {viewMode === 'suggestions' && (
+            <div className="bank-explore-suggestions" aria-live="polite">
+              <p className="bank-explore-suggestions-intro">
+                I only understand FDIC published information about banks. Try some of these:
+              </p>
+              <ul className="bank-explore-suggestions-list">
+                {SUGGESTION_OPTIONS.map((option) => (
+                  <li key={option}>
+                    <button
+                      type="button"
+                      className="bank-explore-suggestion-option"
+                      onClick={() => handleSuggestionClick(option)}
+                    >
+                      {option}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {viewMode === 'scalar' && (
+            <div className="bank-explore-scalar" aria-live="polite">
+              <span className="bank-explore-scalar-value">{String(scalarValue ?? '')}</span>
+            </div>
+          )}
+
+          {viewMode === 'table' && (
           <BankExplorerTable
             rows={rows}
             sortState={sortState}
@@ -546,6 +616,7 @@ Limit 20.`;
             onOpenDetail={handleOpenDetail}
             onRequestBranches={handleRequestBranches}
           />
+          )}
 
           <aside className={`detail-panel ${detailBank ? 'open' : ''}`} aria-label="Bank detail panel">
             <div className="detail-panel-shell">

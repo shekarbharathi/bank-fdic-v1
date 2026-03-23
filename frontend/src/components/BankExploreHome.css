@@ -58,6 +58,63 @@
   font-weight: 600;
 }
 
+.bank-explore-suggestions {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1rem 0;
+}
+
+.bank-explore-suggestions-intro {
+  color: #374151;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.75rem 0;
+}
+
+.bank-explore-suggestions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bank-explore-suggestion-option {
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid rgba(229, 231, 235, 1);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #374151;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background-color 200ms ease, border-color 200ms ease, transform 200ms ease;
+}
+
+.bank-explore-suggestion-option:hover {
+  background: rgba(249, 250, 251, 1);
+  border-color: rgba(156, 163, 175, 1);
+  transform: translateY(-1px);
+}
+
+.bank-explore-scalar {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1rem;
+  min-height: 120px;
+}
+
+.bank-explore-scalar-value {
+  display: inline-block;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #111827;
+}
+
 .bank-explore-subtitle {
   color: #6b7280;
   font-weight: 700;
