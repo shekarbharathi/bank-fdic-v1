@@ -81,24 +81,18 @@
 }
 
 .bank-explore-suggestion-option {
-  width: 100%;
+  display: inline;
   text-align: left;
-  padding: 0.6rem 0.85rem;
-  border: 1px solid rgba(229, 231, 235, 1);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.9);
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
   color: #374151;
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 500;
   font-family: inherit;
   cursor: pointer;
-  transition: background-color 200ms ease, border-color 200ms ease, transform 200ms ease;
-}
-
-.bank-explore-suggestion-option:hover {
-  background: rgba(249, 250, 251, 1);
-  border-color: rgba(156, 163, 175, 1);
-  transform: translateY(-1px);
+  text-decoration: underline;
 }
 
 .bank-explore-scalar {
