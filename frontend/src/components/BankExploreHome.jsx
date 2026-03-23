@@ -97,20 +97,6 @@ const isRefusalResponse = (val) => {
   return REFUSAL_PATTERNS.some((p) => s.includes(p.toLowerCase()));
 };
 
-const BANK_QUERY_KEYWORDS = [
-  'bank', 'banks', 'fdic', 'asset', 'assets', 'deposit', 'deposits',
-  'capital', 'roa', 'loan', 'loans', 'equity', 'ratio', 'profit',
-  'top', 'which', 'what', 'how many', 'show', 'list', 'best', 'largest',
-  'billion', 'million', 'percent', '%',
-  ...STATES.flatMap((s) => [s.name.toLowerCase(), s.abbr.toLowerCase()]),
-];
-
-const isLikelyBankQuery = (text) => {
-  const t = (text || '').trim().toLowerCase();
-  if (!t || t.length < 3) return false;
-  return BANK_QUERY_KEYWORDS.some((kw) => t.includes(kw));
-};
-
 const extractTopN = (text) => {
   const m = String(text || '').match(/top\s+(\d{1,3})/i);
   if (!m) return 5;
@@ -461,15 +447,6 @@ Limit 20.`;
       setBranchLoading(false);
       setViewMode('table');
       setScalarValue(null);
-
-      if (!isLikelyBankQuery(text)) {
-        setViewMode('suggestions');
-        setRows([]);
-        setScalarValue(null);
-        setIsLoading(false);
-        shouldFocusAfterLoad.current = true;
-        return;
-      }
 
       try {
         const res = await chatAPI.sendMessage(text?.trim() || text);

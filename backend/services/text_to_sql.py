@@ -9,6 +9,7 @@ if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
     backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     sys.path.insert(0, backend_dir)
 
+import json
 import logging
 from typing import Optional
 
@@ -91,6 +92,13 @@ class TextToSQLService:
 
 User Question: {user_question}
 
+CRITICAL: First, determine if the user's question is related to banks, financial institutions, FDIC data, or banking metrics (assets, deposits, loans, ROA, capital ratio, etc.).
+
+If the question is NOT related (e.g., "blah blah", "aaaaa", "what's the weather", random text, test inputs), respond with ONLY this exact JSON, nothing else:
+{{"error": "out_of_scope"}}
+
+Otherwise, generate the SQL query as instructed below.
+
 Instructions:
 - Generate ONLY the SQL query, no explanations or markdown formatting
 - Use the most recent data available (use MAX(repdte) subqueries when needed)
@@ -126,6 +134,17 @@ SQL Query:"""
             logger.debug("Full Response:")
             logger.debug(raw_response)
             logger.debug("=" * 80)
+            
+            # Check for out_of_scope response before extracting SQL
+            raw_stripped = raw_response.strip()
+            try:
+                parsed = json.loads(raw_stripped)
+                if isinstance(parsed, dict) and parsed.get("error") == "out_of_scope":
+                    raise ValueError("out_of_scope")
+            except json.JSONDecodeError:
+                pass
+            if '"out_of_scope"' in raw_response and '"error"' in raw_response:
+                raise ValueError("out_of_scope")
             
             # Extract SQL from markdown if present
             sql = self.sql_validator.extract_sql_from_markdown(raw_response)
