@@ -13,16 +13,18 @@ from fastapi import APIRouter, HTTPException
 
 # Try relative imports first (for Railway), fallback to absolute (for local dev)
 try:
-    from models.chat import ChatRequest, ChatResponse, HealthResponse
+    from models.chat import ChatRequest, ChatResponse, ExpandRequest, ExpandResponse, HealthResponse
     from services.database import DatabaseService
     from services.text_to_sql import TextToSQLService
     from services.response_formatter import ResponseFormatter
+    from services.llm_providers import get_llm_provider
     from config import LLM_PROVIDER
 except ImportError:
-    from backend.models.chat import ChatRequest, ChatResponse, HealthResponse
+    from backend.models.chat import ChatRequest, ChatResponse, ExpandRequest, ExpandResponse, HealthResponse
     from backend.services.database import DatabaseService
     from backend.services.text_to_sql import TextToSQLService
     from backend.services.response_formatter import ResponseFormatter
+    from backend.services.llm_providers import get_llm_provider
     from backend.config import LLM_PROVIDER
 
 router = APIRouter()
@@ -83,6 +85,23 @@ async def chat_endpoint(request: ChatRequest):
             error=str(e),
             execution_time=execution_time
         )
+
+
+EXPAND_SYSTEM = """You are a query rewriter for FDIC bank data. Given the user's natural language query, return an expanded version that increments any result count by 5 (e.g. "top 5" -> "top 10", "top 10" -> "top 15", "limit 20" -> "limit 25"). Preserve all other aspects. Respond with ONLY the expanded query text, nothing else."""
+
+
+@router.post("/expand-query", response_model=ExpandResponse)
+async def expand_query_endpoint(request: ExpandRequest):
+    """Expand a bank query by incrementing result count by 5"""
+    try:
+        llm = get_llm_provider()
+        expanded = await llm.generate_with_system(EXPAND_SYSTEM, request.message.strip())
+        expanded = (expanded or "").strip()
+        if not expanded:
+            raise ValueError("Empty expand response")
+        return ExpandResponse(expanded_query=expanded)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/health", response_model=HealthResponse)

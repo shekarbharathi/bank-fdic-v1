@@ -20,6 +20,16 @@ class ChatResponse(BaseModel):
     execution_time: Optional[float] = None
 
 
+class ExpandRequest(BaseModel):
+    """Request model for expand-query endpoint"""
+    message: str
+
+
+class ExpandResponse(BaseModel):
+    """Response model for expand-query endpoint"""
+    expanded_query: str
+
+
 class HealthResponse(BaseModel):
     """Response model for health check"""
     status: str

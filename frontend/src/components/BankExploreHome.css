@@ -109,6 +109,31 @@
   color: #111827;
 }
 
+.bank-explore-table-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bank-explore-expand-chevron {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+}
+
+.bank-explore-expand-chevron:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .bank-explore-subtitle {
   color: #6b7280;
   font-weight: 700;

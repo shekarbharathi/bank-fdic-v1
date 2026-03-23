@@ -38,6 +38,11 @@ class LLMProvider(ABC):
     async def generate(self, prompt: str) -> str:
         """Generate response from prompt"""
         pass
+    
+    @abstractmethod
+    async def generate_with_system(self, system: str, user: str) -> str:
+        """Generate response with custom system instruction"""
+        pass
 
 
 class OpenAIProvider(LLMProvider):
@@ -90,6 +95,23 @@ class OpenAIProvider(LLMProvider):
             
             result = response.choices[0].message.content.strip()
             return result
+        except Exception as e:
+            logger.error(f"OpenAI API error: {e}")
+            raise
+    
+    async def generate_with_system(self, system: str, user: str) -> str:
+        """Generate response with custom system instruction"""
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user}
+                ],
+                temperature=0.1,
+                max_tokens=500
+            )
+            return response.choices[0].message.content.strip()
         except Exception as e:
             logger.error(f"OpenAI API error: {e}")
             raise
@@ -148,6 +170,23 @@ class AnthropicProvider(LLMProvider):
         except Exception as e:
             logger.error(f"Anthropic API error: {e}")
             raise
+    
+    async def generate_with_system(self, system: str, user: str) -> str:
+        """Generate response with custom system instruction"""
+        try:
+            message = self.client.messages.create(
+                model=self.model,
+                max_tokens=500,
+                temperature=0.1,
+                system=system,
+                messages=[
+                    {"role": "user", "content": user}
+                ]
+            )
+            return message.content[0].text.strip()
+        except Exception as e:
+            logger.error(f"Anthropic API error: {e}")
+            raise
 
 
 class LocalProvider(LLMProvider):
@@ -201,6 +240,29 @@ class LocalProvider(LLMProvider):
                 logger.debug(f"Response Keys: {list(result.keys())}")
                 logger.debug("=" * 80)
                 
+                return result.get("response", "").strip()
+        except Exception as e:
+            logger.error(f"Local model error: {e}")
+            raise
+    
+    async def generate_with_system(self, system: str, user: str) -> str:
+        """Generate response with custom system instruction"""
+        import aiohttp
+        full_prompt = f"{system}\n\n{user}"
+        if not self.session:
+            self.session = aiohttp.ClientSession()
+        try:
+            url = f"{self.endpoint}/api/generate"
+            payload = {
+                "model": self.model_name,
+                "prompt": full_prompt,
+                "stream": False,
+                "options": {"temperature": 0.1}
+            }
+            async with self.session.post(url, json=payload) as response:
+                if response.status != 200:
+                    raise Exception(f"Ollama API returned status {response.status}")
+                result = await response.json()
                 return result.get("response", "").strip()
         except Exception as e:
             logger.error(f"Local model error: {e}")

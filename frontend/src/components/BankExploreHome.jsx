@@ -534,6 +534,24 @@ Limit 20.`;
     [handleChatSubmit]
   );
 
+  const handleExpandClick = useCallback(
+    async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const expanded = await chatAPI.expandQuery(chatInput);
+        setChatInput(expanded);
+        await handleChatSubmit(expanded);
+      } catch (e) {
+        setError(e?.response?.data?.detail || e?.message || 'Failed to expand');
+        setViewMode('suggestions');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [chatInput, handleChatSubmit]
+  );
+
   useEffect(() => {
     if (!isLoading && shouldFocusAfterLoad.current && activeTopTab === 'banks') {
       shouldFocusAfterLoad.current = false;
@@ -642,14 +660,27 @@ Limit 20.`;
           )}
 
           {viewMode === 'table' && (
-          <BankExplorerTable
-            rows={rows}
-            sortState={sortState}
-            visibleMetricIds={visibleMetricIds}
-            onSortChange={handleSortChange}
-            onOpenDetail={handleOpenDetail}
-            onRequestBranches={handleRequestBranches}
-          />
+            <div className="bank-explore-table-wrap">
+              <BankExplorerTable
+                rows={rows}
+                sortState={sortState}
+                visibleMetricIds={visibleMetricIds}
+                onSortChange={handleSortChange}
+                onOpenDetail={handleOpenDetail}
+                onRequestBranches={handleRequestBranches}
+              />
+              <button
+                type="button"
+                className="bank-explore-expand-chevron"
+                onClick={handleExpandClick}
+                disabled={isLoading}
+                aria-label="Show 5 more results"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </button>
+            </div>
           )}
 
           <aside className={`detail-panel ${detailBank ? 'open' : ''}`} aria-label="Bank detail panel">

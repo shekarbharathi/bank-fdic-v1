@@ -74,6 +74,11 @@ export const chatAPI = {
     return response.data;
   },
 
+  expandQuery: async (message) => {
+    const response = await client.post('/api/expand-query', { message });
+    return response.data.expanded_query;
+  },
+
   /**
    * Health check
    * @returns {Promise} Health status
