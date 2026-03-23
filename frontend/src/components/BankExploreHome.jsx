@@ -462,7 +462,12 @@ Limit 20.`;
     if (!isLoading && shouldFocusAfterLoad.current && activeTopTab === 'banks') {
       shouldFocusAfterLoad.current = false;
       const focusChatbox = () => {
-        document.getElementById('bank-chat-filter-input')?.focus();
+        const input = document.getElementById('bank-chat-filter-input');
+        if (input) {
+          input.focus();
+          const len = (input.value || '').length;
+          input.setSelectionRange(len, len);
+        }
       };
       requestAnimationFrame(() => requestAnimationFrame(focusChatbox));
     }
