@@ -76,6 +76,27 @@ const SUGGESTION_OPTIONS = [
   'top 5 banks in texas less than 50 billion in assets',
 ];
 
+const REFUSAL_PATTERNS = [
+  'test query',
+  'please provide a specific',
+  'provide a specific question',
+  'not a valid question',
+  'cannot convert',
+  "i don't understand",
+  "i do not understand",
+  'not related to fdic',
+  'try asking about',
+  'rephrase your',
+  'unable to generate',
+  'cannot generate sql',
+];
+
+const isRefusalResponse = (val) => {
+  if (val == null) return false;
+  const s = String(val).toLowerCase();
+  return REFUSAL_PATTERNS.some((p) => s.includes(p.toLowerCase()));
+};
+
 const extractTopN = (text) => {
   const m = String(text || '').match(/top\s+(\d{1,3})/i);
   if (!m) return 5;
@@ -445,9 +466,22 @@ Limit 20.`;
           return;
         }
 
+        if (isRefusalResponse(res?.response)) {
+          setViewMode('suggestions');
+          setRows([]);
+          setScalarValue(null);
+          return;
+        }
+
         const isScalar = data.length === 1 && data[0] && Object.keys(data[0]).length === 1;
         if (isScalar) {
           const val = Object.values(data[0])[0];
+          if (isRefusalResponse(val) || isRefusalResponse(res?.response)) {
+            setViewMode('suggestions');
+            setRows([]);
+            setScalarValue(null);
+            return;
+          }
           setViewMode('scalar');
           setScalarValue(val);
           setRows([]);
