@@ -139,8 +139,6 @@ const BankExplorerTable = ({
   onOpenDetail,
   onRequestBranches,
 }) => {
-  const [tooltip, setTooltip] = useState(null); // {x,y, content}
-  const [activeCell, setActiveCell] = useState(null);
   const [columnWidths, setColumnWidths] = useState({});
 
   const [contextMenu, setContextMenu] = useState(null); // {x,y,row}
@@ -203,18 +201,6 @@ const BankExplorerTable = ({
     const isSameKey = currentKey === key;
     const nextDir = isSameKey ? (currentDir === 'desc' ? 'asc' : 'desc') : kind === 'string' ? 'asc' : 'desc';
     onSortChange?.({ key, direction: nextDir });
-  };
-
-  const getCellTooltip = (colKey, row) => {
-    if (!colKey) return '';
-    if (colKey === 'bank_name') return `${row.bank_name}`;
-    if (colKey === 'rank') return `Rank ${row.__rank}`;
-    if (colKey === 'assets') {
-      const trend = row.assets_growth_pct !== undefined ? getTrend(row.assets_growth_pct) : null;
-      const trendStr = trend ? ` (${trend.arrow} vs previous)` : '';
-      return `Assets: ${formatMetricValue('assets', row.assets)}${trendStr}`;
-    }
-    return `${METRIC_DEFS[colKey]?.label || colKey}: ${formatMetricValue(colKey, row[colKey])}`;
   };
 
   const startResize = (e, colKey) => {
@@ -336,15 +322,6 @@ const BankExplorerTable = ({
                     type="button"
                     className="be-cell-button"
                     onClick={() => onOpenDetail?.(row)}
-                    onMouseEnter={(e) => {
-                      const r = e.currentTarget.getBoundingClientRect();
-                      setTooltip({ x: r.left + r.width / 2, y: r.top, content: getCellTooltip('rank', row) });
-                      setActiveCell('rank');
-                    }}
-                    onMouseLeave={() => {
-                      setTooltip(null);
-                      setActiveCell(null);
-                    }}
                     aria-label={`Open details for rank ${row.__rank}`}
                   >
                     {row.__rank}
@@ -355,15 +332,6 @@ const BankExplorerTable = ({
                     type="button"
                     className="be-cell-button be-cell-bank"
                     onClick={() => onOpenDetail?.(row)}
-                    onMouseEnter={(e) => {
-                      const r = e.currentTarget.getBoundingClientRect();
-                      setTooltip({ x: r.left + r.width / 2, y: r.top, content: getCellTooltip('bank_name', row) });
-                      setActiveCell('bank_name');
-                    }}
-                    onMouseLeave={() => {
-                      setTooltip(null);
-                      setActiveCell(null);
-                    }}
                     aria-label={`Open details for ${row.bank_name}`}
                   >
                     {row.bank_name}
@@ -375,16 +343,6 @@ const BankExplorerTable = ({
                     type="button"
                     className="be-cell-button be-cell-metric"
                     onClick={() => onOpenDetail?.(row)}
-                    onMouseEnter={(e) => {
-                      const el = e.currentTarget;
-                      const r = el.getBoundingClientRect();
-                      setTooltip({ x: r.left + r.width / 2, y: r.top, content: getCellTooltip('assets', row) });
-                      setActiveCell('assets');
-                    }}
-                    onMouseLeave={() => {
-                      setTooltip(null);
-                      setActiveCell(null);
-                    }}
                     title={`Assets: ${formatMetricValue('assets', row.assets)}`}
                     aria-label={`Assets for ${row.bank_name}`}
                   >
@@ -400,20 +358,6 @@ const BankExplorerTable = ({
                         type="button"
                         className="be-cell-button"
                         onClick={() => onOpenDetail?.(row)}
-                        onMouseEnter={(e) => {
-                          const el = e.currentTarget;
-                          const r = el.getBoundingClientRect();
-                          setTooltip({
-                            x: r.left + r.width / 2,
-                            y: r.top,
-                            content: getCellTooltip(metricKey, row),
-                          });
-                          setActiveCell(metricKey);
-                        }}
-                        onMouseLeave={() => {
-                          setTooltip(null);
-                          setActiveCell(null);
-                        }}
                         title={`${METRIC_DEFS[metricKey]?.label || metricKey}: ${formatMetricValue(metricKey, row[metricKey])}`}
                         aria-label={`${METRIC_DEFS[metricKey]?.label || metricKey} for ${row.bank_name}`}
                       >
@@ -425,16 +369,6 @@ const BankExplorerTable = ({
             ))}
           </tbody>
         </table>
-
-        {tooltip && (
-          <div
-            className={`be-tooltip ${activeCell ? 'active' : ''}`}
-            style={{ left: tooltip.x, top: tooltip.y }}
-            role="tooltip"
-          >
-            {tooltip.content}
-          </div>
-        )}
 
         {contextMenu && (
           <div
