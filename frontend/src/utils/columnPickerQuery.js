@@ -18,6 +18,25 @@ export function appendMetricsToQuery(baseQuery, displayNames) {
   return `${base} with ${displayNames.join(', ')}`;
 }
 
+/**
+ * Prepend default Assets label so the LLM keeps asset/ASSET in SELECT (picker skips `asset`).
+ * Dedupes case-insensitive against existing display names.
+ * @param {string[]} displayNames
+ * @param {string} assetLabel
+ * @returns {string[]}
+ */
+export function withDefaultAssetsDisplayNames(displayNames, assetLabel) {
+  const list = displayNames || [];
+  if (!list.length) return list;
+  const label = String(assetLabel || 'Total Assets').trim();
+  if (!label) return [...list];
+  const lower = label.toLowerCase();
+  const rest = list.filter(
+    (d) => String(d || '').trim().toLowerCase() !== lower
+  );
+  return [label, ...rest];
+}
+
 /** Map legacy visible metric ids to metadata field_name */
 export function canonicalFieldName(id) {
   if (id === 'deposits') return 'dep';

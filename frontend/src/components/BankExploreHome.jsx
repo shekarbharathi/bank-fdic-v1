@@ -5,7 +5,11 @@ import ChatResponsePanel from './ChatResponsePanel';
 import BankExplorerTable from './BankExplorerTable';
 import { METRIC_DEFS_DEFAULT } from '../constants/metricDefsDefault';
 import ColumnPickerModal from './ColumnPickerModal';
-import { appendMetricsToQuery, canonicalFieldName } from '../utils/columnPickerQuery';
+import {
+  appendMetricsToQuery,
+  canonicalFieldName,
+  withDefaultAssetsDisplayNames,
+} from '../utils/columnPickerQuery';
 import { buildFieldMetaMap, mergeMetricDefs } from '../utils/columnPickerMetrics';
 import './BankExploreHome.css';
 
@@ -611,7 +615,14 @@ Limit 20.`;
         })
         .filter(Boolean);
 
-      const q = appendMetricsToQuery(chatInput, displayNames);
+      const assetLabel =
+        fieldMetaByName.get('asset')?.display_name ??
+        metricDefsMerged.assets?.label ??
+        'Total Assets';
+      const q = appendMetricsToQuery(
+        chatInput,
+        withDefaultAssetsDisplayNames(displayNames, assetLabel)
+      );
       setChatInput(q);
       setColumnPickerOpen(false);
       handleChatSubmit(q, { visibleMetricOverride: mergedVisible });
