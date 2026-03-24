@@ -20,6 +20,16 @@ const SKIP_PICKER_FIELDS = new Set(['asset']);
 
 const UNLOCK_STORAGE_PREFIX = 'bankstatz_unlock_group_';
 
+const IDENTIFIERS_GROUP_NAME = 'Identifiers & Dates';
+
+/** API returns groups by group_id; show Identifiers & Dates last in the modal. */
+function orderGroupsWithIdentifiersLast(list) {
+  if (!Array.isArray(list) || list.length === 0) return list;
+  const ident = list.filter((g) => g.group_name === IDENTIFIERS_GROUP_NAME);
+  const rest = list.filter((g) => g.group_name !== IDENTIFIERS_GROUP_NAME);
+  return [...rest, ...ident];
+}
+
 function getRecommendationFieldNames(queryLower, fieldNamesSet) {
   const out = [];
   if (/\bprofitable|profit|roa\b/i.test(queryLower)) {
@@ -67,17 +77,19 @@ const ColumnPickerModal = ({
   const filteredGroups = useMemo(() => {
     if (!Array.isArray(groups)) return [];
     const q = search.trim().toLowerCase();
-    if (!q) return groups;
-    return groups
-      .map((g) => ({
-        ...g,
-        fields: (g.fields || []).filter((f) => {
-          if (SKIP_PICKER_FIELDS.has(f.field_name)) return false;
-          const hay = `${f.display_name || ''} ${f.field_name || ''} ${f.fdic_field_code || ''}`.toLowerCase();
-          return hay.includes(q);
-        }),
-      }))
-      .filter((g) => g.fields.length > 0);
+    const base = !q
+      ? groups
+      : groups
+          .map((g) => ({
+            ...g,
+            fields: (g.fields || []).filter((f) => {
+              if (SKIP_PICKER_FIELDS.has(f.field_name)) return false;
+              const hay = `${f.display_name || ''} ${f.field_name || ''} ${f.fdic_field_code || ''}`.toLowerCase();
+              return hay.includes(q);
+            }),
+          }))
+          .filter((g) => g.fields.length > 0);
+    return orderGroupsWithIdentifiersLast(base);
   }, [groups, search]);
 
   useEffect(() => {
