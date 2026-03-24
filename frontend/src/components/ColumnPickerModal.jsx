@@ -16,7 +16,7 @@ const GROUP_ICONS = {
 
 const POPULAR_FIELDS = ['roa', 'nimy', 'dep', 'netinc', 'lncrcd', 'eq'];
 
-const SKIP_PICKER_FIELDS = new Set(['cert', 'repdte', 'asset']);
+const SKIP_PICKER_FIELDS = new Set(['asset']);
 
 const UNLOCK_STORAGE_PREFIX = 'bankstatz_unlock_group_';
 

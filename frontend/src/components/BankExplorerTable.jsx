@@ -23,6 +23,11 @@ const formatMetricValue = (metricKey, value, defs) => {
   if (!def) return value === null || value === undefined ? 'N/A' : String(value);
   if (def.kind === 'dollar') return formatCompact(Number(value));
   if (def.kind === 'percent') return formatPercent(Number(value));
+  if (def.kind === 'date') {
+    if (value === null || value === undefined) return 'N/A';
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    return String(value);
+  }
   return value === null || value === undefined ? 'N/A' : String(value);
 };
 
@@ -233,7 +238,12 @@ const BankExplorerTable = ({
                     <button
                       type="button"
                       className="be-header-clickable"
-                      onClick={() => handleHeaderSort(metricKey, 'number')}
+                      onClick={() =>
+                        handleHeaderSort(
+                          metricKey,
+                          defs[metricKey]?.kind === 'date' ? 'string' : 'number'
+                        )
+                      }
                       aria-label={`Sort by ${defs[metricKey]?.label || metricKey}`}
                     >
                       {defs[metricKey]?.label || metricKey}

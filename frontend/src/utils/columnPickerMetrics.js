@@ -5,7 +5,8 @@
 export function fieldToMetricDef(field) {
   const id = field.field_name;
   let kind = 'number';
-  if (field.is_ratio) kind = 'percent';
+  if (field.data_type === 'date' || field.field_name === 'repdte') kind = 'date';
+  else if (field.is_ratio) kind = 'percent';
   else if (field.is_currency) kind = 'dollar';
 
   return {

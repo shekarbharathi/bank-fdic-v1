@@ -298,6 +298,10 @@ const normalizeBankRows = (rawRows, options = {}) => {
 
     for (const fname of extra) {
       if (fname === 'assets') continue;
+      if (fname === 'repdte') {
+        out.repdte = out.report_date ?? pickCaseInsensitive(row, 'repdte', 'REPDTE') ?? null;
+        continue;
+      }
       if (out[fname] !== undefined && out[fname] !== null) continue;
       if (fname === 'dep') {
         out.dep = out.deposits ?? extractExtraMetric(row, 'dep', fieldMetaByName);
