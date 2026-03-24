@@ -68,7 +68,7 @@ const MetricInfo = ({ metricKey, defs }) => {
 };
 
 const PlusIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="add-column-btn-svg">
     <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
@@ -386,7 +386,9 @@ const BankExplorerTable = ({
           aria-haspopup="dialog"
           aria-label="Add columns"
         >
-          <PlusIcon /> Add Columns
+          <span className="add-column-btn-icon" aria-hidden="true">
+            <PlusIcon />
+          </span>
         </button>
       )}
       </div>

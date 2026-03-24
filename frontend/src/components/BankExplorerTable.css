@@ -24,30 +24,36 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
   min-height: 52px;
-  padding: 0 0.85rem;
+  padding: 0 0.65rem;
   margin-top: 0;
   border: 1px solid rgba(229, 231, 235, 1);
   border-radius: 0 18px 18px 0;
   background: rgba(255, 255, 255, 0.95);
-  color: #1d4ed8;
-  font-size: 0.88rem;
-  font-weight: 700;
+  color: #6b7280;
   font-family: inherit;
   cursor: pointer;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.03);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: color 200ms ease, transform 200ms ease, background-color 200ms ease;
+}
+
+.add-column-btn-icon {
+  display: flex;
+  color: inherit;
+}
+
+.add-column-btn-svg {
+  color: inherit;
 }
 
 .add-column-btn:hover:not(:disabled) {
-  background: rgba(239, 246, 255, 1);
-  color: #1e40af;
+  color: #374151;
+  transform: translateY(-1px);
 }
 
 .add-column-btn:disabled {
-  opacity: 0.5;
   cursor: not-allowed;
+  color: #9ca3af;
 }
 
 .be-th.be-col-new,
