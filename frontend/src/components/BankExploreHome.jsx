@@ -181,14 +181,24 @@ const maybeThousandsToDollars = (v) => {
   return n * 1000;
 };
 
+/** LLM/SQL may alias columns with descriptive snake_case; map metadata field_name → extra JSON keys. */
+const EXTRA_FIELD_JSON_ALIASES = {
+  asset: ['total_assets_dollars'],
+  dep: ['total_deposits_dollars'],
+  nimy: ['net_interest_margin'],
+  intinc: ['total_interest_income_dollars'],
+  depdom: ['domestic_deposits_dollars'],
+  eqtot: ['total_equity_capital_dollars'],
+};
+
 const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
   const meta = fieldMetaByName.get(fieldName);
+  const aliases = EXTRA_FIELD_JSON_ALIASES[fieldName] || [];
   const raw = pickCaseInsensitive(
     row,
     fieldName,
     fieldName.toUpperCase(),
-    ...(fieldName === 'dep' ? ['total_deposits_dollars'] : []),
-    ...(fieldName === 'asset' ? ['total_assets_dollars'] : []),
+    ...aliases,
     `total_${fieldName}_dollars`
   );
   if (raw === undefined || raw === null) return null;
@@ -290,7 +300,13 @@ const normalizeBankRows = (rawRows, options = {}) => {
     const report_date =
       pickCaseInsensitive(row, 'report_date', 'REPORT_DATE', 'repdte', 'REPDTE');
 
-    const nimy = pickCaseInsensitive(row, 'nimy', 'NIMY');
+    const nimy = pickCaseInsensitive(
+      row,
+      'nimy',
+      'NIMY',
+      'net_interest_margin',
+      'NET_INTEREST_MARGIN'
+    );
     const roaptx = pickCaseInsensitive(row, 'roaptx', 'ROAPTX');
     const lnlsnet = pickCaseInsensitive(row, 'lnlsnet', 'LNLSNET');
     const elnatr = pickCaseInsensitive(row, 'elnatr', 'ELNATR');
