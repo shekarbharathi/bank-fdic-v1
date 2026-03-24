@@ -60,7 +60,6 @@ const ColumnPickerModal = ({
   onApply,
 }) => {
   const titleId = useId();
-  const descId = useId();
   const dialogRef = useRef(null);
   const closeBtnRef = useRef(null);
 
@@ -182,17 +181,13 @@ const ColumnPickerModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        aria-describedby={descId}
         ref={dialogRef}
       >
         <div className="cpm-header">
           <div>
             <h2 id={titleId} className="cpm-title">
-              Add Data Columns
+              Add columns
             </h2>
-            <p id={descId} className="cpm-subtitle">
-              Discover what data you can explore
-            </p>
           </div>
           <button
             type="button"
@@ -228,7 +223,7 @@ const ColumnPickerModal = ({
 
         {popularAvailable.length > 0 && (
           <div className="cpm-section">
-            <h3 className="cpm-section-title">Frequently explored</h3>
+            <h3 className="cpm-section-title">Frequently used</h3>
             <div className="cpm-quick-row">
               {popularAvailable.map((name) => {
                 const field = fieldMeta.get(name);
@@ -241,7 +236,7 @@ const ColumnPickerModal = ({
                     className={`cpm-quick-btn ${checked ? 'is-on' : ''}`}
                     onClick={() => togglePopular(name)}
                   >
-                    <PlusIcon /> {label}
+                    {label}
                   </button>
                 );
               })}
