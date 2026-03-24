@@ -31,62 +31,6 @@ const formatMetricValue = (metricKey, value, defs) => {
   return value === null || value === undefined ? 'N/A' : String(value);
 };
 
-const MetricInfo = ({ metricKey, defs }) => {
-  const [open, setOpen] = useState(false);
-  const tooltipRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e) => {
-      const el = tooltipRef.current;
-      if (!el) return;
-      if (!el.contains(e.target)) setOpen(false);
-    };
-    window.addEventListener('mousedown', onDown);
-    return () => window.removeEventListener('mousedown', onDown);
-  }, [open]);
-
-  const def = defs[metricKey];
-  if (!def) return null;
-
-  return (
-    <span className="metric-info" ref={tooltipRef}>
-      <button
-        type="button"
-        className="metric-info-btn"
-        aria-label={`About ${def.label}`}
-        aria-expanded={open}
-        onMouseEnter={() => setOpen(true)}
-        onMouseLeave={() => setOpen(false)}
-        onFocus={() => setOpen(true)}
-        onBlur={() => setOpen(false)}
-      >
-        <svg
-          className="metric-info-icon"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          aria-hidden="true"
-        >
-          <path
-            d="M12 16v-5M12 8h.01"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-      {open && (
-        <span className="metric-info-tooltip" role="tooltip">
-          {def.explanation}
-        </span>
-      )}
-    </span>
-  );
-};
-
 const PlusIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="add-column-btn-svg">
     <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -263,7 +207,6 @@ const BankExplorerTable = ({
                     >
                       {defs[metricKey]?.label || metricKey}
                     </button>
-                    <MetricInfo metricKey={metricKey} defs={defs} />
                     <span className="be-sort-hint">{sortState?.key === metricKey ? (sortState.direction === 'asc' ? '⬆' : '⬇') : ''}</span>
                     <div
                       className="be-resizer"
