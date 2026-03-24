@@ -61,7 +61,22 @@ const MetricInfo = ({ metricKey, defs }) => {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
       >
-        ⓘ
+        <svg
+          className="metric-info-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 16v-5M12 8h.01"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
       </button>
       {open && (
         <span className="metric-info-tooltip" role="tooltip">
