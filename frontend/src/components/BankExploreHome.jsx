@@ -183,7 +183,14 @@ const maybeThousandsToDollars = (v) => {
 
 const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
   const meta = fieldMetaByName.get(fieldName);
-  const raw = pickCaseInsensitive(row, fieldName, fieldName.toUpperCase());
+  const raw = pickCaseInsensitive(
+    row,
+    fieldName,
+    fieldName.toUpperCase(),
+    ...(fieldName === 'dep' ? ['total_deposits_dollars'] : []),
+    ...(fieldName === 'asset' ? ['total_assets_dollars'] : []),
+    `total_${fieldName}_dollars`
+  );
   if (raw === undefined || raw === null) return null;
   if (meta?.is_currency && meta?.unit === 'thousands') {
     return maybeThousandsToDollars(Number(raw));
@@ -208,6 +215,8 @@ const normalizeBankRows = (rawRows, options = {}) => {
       row,
       'assets_dollars',
       'ASSETS_DOLLARS',
+      'total_assets_dollars',
+      'TOTAL_ASSETS_DOLLARS',
       'assets',
       'ASSETS',
       'asset_dollars',
@@ -226,6 +235,8 @@ const normalizeBankRows = (rawRows, options = {}) => {
       row,
       'deposits_dollars',
       'DEPOSITS_DOLLARS',
+      'total_deposits_dollars',
+      'TOTAL_DEPOSITS_DOLLARS',
       'deposits',
       'DEPOSITS',
       'deposit_dollars',
@@ -243,7 +254,13 @@ const normalizeBankRows = (rawRows, options = {}) => {
           ? maybeThousandsToDollars(dep_thousands_raw)
           : undefined;
 
-    const netinc_dollars_raw = pickCaseInsensitive(row, 'netinc_dollars', 'NETINC_DOLLARS');
+    const netinc_dollars_raw = pickCaseInsensitive(
+      row,
+      'netinc_dollars',
+      'NETINC_DOLLARS',
+      'total_netinc_dollars',
+      'TOTAL_NETINC_DOLLARS'
+    );
     const netinc_thousands_raw = pickCaseInsensitive(row, 'netinc', 'NETINC');
     const netinc =
       netinc_dollars_raw !== undefined
