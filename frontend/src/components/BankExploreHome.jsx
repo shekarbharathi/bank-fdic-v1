@@ -592,19 +592,31 @@ Limit 20.`;
   );
 
   const handleColumnPickerApply = useCallback(
-    ({ selectedFieldNames, displayNames }) => {
-      const canon = selectedFieldNames.map((id) => canonicalFieldName(id));
-      const prevSet = new Set(visibleMetricIds.map((id) => canonicalFieldName(id)));
-      const added = canon.filter((id) => !prevSet.has(id));
+    ({ selectedFieldNames }) => {
+      const canonFromModal = selectedFieldNames.map((id) => canonicalFieldName(id));
+      const prevCanon = visibleMetricIds.map((id) => canonicalFieldName(id));
+      // Union: keep columns already shown (incl. ranking/inferred metrics not in metadata) plus modal picks.
+      const mergedVisible = [...new Set([...prevCanon, ...canonFromModal])];
+
+      const prevSet = new Set(prevCanon);
+      const added = canonFromModal.filter((id) => !prevSet.has(id));
       setNewlyAddedMetricIds(added);
       window.setTimeout(() => setNewlyAddedMetricIds([]), 2000);
+
+      const displayNames = mergedVisible
+        .map((id) => {
+          const fm = fieldMetaByName.get(id);
+          if (fm?.display_name) return fm.display_name;
+          return metricDefsMerged[id]?.label || id;
+        })
+        .filter(Boolean);
 
       const q = appendMetricsToQuery(chatInput, displayNames);
       setChatInput(q);
       setColumnPickerOpen(false);
-      handleChatSubmit(q, { visibleMetricOverride: canon });
+      handleChatSubmit(q, { visibleMetricOverride: mergedVisible });
     },
-    [chatInput, handleChatSubmit, visibleMetricIds]
+    [chatInput, handleChatSubmit, visibleMetricIds, fieldMetaByName, metricDefsMerged]
   );
 
   const handleSuggestionClick = useCallback(
