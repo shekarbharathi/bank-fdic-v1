@@ -101,6 +101,7 @@ Otherwise, generate the SQL query as instructed below.
 
 Instructions:
 - Generate ONLY the SQL query, no explanations or markdown formatting
+- If the user names specific banking metrics or FDIC fields (by display name, abbreviation, or field code), include those columns in the SELECT list (from financials, financials_kv, or joined tables as appropriate) so results can show those values
 - Use the most recent data available (use MAX(repdte) subqueries when needed)
 - Always filter for active banks when appropriate (WHERE active = 1)
 - Handle NULL values properly (use IS NOT NULL, COALESCE, NULLIF)

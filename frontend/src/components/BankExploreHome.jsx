@@ -1,8 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { chatAPI } from '../api/client';
 import ChatFilterBox from './ChatFilterBox';
 import ChatResponsePanel from './ChatResponsePanel';
 import BankExplorerTable from './BankExplorerTable';
+import { METRIC_DEFS_DEFAULT } from '../constants/metricDefsDefault';
+import ColumnPickerModal from './ColumnPickerModal';
+import { appendMetricsToQuery, canonicalFieldName } from '../utils/columnPickerQuery';
+import { buildFieldMetaMap, mergeMetricDefs } from '../utils/columnPickerMetrics';
 import './BankExploreHome.css';
 
 const STATES = [
@@ -143,17 +147,6 @@ const extractRequestedMetrics = (text) => {
   return Array.from(new Set(metrics));
 };
 
-const buildExplorePrompt = ({ userText, limit }) => {
-  const base = userText?.trim() ? userText.trim() : '';
-  return `${base}
-
-Return a ranking table for US FDIC banking data (active banks), limited to top ${limit}.
-Use the most recent available financial report date per bank.
-Return columns (as SQL aliases): cert, bank_name, city, stalp, stname, report_date,
-assets_dollars, deposits_dollars, roa, capital_ratio, netinc_dollars, nimy, roaptx, lnlsnet, elnatr.
-`;
-};
-
 const buildTopByCriteriaPrompt = ({ rankingCriteria, regionAbbr, limit }) => {
   const stateText = regionAbbr ? ` in ${stateNameByAbbr[regionAbbr]}` : '';
   const metricText = rankingCriteriaLabels[rankingCriteria] || 'assets';
@@ -184,7 +177,22 @@ const maybeThousandsToDollars = (v) => {
   return n * 1000;
 };
 
-const normalizeBankRows = (rawRows) => {
+const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
+  const meta = fieldMetaByName.get(fieldName);
+  const raw = pickCaseInsensitive(row, fieldName, fieldName.toUpperCase());
+  if (raw === undefined || raw === null) return null;
+  if (meta?.is_currency && meta?.unit === 'thousands') {
+    return maybeThousandsToDollars(Number(raw));
+  }
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return n;
+};
+
+const normalizeBankRows = (rawRows, options = {}) => {
+  const { extraFieldNames = [], fieldMetaByName = new Map() } = options;
+  const extra = new Set(extraFieldNames.map((k) => canonicalFieldName(k)).filter(Boolean));
+
   if (!Array.isArray(rawRows)) return [];
 
   return rawRows.map((row) => {
@@ -268,7 +276,7 @@ const normalizeBankRows = (rawRows) => {
 
     const assets_growth_pct = pickCaseInsensitive(row, 'assets_growth_pct', 'ASSETS_GROWTH_PCT', 'growth_pct', 'GROWTH_PCT');
 
-    return {
+    const out = {
       cert: cert ?? null,
       bank_name: bank_name ?? 'Unknown Bank',
       city: city ?? null,
@@ -287,6 +295,23 @@ const normalizeBankRows = (rawRows) => {
       assets_growth_pct: assets_growth_pct !== undefined ? Number(assets_growth_pct) : undefined,
       raw: row,
     };
+
+    for (const fname of extra) {
+      if (fname === 'assets') continue;
+      if (out[fname] !== undefined && out[fname] !== null) continue;
+      if (fname === 'dep') {
+        out.dep = out.deposits ?? extractExtraMetric(row, 'dep', fieldMetaByName);
+        continue;
+      }
+      if (fname === 'deposits') {
+        out.deposits = out.deposits ?? extractExtraMetric(row, 'dep', fieldMetaByName);
+        continue;
+      }
+      const v = extractExtraMetric(row, fname, fieldMetaByName);
+      if (v !== null && v !== undefined) out[fname] = v;
+    }
+
+    return out;
   });
 };
 
@@ -305,6 +330,14 @@ const BankExploreHome = () => {
   const [sortState, setSortState] = useState({ key: 'assets', direction: 'desc' });
 
   const [visibleMetricIds, setVisibleMetricIds] = useState([]);
+
+  const [fieldGroups, setFieldGroups] = useState([]);
+  const [columnPickerOpen, setColumnPickerOpen] = useState(false);
+  const [pickerSession, setPickerSession] = useState(0);
+  const [newlyAddedMetricIds, setNewlyAddedMetricIds] = useState([]);
+
+  const fieldMetaByName = useMemo(() => buildFieldMetaMap(fieldGroups), [fieldGroups]);
+  const metricDefsMerged = useMemo(() => mergeMetricDefs(METRIC_DEFS_DEFAULT, fieldGroups), [fieldGroups]);
 
   const [, setConfirmation] = useState('Okay, showing you the top 5 banks by total assets.');
 
@@ -386,7 +419,10 @@ Limit 20.`;
         const res = await chatAPI.sendMessage(prompt);
         if (res?.error) throw new Error(res?.error || 'Backend error');
 
-        const normalized = normalizeBankRows(res?.data);
+        const normalized = normalizeBankRows(res?.data, {
+          extraFieldNames: [],
+          fieldMetaByName: new Map(),
+        });
         setRows(normalized);
         setViewMode('table');
         setScalarValue(null);
@@ -434,8 +470,24 @@ Limit 20.`;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await chatAPI.getFieldGroups();
+        if (!cancelled && data?.groups) setFieldGroups(data.groups);
+      } catch {
+        if (!cancelled) setFieldGroups([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const handleChatSubmit = useCallback(
-    async (text) => {
+    async (text, submitOptions = {}) => {
+      const { visibleMetricOverride } = submitOptions;
       const nextLimit = extractTopN(text);
       const nextRegionAbbr = extractStateAbbr(text);
       const inferredRanking = extractRankingCriteria(text);
@@ -488,15 +540,19 @@ Limit 20.`;
           return;
         }
 
-        const normalized = normalizeBankRows(data);
-        setRows(normalized);
-
-        // Update visible columns to reflect what the user asked for.
-        const nextVisible = new Set(visibleMetricIds);
-        for (const m of requestedMetrics) nextVisible.add(m);
+        const nextVisible = new Set((visibleMetricOverride ?? visibleMetricIds).map(canonicalFieldName));
+        for (const m of requestedMetrics) nextVisible.add(canonicalFieldName(m));
         if (inferredRanking === 'profitability') nextVisible.add('roa');
         if (inferredRanking === 'safety') nextVisible.add('capital_ratio');
-        setVisibleMetricIds(Array.from(nextVisible));
+        const effectiveExtra = Array.from(nextVisible);
+
+        const normalized = normalizeBankRows(data, {
+          extraFieldNames: effectiveExtra,
+          fieldMetaByName,
+        });
+        setRows(normalized);
+
+        setVisibleMetricIds(effectiveExtra);
 
         setSortState({
           key:
@@ -514,7 +570,7 @@ Limit 20.`;
           inferredLimit: nextLimit,
           requestedMetrics,
         });
-      } catch (e) {
+      } catch {
         setViewMode('suggestions');
         setRows([]);
         setScalarValue(null);
@@ -523,7 +579,28 @@ Limit 20.`;
         shouldFocusAfterLoad.current = true;
       }
     },
-    [updateConfirmationFromIntent, visibleMetricIds]
+    [updateConfirmationFromIntent, visibleMetricIds, fieldMetaByName]
+  );
+
+  const pickerSelectedFieldNames = useMemo(
+    () => visibleMetricIds.map((id) => canonicalFieldName(id)),
+    [visibleMetricIds]
+  );
+
+  const handleColumnPickerApply = useCallback(
+    ({ selectedFieldNames, displayNames }) => {
+      const canon = selectedFieldNames.map((id) => canonicalFieldName(id));
+      const prevSet = new Set(visibleMetricIds.map((id) => canonicalFieldName(id)));
+      const added = canon.filter((id) => !prevSet.has(id));
+      setNewlyAddedMetricIds(added);
+      window.setTimeout(() => setNewlyAddedMetricIds([]), 2000);
+
+      const q = appendMetricsToQuery(chatInput, displayNames);
+      setChatInput(q);
+      setColumnPickerOpen(false);
+      handleChatSubmit(q, { visibleMetricOverride: canon });
+    },
+    [chatInput, handleChatSubmit, visibleMetricIds]
   );
 
   const handleSuggestionClick = useCallback(
@@ -665,9 +742,16 @@ Limit 20.`;
                 rows={rows}
                 sortState={sortState}
                 visibleMetricIds={visibleMetricIds}
+                metricDefs={metricDefsMerged}
                 onSortChange={handleSortChange}
                 onOpenDetail={handleOpenDetail}
                 onRequestBranches={handleRequestBranches}
+                onOpenColumnPicker={() => {
+                  setPickerSession((s) => s + 1);
+                  setColumnPickerOpen(true);
+                }}
+                columnPickerDisabled={isLoading}
+                newlyAddedMetricIds={newlyAddedMetricIds}
               />
               <button
                 type="button"
@@ -682,6 +766,16 @@ Limit 20.`;
               </button>
             </div>
           )}
+
+          <ColumnPickerModal
+            key={columnPickerOpen ? `picker-${pickerSession}` : 'closed'}
+            open={columnPickerOpen}
+            onClose={() => setColumnPickerOpen(false)}
+            groups={fieldGroups}
+            selectedFieldNames={pickerSelectedFieldNames}
+            currentQueryText={chatInput}
+            onApply={handleColumnPickerApply}
+          />
 
           <aside className={`detail-panel ${detailBank ? 'open' : ''}`} aria-label="Bank detail panel">
             <div className="detail-panel-shell">

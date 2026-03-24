@@ -96,6 +96,15 @@ export const chatAPI = {
     const response = await client.get('/api/schema');
     return response.data;
   },
+
+  /**
+   * Field groups for column picker (from field_metadata)
+   * @returns {Promise<{ groups: Array }>}
+   */
+  getFieldGroups: async () => {
+    const response = await client.get('/api/metadata/field-groups');
+    return response.data;
+  },
 };
 
 export default client;

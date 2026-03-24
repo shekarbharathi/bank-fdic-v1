@@ -1,62 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { METRIC_DEFS_DEFAULT } from '../constants/metricDefsDefault';
 import './BankExplorerTable.css';
-
-const METRIC_DEFS = {
-  assets: {
-    id: 'assets',
-    label: 'Assets',
-    kind: 'dollar',
-    explanation: 'Total bank assets (latest report). Larger banks are shown first by default.',
-  },
-  roa: {
-    id: 'roa',
-    label: 'ROA',
-    kind: 'percent',
-    explanation: 'Return on Assets: net income as a percent of total assets. Higher generally means stronger profitability.',
-  },
-  capital_ratio: {
-    id: 'capital_ratio',
-    label: 'Capital Ratio',
-    kind: 'percent',
-    explanation: 'Capital ratio: equity divided by assets (percentage). Higher suggests a stronger capital position.',
-  },
-  deposits: {
-    id: 'deposits',
-    label: 'Deposits',
-    kind: 'dollar',
-    explanation: 'Total deposits (latest report). Helpful for understanding funding strength.',
-  },
-  netinc: {
-    id: 'netinc',
-    label: 'Net Income',
-    kind: 'dollar',
-    explanation: 'Net income (latest report). A core profitability signal for banks.',
-  },
-  nimy: {
-    id: 'nimy',
-    label: 'Net Interest Margin',
-    kind: 'percent',
-    explanation: 'Net interest margin (NIM): net interest income relative to earning assets.',
-  },
-  roaptx: {
-    id: 'roaptx',
-    label: 'ROAPTX',
-    kind: 'percent',
-    explanation: 'Alternative ROA measure used in FDIC data (ROAPTX).',
-  },
-  lnlsnet: {
-    id: 'lnlsnet',
-    label: 'LNLSNET',
-    kind: 'percent',
-    explanation: 'A FDIC efficiency/loan loss net metric. Higher/lower indicates different risk patterns depending on definition.',
-  },
-  elnatr: {
-    id: 'elnatr',
-    label: 'ELNATR',
-    kind: 'percent',
-    explanation: 'A FDIC risk metric related to expected losses and net charge-offs.',
-  },
-};
 
 const formatCompact = (num) => {
   if (num === null || num === undefined || Number.isNaN(num)) return 'N/A';
@@ -74,23 +18,15 @@ const formatPercent = (num) => {
   return `${Number(num).toFixed(2)}%`;
 };
 
-const formatMetricValue = (metricKey, value) => {
-  const def = METRIC_DEFS[metricKey];
+const formatMetricValue = (metricKey, value, defs) => {
+  const def = defs[metricKey];
   if (!def) return value === null || value === undefined ? 'N/A' : String(value);
   if (def.kind === 'dollar') return formatCompact(Number(value));
   if (def.kind === 'percent') return formatPercent(Number(value));
   return value === null || value === undefined ? 'N/A' : String(value);
 };
 
-const getTrend = (growthPct) => {
-  const v = Number(growthPct);
-  if (!Number.isFinite(v)) return { arrow: '➜', tone: 'flat' };
-  if (v > 2) return { arrow: '⬆', tone: 'up' };
-  if (v < -2) return { arrow: '⬇', tone: 'down' };
-  return { arrow: '➜', tone: 'flat' };
-};
-
-const MetricInfo = ({ metricKey }) => {
+const MetricInfo = ({ metricKey, defs }) => {
   const [open, setOpen] = useState(false);
   const tooltipRef = useRef(null);
 
@@ -105,7 +41,7 @@ const MetricInfo = ({ metricKey }) => {
     return () => window.removeEventListener('mousedown', onDown);
   }, [open]);
 
-  const def = METRIC_DEFS[metricKey];
+  const def = defs[metricKey];
   if (!def) return null;
 
   return (
@@ -131,14 +67,25 @@ const MetricInfo = ({ metricKey }) => {
   );
 };
 
+const PlusIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+);
+
 const BankExplorerTable = ({
   rows,
   sortState,
   visibleMetricIds,
+  metricDefs,
   onSortChange,
   onOpenDetail,
   onRequestBranches,
+  onOpenColumnPicker,
+  columnPickerDisabled,
+  newlyAddedMetricIds,
 }) => {
+  const defs = metricDefs || METRIC_DEFS_DEFAULT;
   const [columnWidths, setColumnWidths] = useState({});
 
   const [contextMenu, setContextMenu] = useState(null); // {x,y,row}
@@ -155,8 +102,8 @@ const BankExplorerTable = ({
       if (id !== 'assets') cols.push(id);
     }
     // Only keep columns we know about.
-    return cols.filter((k) => Boolean(METRIC_DEFS[k]));
-  }, [visibleMetricIds]);
+    return cols.filter((k) => Boolean(defs[k]));
+  }, [visibleMetricIds, defs]);
 
   useEffect(() => {
     if (!contextMenu) return;
@@ -224,8 +171,14 @@ const BankExplorerTable = ({
     window.addEventListener('mouseup', onUp);
   };
 
+  const highlightSet = useMemo(
+    () => new Set(newlyAddedMetricIds || []),
+    [newlyAddedMetricIds]
+  );
+
   return (
     <div className="be-wrap" ref={containerRef}>
+      <div className="be-table-header-row">
       <div className="be-table-shell" role="region" aria-label="Interactive bank exploration table">
         <table className="be-table">
           <thead>
@@ -274,18 +227,18 @@ const BankExplorerTable = ({
                 .map((metricKey) => (
                   <th
                     key={metricKey}
-                    className="be-th be-th-metric"
+                    className={`be-th be-th-metric ${highlightSet.has(metricKey) ? 'be-col-new' : ''}`}
                     style={{ width: columnWidths[metricKey] ?? 155 }}
                   >
                     <button
                       type="button"
                       className="be-header-clickable"
                       onClick={() => handleHeaderSort(metricKey, 'number')}
-                      aria-label={`Sort by ${METRIC_DEFS[metricKey]?.label || metricKey}`}
+                      aria-label={`Sort by ${defs[metricKey]?.label || metricKey}`}
                     >
-                      {METRIC_DEFS[metricKey]?.label || metricKey}
+                      {defs[metricKey]?.label || metricKey}
                     </button>
-                    <MetricInfo metricKey={metricKey} />
+                    <MetricInfo metricKey={metricKey} defs={defs} />
                     <span className="be-sort-hint">{sortState?.key === metricKey ? (sortState.direction === 'asc' ? '⬆' : '⬇') : ''}</span>
                     <div
                       className="be-resizer"
@@ -343,25 +296,29 @@ const BankExplorerTable = ({
                     type="button"
                     className="be-cell-button be-cell-metric"
                     onClick={() => onOpenDetail?.(row)}
-                    title={`Assets: ${formatMetricValue('assets', row.assets)}`}
+                    title={`Assets: ${formatMetricValue('assets', row.assets, defs)}`}
                     aria-label={`Assets for ${row.bank_name}`}
                   >
-                    <span className="be-cell-metric-value">{formatMetricValue('assets', row.assets)}</span>
+                    <span className="be-cell-metric-value">{formatMetricValue('assets', row.assets, defs)}</span>
                   </button>
                 </td>
 
                 {visibleColumns
                   .filter((k) => k !== 'assets')
                   .map((metricKey) => (
-                    <td key={`${row.cert}-${metricKey}`} data-label={METRIC_DEFS[metricKey]?.label || metricKey} className="be-td">
+                    <td
+                      key={`${row.cert}-${metricKey}`}
+                      data-label={defs[metricKey]?.label || metricKey}
+                      className={`be-td ${highlightSet.has(metricKey) ? 'be-col-new' : ''}`}
+                    >
                       <button
                         type="button"
                         className="be-cell-button"
                         onClick={() => onOpenDetail?.(row)}
-                        title={`${METRIC_DEFS[metricKey]?.label || metricKey}: ${formatMetricValue(metricKey, row[metricKey])}`}
-                        aria-label={`${METRIC_DEFS[metricKey]?.label || metricKey} for ${row.bank_name}`}
+                        title={`${defs[metricKey]?.label || metricKey}: ${formatMetricValue(metricKey, row[metricKey], defs)}`}
+                        aria-label={`${defs[metricKey]?.label || metricKey} for ${row.bank_name}`}
                       >
-                        {formatMetricValue(metricKey, row[metricKey])}
+                        {formatMetricValue(metricKey, row[metricKey], defs)}
                       </button>
                     </td>
                   ))}
@@ -420,6 +377,20 @@ const BankExplorerTable = ({
         )}
       </div>
 
+      {onOpenColumnPicker && (
+        <button
+          type="button"
+          className="add-column-btn"
+          onClick={onOpenColumnPicker}
+          disabled={columnPickerDisabled}
+          aria-haspopup="dialog"
+          aria-label="Add columns"
+        >
+          <PlusIcon /> Add Columns
+        </button>
+      )}
+      </div>
+
       {compareBanks.length > 0 && (
         <div className="be-compare-overlay" role="dialog" aria-label="Quick compare">
           <div className="be-compare-header">
@@ -448,9 +419,9 @@ const BankExplorerTable = ({
                 <div className="be-compare-metrics">
                   {['assets', 'roa', 'capital_ratio', 'deposits', 'netinc'].map((k) => (
                     <div key={k} className="be-compare-metric">
-                      <span className="be-compare-metric-label">{METRIC_DEFS[k]?.label || k}</span>
+                      <span className="be-compare-metric-label">{defs[k]?.label || k}</span>
                       <span className="be-compare-metric-value">
-                        {formatMetricValue(k, b[k])}
+                        {formatMetricValue(k, b[k], defs)}
                       </span>
                     </div>
                   ))}
