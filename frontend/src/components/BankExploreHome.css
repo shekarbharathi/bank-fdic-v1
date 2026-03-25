@@ -112,13 +112,15 @@
 .bank-explore-table-wrap {
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   gap: 0.5rem;
 }
 
 .bank-explore-expand-chevron {
+  align-self: center;
   display: flex;
   align-items: center;
   justify-content: center;
