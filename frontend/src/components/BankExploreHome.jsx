@@ -375,7 +375,6 @@ const BankExploreHome = () => {
   const [fieldGroups, setFieldGroups] = useState([]);
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
   const [pickerSession, setPickerSession] = useState(0);
-  const [newlyAddedMetricIds, setNewlyAddedMetricIds] = useState([]);
 
   const fieldMetaByName = useMemo(() => buildFieldMetaMap(fieldGroups), [fieldGroups]);
   const metricDefsMerged = useMemo(() => mergeMetricDefs(METRIC_DEFS_DEFAULT, fieldGroups), [fieldGroups]);
@@ -635,11 +634,6 @@ Limit 20.`;
       // Union: keep columns already shown (incl. ranking/inferred metrics not in metadata) plus modal picks.
       const mergedVisible = [...new Set([...prevCanon, ...canonFromModal])];
 
-      const prevSet = new Set(prevCanon);
-      const added = canonFromModal.filter((id) => !prevSet.has(id));
-      setNewlyAddedMetricIds(added);
-      window.setTimeout(() => setNewlyAddedMetricIds([]), 2000);
-
       const displayNames = mergedVisible
         .map((id) => {
           const fm = fieldMetaByName.get(id);
@@ -811,7 +805,6 @@ Limit 20.`;
                   setColumnPickerOpen(true);
                 }}
                 columnPickerDisabled={isLoading}
-                newlyAddedMetricIds={newlyAddedMetricIds}
               />
               <button
                 type="button"

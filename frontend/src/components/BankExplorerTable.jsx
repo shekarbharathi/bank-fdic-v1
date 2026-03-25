@@ -47,7 +47,6 @@ const BankExplorerTable = ({
   onRequestBranches,
   onOpenColumnPicker,
   columnPickerDisabled,
-  newlyAddedMetricIds,
 }) => {
   const defs = metricDefs || METRIC_DEFS_DEFAULT;
   const [columnWidths, setColumnWidths] = useState({});
@@ -135,11 +134,6 @@ const BankExplorerTable = ({
     window.addEventListener('mouseup', onUp);
   };
 
-  const highlightSet = useMemo(
-    () => new Set(newlyAddedMetricIds || []),
-    [newlyAddedMetricIds]
-  );
-
   return (
     <div className="be-wrap" ref={containerRef}>
       <div className="be-table-header-row">
@@ -191,7 +185,7 @@ const BankExplorerTable = ({
                 .map((metricKey) => (
                   <th
                     key={metricKey}
-                    className={`be-th be-th-metric ${highlightSet.has(metricKey) ? 'be-col-new' : ''}`}
+                    className="be-th be-th-metric"
                     style={{ width: columnWidths[metricKey] ?? 155 }}
                   >
                     <button
@@ -277,7 +271,7 @@ const BankExplorerTable = ({
                     <td
                       key={`${row.cert}-${metricKey}`}
                       data-label={defs[metricKey]?.label || metricKey}
-                      className={`be-td ${highlightSet.has(metricKey) ? 'be-col-new' : ''}`}
+                      className="be-td"
                     >
                       <button
                         type="button"

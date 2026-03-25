@@ -56,20 +56,6 @@
   color: #9ca3af;
 }
 
-.be-th.be-col-new,
-.be-td.be-col-new {
-  animation: be-col-highlight 2s ease forwards;
-}
-
-@keyframes be-col-highlight {
-  0% {
-    background: rgba(219, 234, 254, 0.95);
-  }
-  100% {
-    background: transparent;
-  }
-}
-
 .be-table-shell {
   border: 1px solid rgba(229, 231, 235, 1);
   border-radius: 18px;
