@@ -11,6 +11,7 @@ import {
   withDefaultAssetsDisplayNames,
 } from '../utils/columnPickerQuery';
 import { buildFieldMetaMap, mergeMetricDefs } from '../utils/columnPickerMetrics';
+import { computeDiffHighlightRanges } from '../utils/queryDiffHighlight';
 import './BankExploreHome.css';
 
 const STATES = [
@@ -392,6 +393,7 @@ const BankExploreHome = () => {
   const [scalarValue, setScalarValue] = useState(null);
 
   const [chatInput, setChatInput] = useState('top 5 banks');
+  const [queryHighlightRanges, setQueryHighlightRanges] = useState(null);
 
   const [sortState, setSortState] = useState({ key: 'assets', direction: 'desc' });
 
@@ -652,6 +654,13 @@ Limit 20.`;
     [visibleMetricIds]
   );
 
+  const clearQueryHighlight = useCallback(() => setQueryHighlightRanges(null), []);
+
+  const handleChatInputChange = useCallback((next) => {
+    setQueryHighlightRanges(null);
+    setChatInput(next);
+  }, []);
+
   const handleColumnPickerApply = useCallback(
     ({ selectedFieldNames }) => {
       const canonFromModal = selectedFieldNames.map((id) => canonicalFieldName(id));
@@ -671,11 +680,14 @@ Limit 20.`;
         fieldMetaByName.get('asset')?.display_name ??
         metricDefsMerged.assets?.label ??
         'Total Assets';
+      const prevText = chatInput;
       const q = appendMetricsToQuery(
         chatInput,
         withDefaultAssetsDisplayNames(displayNames, assetLabel)
       );
       setChatInput(q);
+      const colRanges = computeDiffHighlightRanges(prevText, q);
+      setQueryHighlightRanges(colRanges.length ? colRanges : null);
       setColumnPickerOpen(false);
       handleChatSubmit(q, { visibleMetricOverride: mergedVisible });
     },
@@ -694,9 +706,12 @@ Limit 20.`;
     async () => {
       setIsLoading(true);
       setError(null);
+      const prevText = chatInput;
       try {
         const expanded = await chatAPI.expandQuery(chatInput);
         setChatInput(expanded);
+        const expRanges = computeDiffHighlightRanges(prevText, expanded);
+        setQueryHighlightRanges(expRanges.length ? expRanges : null);
         await handleChatSubmit(expanded);
       } catch (e) {
         setError(e?.response?.data?.detail || e?.message || 'Failed to expand');
@@ -775,11 +790,13 @@ Limit 20.`;
           <ChatFilterBox
             ref={chatFilterRef}
             value={chatInput}
-            onChange={setChatInput}
+            onChange={handleChatInputChange}
             onSubmit={handleChatSubmit}
             isLoading={isLoading}
             disabled={false}
             placeholder="Show me..."
+            highlightRanges={queryHighlightRanges}
+            onHighlightClear={clearQueryHighlight}
           />
 
           <ChatResponsePanel
