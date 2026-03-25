@@ -189,10 +189,25 @@ const EXTRA_FIELD_JSON_ALIASES = {
   intinc: ['total_interest_income_dollars'],
   depdom: ['domestic_deposits_dollars'],
   eqtot: ['total_equity_capital_dollars'],
+  roa: ['return_on_assets'],
+  numemp: ['number_of_employees'],
 };
 
 const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
   const meta = fieldMetaByName.get(fieldName);
+  // LLM *_dollars / descriptive keys are whole dollars, not FDIC thousands
+  if (fieldName === 'netinc') {
+    const d = pickCaseInsensitive(
+      row,
+      'net_income_dollars',
+      'netinc_dollars',
+      'total_netinc_dollars'
+    );
+    if (d !== undefined && d !== null) {
+      const n = Number(d);
+      return Number.isFinite(n) ? n : null;
+    }
+  }
   const aliases = EXTRA_FIELD_JSON_ALIASES[fieldName] || [];
   const raw = pickCaseInsensitive(
     row,
@@ -268,6 +283,8 @@ const normalizeBankRows = (rawRows, options = {}) => {
       row,
       'netinc_dollars',
       'NETINC_DOLLARS',
+      'net_income_dollars',
+      'NET_INCOME_DOLLARS',
       'total_netinc_dollars',
       'TOTAL_NETINC_DOLLARS'
     );
@@ -279,7 +296,15 @@ const normalizeBankRows = (rawRows, options = {}) => {
           ? maybeThousandsToDollars(netinc_thousands_raw)
           : undefined;
 
-    const roa = pickCaseInsensitive(row, 'roa', 'ROA', 'calculated_roa', 'CALCULATED_ROA');
+    const roa = pickCaseInsensitive(
+      row,
+      'roa',
+      'ROA',
+      'return_on_assets',
+      'RETURN_ON_ASSETS',
+      'calculated_roa',
+      'CALCULATED_ROA'
+    );
 
     let capital_ratio = pickCaseInsensitive(row, 'capital_ratio', 'CAPITAL_RATIO');
     const eqtot_thousands = pickCaseInsensitive(row, 'eqtot', 'EQTOT');
