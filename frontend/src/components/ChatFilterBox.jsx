@@ -47,7 +47,7 @@ const ChatFilterBox = forwardRef(
 
     useEffect(() => {
       if (!hasHighlight || !onHighlightClear) return;
-      const t = window.setTimeout(() => onHighlightClear(), 2000);
+      const t = window.setTimeout(() => onHighlightClear(), 3400);
       return () => window.clearTimeout(t);
     }, [hasHighlight, highlightRanges, onHighlightClear]);
 

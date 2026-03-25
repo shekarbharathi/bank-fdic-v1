@@ -74,21 +74,25 @@
 }
 
 .chat-filter-diff-chunk {
-  animation: chat-filter-diff-pulse 1.55s ease forwards;
+  animation: chat-filter-diff-pulse 3.1s ease forwards;
 }
 
 @keyframes chat-filter-diff-pulse {
   0% {
     color: #000000;
+    font-weight: 400;
   }
   18% {
     color: #2563eb;
+    font-weight: 700;
   }
   45% {
     color: #2563eb;
+    font-weight: 700;
   }
   100% {
     color: #000000;
+    font-weight: 400;
   }
 }
 
