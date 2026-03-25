@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { METRIC_DEFS_DEFAULT } from '../constants/metricDefsDefault';
 import './BankExplorerTable.css';
 
@@ -57,6 +57,8 @@ const BankExplorerTable = ({
   const [compareBanks, setCompareBanks] = useState([]); // normalized rows
 
   const containerRef = useRef(null);
+  const theadRef = useRef(null);
+  const [headerRowPx, setHeaderRowPx] = useState(null);
 
   const visibleColumns = useMemo(() => {
     const cols = ['assets'];
@@ -78,6 +80,22 @@ const BankExplorerTable = ({
     window.addEventListener('mousedown', onDown);
     return () => window.removeEventListener('mousedown', onDown);
   }, [contextMenu]);
+
+  useLayoutEffect(() => {
+    const thead = theadRef.current;
+    if (!thead || !onOpenColumnPicker) {
+      setHeaderRowPx(null);
+      return;
+    }
+    const measure = () => {
+      const h = thead.getBoundingClientRect().height;
+      if (h > 0) setHeaderRowPx(Math.round(h * 100) / 100);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(thead);
+    return () => ro.disconnect();
+  }, [onOpenColumnPicker]);
 
   const sortedRows = useMemo(() => {
     if (!rows) return [];
@@ -139,7 +157,7 @@ const BankExplorerTable = ({
       <div className="be-table-header-row">
       <div className="be-table-shell" role="region" aria-label="Interactive bank exploration table">
         <table className="be-table">
-          <thead>
+          <thead ref={theadRef}>
             <tr>
               <th
                 className="be-th be-th-rank"
@@ -343,6 +361,11 @@ const BankExplorerTable = ({
         <button
           type="button"
           className="add-column-btn"
+          style={
+            headerRowPx != null
+              ? { height: headerRowPx, minHeight: headerRowPx, boxSizing: 'border-box' }
+              : undefined
+          }
           onClick={onOpenColumnPicker}
           disabled={columnPickerDisabled}
           aria-haspopup="dialog"

@@ -24,10 +24,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 52px;
+  min-height: 52px; /* fallback before thead height is measured */
   padding: 0 0.65rem;
   margin-top: 0;
+  align-self: flex-start;
+  box-sizing: border-box;
   border: 1px solid rgba(229, 231, 235, 1);
+  border-bottom-width: 2px;
+  border-bottom-color: rgba(229, 231, 235, 1);
   border-radius: 0 18px 18px 0;
   background: rgba(255, 255, 255, 0.95);
   color: #6b7280;
