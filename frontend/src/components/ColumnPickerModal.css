@@ -143,6 +143,7 @@
 }
 
 .cpm-card {
+  flex-shrink: 0;
   border: 1px solid rgba(229, 231, 235, 1);
   border-radius: 12px;
   background: rgba(249, 250, 251, 0.5);
