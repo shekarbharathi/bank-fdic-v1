@@ -210,7 +210,7 @@
 
 .cpm-field-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.65rem;
   cursor: pointer;
   font-size: 0.9rem;
@@ -218,30 +218,49 @@
 }
 
 .cpm-field-row input {
-  margin-top: 0.2rem;
+  flex-shrink: 0;
 }
 
 .cpm-field-text {
   display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.cpm-field-label {
-  font-weight: 600;
-}
-
-.cpm-field-desc {
-  font-size: 0.82rem;
-  color: #6b7280;
-  font-weight: 500;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+  flex: 1;
   line-height: 1.35;
 }
 
+.cpm-field-label {
+  flex-shrink: 0;
+  font-weight: 600;
+}
+
+.cpm-field-sep {
+  flex-shrink: 0;
+  color: #9ca3af;
+  font-weight: 600;
+  user-select: none;
+}
+
+.cpm-field-desc {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 0.82rem;
+  color: #6b7280;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .cpm-field-code {
+  flex-shrink: 0;
   font-size: 0.75rem;
   color: #9ca3af;
   font-family: ui-monospace, monospace;
+  white-space: nowrap;
 }
 
 .cpm-footer {

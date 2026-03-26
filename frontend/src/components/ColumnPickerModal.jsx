@@ -308,12 +308,24 @@ const ColumnPickerModal = ({
                           <span className="cpm-field-text">
                             <span className="cpm-field-label">{field.display_name}</span>
                             {field.description && (
-                              <span className="cpm-field-desc">{field.description}</span>
+                              <>
+                                <span className="cpm-field-sep" aria-hidden="true">
+                                  ·
+                                </span>
+                                <span className="cpm-field-desc" title={field.description}>
+                                  {field.description}
+                                </span>
+                              </>
                             )}
                             {field.fdic_field_code && (
-                              <span className="cpm-field-code" title={field.fdic_field_code}>
-                                {field.fdic_field_code}
-                              </span>
+                              <>
+                                <span className="cpm-field-sep" aria-hidden="true">
+                                  ·
+                                </span>
+                                <span className="cpm-field-code" title={field.fdic_field_code}>
+                                  {field.fdic_field_code}
+                                </span>
+                              </>
                             )}
                           </span>
                         </label>
