@@ -577,7 +577,7 @@ Limit 20.`;
       setStatusPhase(null);
       return;
     }
-    const t = window.setTimeout(() => setStatusPhase('fetching'), 350);
+    const t = window.setTimeout(() => setStatusPhase('fetching'), 550);
     return () => window.clearTimeout(t);
   }, [isLoading]);
 
