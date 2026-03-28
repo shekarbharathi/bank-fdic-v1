@@ -24,4 +24,4 @@
 
 ### 7. scalar
 **When:** User wants a simple number. e.g. counts, one total
-**Example queries:** "how many banks in total", "how many active banks in US", "how many inactive banks" , "how many banks in California", "how many banks in Texas"
+**Example queries:** "how many banks in total", "how many active banks in US", "how many inactive banks" , "how many banks in California", "how many banks in Texas",  "total of all assets of all banks", "total of all deposits of banks in California"

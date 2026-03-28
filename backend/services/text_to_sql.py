@@ -64,7 +64,11 @@ Respond with ONLY a single JSON object (no markdown outside the JSON). Shape:
 - browse_table — DEFAULT for lists, filters, and rankings: "top N banks", "top N by assets", "show banks in CA",
   "banks with ROA above X%", "highest ROA banks" (as a ranked table), "safest banks" when the user wants a list to browse.
   Use browse_table whenever the answer is "show me banks (rows) sorted or filtered by a metric" — not a distribution analysis.
-- scalar — single aggregate answer (one row, one numeric column) e.g. counts, one total
+- scalar — the user wants **one simple number** (a count, sum, average, or other single aggregate). SQL should return one row with one numeric column.
+  Use scalar for: "how many banks in total", "how many active banks in US", "how many inactive banks",
+  "how many banks in California", "how many banks in Texas", "total of all assets of all banks",
+  "total of all deposits of banks in California", and similar **how many / total / sum** questions.
+  Set visualization.type to "scalar". Do NOT use scalar when the user wants a list of banks (that is browse_table).
 - compare_banks — user compares 2–4 named banks (keywords: compare, vs, versus, difference between)
 - trend_tracker — time series / over time / history / growth / since YEAR
 - metric_explorer — ONLY when the question is clearly about **distribution, landscape, or system-wide patterns** across many banks
@@ -72,7 +76,11 @@ Respond with ONLY a single JSON object (no markdown outside the JSON). Shape:
   "How much do banks lend in credit cards (overall / across the industry)?", "How safe are US banks?" (as a pattern/distribution),
   "What makes a bank safe?" (exploratory / multi-faceted view). Do NOT use metric_explorer for plain "top 5 banks",
   "top 5 by assets", or "show me high ROA banks" — those are browse_table.
-- state_explorer — state-level banking overview (state name or abbreviation in question)
+- state_explorer — the user asks for a **banking overview or landscape in a specific state** (holistic picture: mix of
+  stats, context, or how banking looks in that state — not merely a single count). Examples: "Texas banking landscape",
+  "New York banks overview", "California banking market overview". Set visualization.type to "state_overview".
+  If the question is only "how many banks in [state]" or "total deposits in [state]" with no overview wording, prefer **scalar**
+  (one number). If they want a **list of banks** in a state, use **browse_table**.
 - peer_group — similar banks, peers, comparable to, like [bank]
 
 ### visualization.type
