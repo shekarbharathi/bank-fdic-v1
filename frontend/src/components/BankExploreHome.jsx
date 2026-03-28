@@ -21,6 +21,9 @@ import PeerGroupViz from './viz/PeerGroupViz';
 import SurprisingFactsCarousel from './viz/SurprisingFactsCarousel';
 import './BankExploreHome.css';
 
+/** Set to true to show the Surprising Facts (Insights) carousel again. */
+const SHOW_INSIGHTS_CAROUSEL = false;
+
 const STATES = [
   { abbr: 'AL', name: 'Alabama' },
   { abbr: 'AK', name: 'Alaska' },
@@ -157,18 +160,6 @@ const extractRequestedMetrics = (text) => {
   if (/\bnet interest margin\b|\bnim\b/.test(lower)) metrics.push('nimy');
 
   return Array.from(new Set(metrics));
-};
-
-const buildTopByCriteriaPrompt = ({ rankingCriteria, regionAbbr, limit }) => {
-  const stateText = regionAbbr ? ` in ${stateNameByAbbr[regionAbbr]}` : '';
-  const metricText = rankingCriteriaLabels[rankingCriteria] || 'assets';
-
-  return `Show the top ${limit} active US banks${stateText} ranked by ${metricText}.
-Use the most recent available financial report date per bank.
-Return columns (as SQL aliases): cert, bank_name, city, stalp, stname, report_date,
-assets_dollars, deposits_dollars, roa, capital_ratio, netinc_dollars, nimy, roaptx, lnlsnet, elnatr.
-If needed, compute capital_ratio as (eqtot / NULLIF(asset, 0)) * 100.
-`;
 };
 
 const pickCaseInsensitive = (row, ...candidates) => {
@@ -401,8 +392,10 @@ const BankExploreHome = () => {
   const [scalarValue, setScalarValue] = useState(null);
   const [vizMeta, setVizMeta] = useState({ title: '', config: {} });
   const [vizData, setVizData] = useState([]);
+  /** After first successful chat submit, chat moves to top and results area is shown. */
+  const [hasSubmittedQuery, setHasSubmittedQuery] = useState(false);
 
-  const [chatInput, setChatInput] = useState('top 5 banks');
+  const [chatInput, setChatInput] = useState('');
   const [queryHighlightRanges, setQueryHighlightRanges] = useState(null);
 
   const [sortState, setSortState] = useState({ key: 'assets', direction: 'desc' });
@@ -416,7 +409,7 @@ const BankExploreHome = () => {
   const fieldMetaByName = useMemo(() => buildFieldMetaMap(fieldGroups), [fieldGroups]);
   const metricDefsMerged = useMemo(() => mergeMetricDefs(METRIC_DEFS_DEFAULT, fieldGroups), [fieldGroups]);
 
-  const [, setConfirmation] = useState('Okay, showing you the top 5 banks by total assets.');
+  const [, setConfirmation] = useState('');
 
   const [detailBank, setDetailBank] = useState(null);
   const [branchRows, setBranchRows] = useState([]);
@@ -479,75 +472,6 @@ Limit 20.`;
     },
     []
   );
-
-  const fetchTopByCriteria = useCallback(
-    async ({ nextRankingCriteria, nextRegionAbbr, nextLimit }) => {
-      setIsLoading(true);
-      setError(null);
-      setDetailBank(null);
-      setBranchRows([]);
-      setBranchLoading(false);
-      try {
-        const prompt = buildTopByCriteriaPrompt({
-          rankingCriteria: nextRankingCriteria,
-          regionAbbr: nextRegionAbbr,
-          limit: nextLimit,
-        });
-        const res = await chatAPI.sendMessage(prompt);
-        if (res?.error) throw new Error(res?.error || 'Backend error');
-
-        const normalized = normalizeBankRows(res?.data, {
-          extraFieldNames: [],
-          fieldMetaByName: new Map(),
-        });
-        setRows(normalized);
-        setViewMode('table');
-        setScalarValue(null);
-        setVizMeta({ title: '', config: {} });
-        setVizData([]);
-
-        // Ensure the ranking metric is visible (progressive exploration).
-        const metricKey =
-          nextRankingCriteria === 'size'
-            ? null
-            : nextRankingCriteria === 'profitability'
-              ? 'roa'
-              : 'capital_ratio';
-
-        setVisibleMetricIds((prev) => {
-          const next = new Set(prev);
-          // Always keep assets visible (handled by table core).
-          if (metricKey) next.add(metricKey);
-          return Array.from(next);
-        });
-
-        setSortState({
-          key: metricKey ?? 'assets',
-          direction: 'desc',
-        });
-
-        updateConfirmationFromIntent({
-          inferredRanking: nextRankingCriteria,
-          inferredRegionAbbr: nextRegionAbbr,
-          inferredLimit: nextLimit,
-          requestedMetrics: metricKey ? [metricKey] : [],
-        });
-      } catch (e) {
-        setError(e?.message || 'Failed to load banks');
-      } finally {
-        setIsLoading(false);
-        shouldFocusAfterLoad.current = true;
-      }
-    },
-    [updateConfirmationFromIntent]
-  );
-
-  useEffect(() => {
-    // Initial table state: Top 5 Banks.
-    // If the user has no backend configured, this may show the error panel.
-    fetchTopByCriteria({ nextRankingCriteria: 'size', nextRegionAbbr: null, nextLimit: 5 });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -687,6 +611,7 @@ Limit 20.`;
         setVizData([]);
       } finally {
         setIsLoading(false);
+        setHasSubmittedQuery(true);
         shouldFocusAfterLoad.current = true;
       }
     },
@@ -792,6 +717,14 @@ Limit 20.`;
     }
   }, [isLoading, activeTopTab]);
 
+  useEffect(() => {
+    if (activeTopTab !== 'banks' || hasSubmittedQuery) return undefined;
+    const id = window.setTimeout(() => {
+      document.getElementById('bank-chat-filter-input')?.focus();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [activeTopTab, hasSubmittedQuery]);
+
   const handleSortChange = useCallback(
     (nextSort) => {
       setSortState(nextSort);
@@ -841,27 +774,38 @@ Limit 20.`;
 
       {activeTopTab === 'banks' ? (
         <>
-          <ChatFilterBox
-            ref={chatFilterRef}
-            value={chatInput}
-            onChange={handleChatInputChange}
-            onSubmit={handleChatSubmit}
-            isLoading={isLoading}
-            disabled={false}
-            placeholder="Show me..."
-            highlightRanges={queryHighlightRanges}
-            onHighlightClear={clearQueryHighlight}
-          />
+          <div className="bank-explore-banks-shell">
+            <div
+              className={`bank-explore-banks-root ${
+                hasSubmittedQuery ? 'bank-explore-banks-root--has-query' : 'bank-explore-banks-root--landing'
+              }`}
+            >
+              <ChatFilterBox
+                ref={chatFilterRef}
+                value={chatInput}
+                onChange={handleChatInputChange}
+                onSubmit={handleChatSubmit}
+                isLoading={isLoading}
+                disabled={false}
+                placeholder="Show me..."
+                highlightRanges={queryHighlightRanges}
+                onHighlightClear={clearQueryHighlight}
+              />
+            </div>
 
-          <SurprisingFactsCarousel onExploreQuery={handleExploreFactQuery} disabled={isLoading} />
+            {hasSubmittedQuery && (
+              <>
+                {SHOW_INSIGHTS_CAROUSEL ? (
+                  <SurprisingFactsCarousel onExploreQuery={handleExploreFactQuery} disabled={isLoading} />
+                ) : null}
 
-          <ChatResponsePanel
-            isVisible={showChatPanel}
-            isLoading={isLoading}
-            error={error}
-          />
+                <ChatResponsePanel
+                  isVisible={showChatPanel}
+                  isLoading={isLoading}
+                  error={error}
+                />
 
-          {viewMode === 'suggestions' && (
+                {viewMode === 'suggestions' && (
             <div className="bank-explore-suggestions" aria-live="polite">
               <p className="bank-explore-suggestions-intro">
                 I only understand FDIC published information about banks. Try some of these:
@@ -933,7 +877,11 @@ Limit 20.`;
                 </svg>
               </button>
             </div>
-          )}
+                )}
+
+              </>
+            )}
+          </div>
 
           <ColumnPickerModal
             key={columnPickerOpen ? `picker-${pickerSession}` : 'closed'}
