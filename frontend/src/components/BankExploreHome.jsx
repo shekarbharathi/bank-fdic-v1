@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { chatAPI } from '../api/client';
+import { chatAPI, sendClientDebugLog } from '../api/client';
 import ChatFilterBox from './ChatFilterBox';
 import ChatResponsePanel from './ChatResponsePanel';
 import BankExplorerTable from './BankExplorerTable';
@@ -643,6 +643,22 @@ Limit 20.`;
 
         const { experience, title, config } = resolveExperience(res.intent, res.visualization, data);
 
+        // #region agent log
+        sendClientDebugLog({
+          sessionId: '073e07',
+          hypothesisId: 'H1-H2',
+          location: 'BankExploreHome.jsx:handleChatSubmit:afterResolveExperience',
+          message: 'resolved experience',
+          data: {
+            intent: res?.intent,
+            experience,
+            dataRowCount: Array.isArray(data) ? data.length : null,
+            hasError: !!(res?.error || res?.error_code),
+          },
+          timestamp: Date.now(),
+        });
+        // #endregion
+
         if (experience === 'scalar') {
           const row0 = data[0];
           if (!row0 || Object.keys(row0).length === 0) {
@@ -667,6 +683,16 @@ Limit 20.`;
         }
 
         if (experience === 'table') {
+          // #region agent log
+          sendClientDebugLog({
+            sessionId: '073e07',
+            hypothesisId: 'H1',
+            location: 'BankExploreHome.jsx:handleChatSubmit:tableBranchEntry',
+            message: 'entered table branch before setRows',
+            data: { experience },
+            timestamp: Date.now(),
+          });
+          // #endregion
           const nextVisible = new Set((visibleMetricOverride ?? visibleMetricIds).map(canonicalFieldName));
           for (const m of requestedMetrics) nextVisible.add(canonicalFieldName(m));
           if (inferredRanking === 'profitability') nextVisible.add('roa');
@@ -699,6 +725,17 @@ Limit 20.`;
           });
           setVizMeta({ title, config });
           setVizData([]);
+          setViewMode('table');
+          // #region agent log
+          sendClientDebugLog({
+            sessionId: '073e07',
+            hypothesisId: 'H1',
+            location: 'BankExploreHome.jsx:handleChatSubmit:tableBranchExit',
+            message: 'table branch return after setViewMode(table)',
+            data: { note: 'viewMode should be table' },
+            timestamp: Date.now(),
+          });
+          // #endregion
           return;
         }
 
