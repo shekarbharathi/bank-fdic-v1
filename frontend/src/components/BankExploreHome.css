@@ -1,7 +1,98 @@
 .bank-explore-page {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(to left, #ffffff, #fafafa);
   padding-bottom: 6rem; /* Space for compare overlay */
+}
+
+.bank-explore-banks-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.bank-explore-banks-root--landing {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem 1rem 2rem;
+  box-sizing: border-box;
+}
+
+.bank-explore-banks-root--has-query {
+  flex: 0 0 auto;
+}
+
+.bank-explore-landing-stack {
+  width: 100%;
+  max-width: min(720px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.5rem;
+}
+
+.bank-explore-landing-examples-heading {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #374151;
+  text-align: center;
+}
+
+.bank-explore-landing-example-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.bank-explore-landing-example-tile {
+  width: 100%;
+  text-align: left;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid rgba(229, 231, 235, 1);
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #111827;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.35;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    background 0.15s ease;
+}
+
+.bank-explore-landing-example-tile:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: rgba(239, 246, 255, 0.65);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+
+.bank-explore-landing-example-tile:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.bank-explore-banks-root--landing .chat-filter {
+  max-width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.bank-explore-banks-root--landing .chat-filter-shell {
+  width: 100%;
+  max-width: 100%;
 }
 
 .bank-explore-header {

@@ -24,6 +24,14 @@ import './BankExploreHome.css';
 /** Set to true to show the Surprising Facts (Insights) carousel again. */
 const SHOW_INSIGHTS_CAROUSEL = false;
 
+const LANDING_EXAMPLE_QUERIES = [
+  'Compare JP Morgan Chase with Bank of America',
+  'Wells Fargo assets over time',
+  "What's the ROA distribution across banks",
+  'Overview of banks in New York',
+  'All banks in texas with more than 20 billion but less than 50 billion in assets',
+];
+
 const STATES = [
   { abbr: 'AL', name: 'Alabama' },
   { abbr: 'AK', name: 'Alaska' },
@@ -780,17 +788,50 @@ Limit 20.`;
                 hasSubmittedQuery ? 'bank-explore-banks-root--has-query' : 'bank-explore-banks-root--landing'
               }`}
             >
-              <ChatFilterBox
-                ref={chatFilterRef}
-                value={chatInput}
-                onChange={handleChatInputChange}
-                onSubmit={handleChatSubmit}
-                isLoading={isLoading}
-                disabled={false}
-                placeholder="Show me..."
-                highlightRanges={queryHighlightRanges}
-                onHighlightClear={clearQueryHighlight}
-              />
+              {hasSubmittedQuery ? (
+                <ChatFilterBox
+                  ref={chatFilterRef}
+                  value={chatInput}
+                  onChange={handleChatInputChange}
+                  onSubmit={handleChatSubmit}
+                  isLoading={isLoading}
+                  disabled={false}
+                  placeholder="Show me..."
+                  highlightRanges={queryHighlightRanges}
+                  onHighlightClear={clearQueryHighlight}
+                />
+              ) : (
+                <div className="bank-explore-landing-stack">
+                  <ChatFilterBox
+                    ref={chatFilterRef}
+                    value={chatInput}
+                    onChange={handleChatInputChange}
+                    onSubmit={handleChatSubmit}
+                    isLoading={isLoading}
+                    disabled={false}
+                    placeholder="Show me..."
+                    highlightRanges={queryHighlightRanges}
+                    onHighlightClear={clearQueryHighlight}
+                  />
+                  <section className="bank-explore-landing-examples" aria-label="Example queries">
+                    <p className="bank-explore-landing-examples-heading">Try these examples</p>
+                    <ul className="bank-explore-landing-example-list">
+                      {LANDING_EXAMPLE_QUERIES.map((q) => (
+                        <li key={q}>
+                          <button
+                            type="button"
+                            className="bank-explore-landing-example-tile"
+                            onClick={() => handleSuggestionClick(q)}
+                            disabled={isLoading}
+                          >
+                            {q}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                </div>
+              )}
             </div>
 
             {hasSubmittedQuery && (
