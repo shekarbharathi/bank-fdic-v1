@@ -81,15 +81,16 @@
   min-height: 1.25em;
 }
 
-/* Left-aligned, directly under the user bubble column */
+/* Centered under the chat column */
 .bank-explore-chat-status--below-bubble {
-  align-self: flex-start;
-  text-align: left;
+  align-self: center;
+  text-align: center;
   margin-top: 0.15rem;
   margin-bottom: 0.65rem;
-  padding-left: 0.1rem;
+  padding-left: 0;
   width: 100%;
-  max-width: min(720px, 100%);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .bank-explore-banks-root--landing {
