@@ -888,7 +888,7 @@ Limit 20.`;
                   onSubmit={handleChatSubmit}
                   isLoading={isLoading}
                   disabled={false}
-                  placeholder="Show me..."
+                  placeholder=""
                   highlightRanges={queryHighlightRanges}
                   onHighlightClear={clearQueryHighlight}
                   onFocus={handleChatFilterFocus}
@@ -902,7 +902,7 @@ Limit 20.`;
                     onSubmit={handleChatSubmit}
                     isLoading={isLoading}
                     disabled={false}
-                    placeholder="Show me..."
+                    placeholder=""
                     highlightRanges={queryHighlightRanges}
                     onHighlightClear={clearQueryHighlight}
                     onFocus={handleChatFilterFocus}
