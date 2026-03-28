@@ -403,7 +403,7 @@ const BankExploreHome = () => {
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  /** table | scalar | suggestions | compare_banks | trend_tracker | metric_explorer | state_explorer | peer_group */
+  /** pending = awaiting API; then table | scalar | suggestions | compare_banks | trend_tracker | metric_explorer | state_explorer | peer_group */
   const [viewMode, setViewMode] = useState('table');
   const [scalarValue, setScalarValue] = useState(null);
   const [vizMeta, setVizMeta] = useState({ title: '', config: {} });
@@ -577,7 +577,6 @@ Limit 20.`;
       setStatusPhase(null);
       return;
     }
-    setStatusPhase('interpreting');
     const t = window.setTimeout(() => setStatusPhase('fetching'), 100);
     return () => window.clearTimeout(t);
   }, [isLoading]);
@@ -599,11 +598,13 @@ Limit 20.`;
       const inferredRanking = extractRankingCriteria(trimmed);
       const requestedMetrics = extractRequestedMetrics(trimmed);
       setError(null);
+      setStatusPhase('interpreting');
       setIsLoading(true);
       setDetailBank(null);
       setBranchRows([]);
       setBranchLoading(false);
-      setViewMode('table');
+      setViewMode('pending');
+      setRows([]);
       setScalarValue(null);
       setVizMeta({ title: '', config: {} });
       setVizData([]);
@@ -941,15 +942,23 @@ Limit 20.`;
                     ))}
                   </div>
 
-                  {SHOW_INSIGHTS_CAROUSEL ? (
+                  {isLoading && statusPhase ? (
+                    <div className="bank-explore-chat-status bank-explore-chat-status--below-bubble" aria-live="polite">
+                      {statusPhase === 'interpreting' ? 'Interpreting...' : 'Fetching Data...'}
+                    </div>
+                  ) : null}
+
+                  {!isLoading && SHOW_INSIGHTS_CAROUSEL ? (
                     <SurprisingFactsCarousel onExploreQuery={handleExploreFactQuery} disabled={isLoading} />
                   ) : null}
 
-                  <ChatResponsePanel
-                    isVisible={showChatPanel}
-                    isLoading={isLoading}
-                    error={error}
-                  />
+                  {!isLoading && (
+                    <ChatResponsePanel
+                      isVisible={showChatPanel}
+                      isLoading={isLoading}
+                      error={error}
+                    />
+                  )}
 
                   {viewMode === 'suggestions' && (
                     <div className="bank-explore-suggestions" aria-live="polite">
@@ -1033,11 +1042,6 @@ Limit 20.`;
                 </div>
 
                 <div className="bank-explore-chat-footer">
-                  {statusPhase ? (
-                    <div className="bank-explore-chat-status" aria-live="polite">
-                      {statusPhase === 'interpreting' ? 'Interpreting...' : 'Fetching Data...'}
-                    </div>
-                  ) : null}
                   <ChatFilterBox
                     ref={chatFilterRef}
                     value={displayValue}
