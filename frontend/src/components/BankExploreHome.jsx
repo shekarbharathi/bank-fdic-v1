@@ -434,6 +434,11 @@ const BankExploreHome = () => {
   const [branchRows, setBranchRows] = useState([]);
   const [branchLoading, setBranchLoading] = useState(false);
 
+  /** Right-aligned user query bubbles after submit (persists across turns). */
+  const [userChatMessages, setUserChatMessages] = useState([]);
+  /** Shown above composer while loading: Interpreting → Fetching Data */
+  const [statusPhase, setStatusPhase] = useState(null);
+
   const hasSubmittedQueryRef = useRef(hasSubmittedQuery);
   const userHasInteractedRef = useRef(userHasInteracted);
   const chatInputRef = useRef(chatInput);
@@ -567,13 +572,32 @@ Limit 20.`;
     };
   }, [hasSubmittedQuery, userHasInteracted, chatInput, isLoading]);
 
+  useEffect(() => {
+    if (!isLoading) {
+      setStatusPhase(null);
+      return;
+    }
+    setStatusPhase('interpreting');
+    const t = window.setTimeout(() => setStatusPhase('fetching'), 100);
+    return () => window.clearTimeout(t);
+  }, [isLoading]);
+
   const handleChatSubmit = useCallback(
     async (text, submitOptions = {}) => {
+      const trimmed = String(text ?? '').trim();
+      if (!trimmed) return;
+
       const { visibleMetricOverride } = submitOptions;
-      const nextLimit = extractTopN(text);
-      const nextRegionAbbr = extractStateAbbr(text);
-      const inferredRanking = extractRankingCriteria(text);
-      const requestedMetrics = extractRequestedMetrics(text);
+      setHasSubmittedQuery(true);
+      setUserChatMessages((prev) => [...prev, trimmed]);
+      setChatInput('');
+      setTypewriterDisplay('');
+      setUserHasInteracted(false);
+
+      const nextLimit = extractTopN(trimmed);
+      const nextRegionAbbr = extractStateAbbr(trimmed);
+      const inferredRanking = extractRankingCriteria(trimmed);
+      const requestedMetrics = extractRequestedMetrics(trimmed);
       setError(null);
       setIsLoading(true);
       setDetailBank(null);
@@ -585,7 +609,7 @@ Limit 20.`;
       setVizData([]);
 
       try {
-        const res = await chatAPI.sendMessage(text?.trim() || text);
+        const res = await chatAPI.sendMessage(trimmed);
 
         if (res?.error_code === 'out_of_scope' || res?.error === 'out_of_scope') {
           setViewMode('suggestions');
@@ -690,7 +714,6 @@ Limit 20.`;
         setVizData([]);
       } finally {
         setIsLoading(false);
-        setHasSubmittedQuery(true);
         shouldFocusAfterLoad.current = true;
       }
     },
@@ -780,7 +803,6 @@ Limit 20.`;
 
   const handleExpandClick = useCallback(
     async () => {
-      setIsLoading(true);
       setError(null);
       const prevText = chatInput;
       try {
@@ -795,8 +817,6 @@ Limit 20.`;
         setViewMode('suggestions');
         setVizMeta({ title: '', config: {} });
         setVizData([]);
-      } finally {
-        setIsLoading(false);
       }
     },
     [chatInput, handleChatSubmit]
@@ -875,25 +895,8 @@ Limit 20.`;
       {activeTopTab === 'banks' ? (
         <>
           <div className="bank-explore-banks-shell">
-            <div
-              className={`bank-explore-banks-root ${
-                hasSubmittedQuery ? 'bank-explore-banks-root--has-query' : 'bank-explore-banks-root--landing'
-              }`}
-            >
-              {hasSubmittedQuery ? (
-                <ChatFilterBox
-                  ref={chatFilterRef}
-                  value={displayValue}
-                  onChange={handleChatInputChange}
-                  onSubmit={handleChatSubmit}
-                  isLoading={isLoading}
-                  disabled={false}
-                  placeholder=""
-                  highlightRanges={queryHighlightRanges}
-                  onHighlightClear={clearQueryHighlight}
-                  onFocus={handleChatFilterFocus}
-                />
-              ) : (
+            {!hasSubmittedQuery ? (
+              <div className="bank-explore-banks-root bank-explore-banks-root--landing">
                 <div className="bank-explore-landing-stack">
                   <ChatFilterBox
                     ref={chatFilterRef}
@@ -926,96 +929,129 @@ Limit 20.`;
                     </ul>
                   </section>
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="bank-explore-chat-layout">
+                <div className="bank-explore-chat-main">
+                  <div className="bank-explore-chat-bubbles" aria-live="polite">
+                    {userChatMessages.map((msg, i) => (
+                      <div key={`user-msg-${i}`} className="bank-explore-chat-user-bubble">
+                        {msg}
+                      </div>
+                    ))}
+                  </div>
 
-            {hasSubmittedQuery && (
-              <>
-                {SHOW_INSIGHTS_CAROUSEL ? (
-                  <SurprisingFactsCarousel onExploreQuery={handleExploreFactQuery} disabled={isLoading} />
-                ) : null}
+                  {SHOW_INSIGHTS_CAROUSEL ? (
+                    <SurprisingFactsCarousel onExploreQuery={handleExploreFactQuery} disabled={isLoading} />
+                  ) : null}
 
-                <ChatResponsePanel
-                  isVisible={showChatPanel}
-                  isLoading={isLoading}
-                  error={error}
-                />
+                  <ChatResponsePanel
+                    isVisible={showChatPanel}
+                    isLoading={isLoading}
+                    error={error}
+                  />
 
-                {viewMode === 'suggestions' && (
-            <div className="bank-explore-suggestions" aria-live="polite">
-              <p className="bank-explore-suggestions-intro">
-                I only understand FDIC published information about banks. Try some of these:
-              </p>
-              <ul className="bank-explore-suggestions-list">
-                {SUGGESTION_OPTIONS.map((option) => (
-                  <li key={option}>
-                    <button
-                      type="button"
-                      className="bank-explore-suggestion-option"
-                      onClick={() => handleSuggestionClick(option)}
-                    >
-                      {option}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+                  {viewMode === 'suggestions' && (
+                    <div className="bank-explore-suggestions" aria-live="polite">
+                      <p className="bank-explore-suggestions-intro">
+                        I only understand FDIC published information about banks. Try some of these:
+                      </p>
+                      <ul className="bank-explore-suggestions-list">
+                        {SUGGESTION_OPTIONS.map((option) => (
+                          <li key={option}>
+                            <button
+                              type="button"
+                              className="bank-explore-suggestion-option"
+                              onClick={() => handleSuggestionClick(option)}
+                            >
+                              {option}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
-          {viewMode === 'scalar' && (
-            <div className="bank-explore-scalar" aria-live="polite">
-              {vizMeta.title ? <h3 className="bank-explore-scalar-title">{vizMeta.title}</h3> : null}
-              <span className="bank-explore-scalar-value">{String(scalarValue ?? '')}</span>
-            </div>
-          )}
+                  {viewMode === 'scalar' && (
+                    <div className="bank-explore-scalar" aria-live="polite">
+                      {vizMeta.title ? <h3 className="bank-explore-scalar-title">{vizMeta.title}</h3> : null}
+                      <span className="bank-explore-scalar-value">{String(scalarValue ?? '')}</span>
+                    </div>
+                  )}
 
-          {viewMode === 'compare_banks' && (
-            <BankComparisonViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-          )}
-          {viewMode === 'trend_tracker' && (
-            <TrendChartViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-          )}
-          {viewMode === 'metric_explorer' && (
-            <MetricExplorerViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-          )}
-          {viewMode === 'state_explorer' && (
-            <StateOverviewViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-          )}
-          {viewMode === 'peer_group' && (
-            <PeerGroupViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-          )}
+                  {viewMode === 'compare_banks' && (
+                    <BankComparisonViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
+                  )}
+                  {viewMode === 'trend_tracker' && (
+                    <TrendChartViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
+                  )}
+                  {viewMode === 'metric_explorer' && (
+                    <MetricExplorerViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
+                  )}
+                  {viewMode === 'state_explorer' && (
+                    <StateOverviewViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
+                  )}
+                  {viewMode === 'peer_group' && (
+                    <PeerGroupViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
+                  )}
 
-          {viewMode === 'table' && (
-            <div className="bank-explore-table-wrap">
-              <BankExplorerTable
-                rows={rows}
-                sortState={sortState}
-                visibleMetricIds={visibleMetricIds}
-                metricDefs={metricDefsMerged}
-                onSortChange={handleSortChange}
-                onOpenDetail={handleOpenDetail}
-                onRequestBranches={handleRequestBranches}
-                onOpenColumnPicker={() => {
-                  setPickerSession((s) => s + 1);
-                  setColumnPickerOpen(true);
-                }}
-                columnPickerDisabled={isLoading}
-              />
-              <button
-                type="button"
-                className="bank-explore-expand-chevron"
-                onClick={handleExpandClick}
-                disabled={isLoading}
-                aria-label="Show 5 more results"
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path d="M7 10l5 5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-                )}
+                  {viewMode === 'table' && (
+                    <div className="bank-explore-table-wrap">
+                      <BankExplorerTable
+                        rows={rows}
+                        sortState={sortState}
+                        visibleMetricIds={visibleMetricIds}
+                        metricDefs={metricDefsMerged}
+                        onSortChange={handleSortChange}
+                        onOpenDetail={handleOpenDetail}
+                        onRequestBranches={handleRequestBranches}
+                        onOpenColumnPicker={() => {
+                          setPickerSession((s) => s + 1);
+                          setColumnPickerOpen(true);
+                        }}
+                        columnPickerDisabled={isLoading}
+                      />
+                      <button
+                        type="button"
+                        className="bank-explore-expand-chevron"
+                        onClick={handleExpandClick}
+                        disabled={isLoading}
+                        aria-label="Show 5 more results"
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                          <path
+                            d="M7 10l5 5 5-5"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
 
-              </>
+                <div className="bank-explore-chat-footer">
+                  {statusPhase ? (
+                    <div className="bank-explore-chat-status" aria-live="polite">
+                      {statusPhase === 'interpreting' ? 'Interpreting...' : 'Fetching Data...'}
+                    </div>
+                  ) : null}
+                  <ChatFilterBox
+                    ref={chatFilterRef}
+                    value={displayValue}
+                    onChange={handleChatInputChange}
+                    onSubmit={handleChatSubmit}
+                    isLoading={isLoading}
+                    disabled={isLoading}
+                    placeholder="Show me..."
+                    highlightRanges={queryHighlightRanges}
+                    onHighlightClear={clearQueryHighlight}
+                    onFocus={handleChatFilterFocus}
+                  />
+                </div>
+              </div>
             )}
           </div>
 
