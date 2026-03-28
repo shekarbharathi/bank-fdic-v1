@@ -17,6 +17,10 @@ class ChatResponse(BaseModel):
     sql: Optional[str] = None
     data: Optional[List[Dict[str, Any]]] = None
     error: Optional[str] = None
+    error_code: Optional[str] = None
+    intent: Optional[str] = None
+    visualization: Optional[Dict[str, Any]] = None
+    entities: Optional[Dict[str, Any]] = None
     execution_time: Optional[float] = None
 
 

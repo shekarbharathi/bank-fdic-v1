@@ -29,7 +29,14 @@ class SQLValidator:
     
     def __init__(self):
         self.allowed_tables = [
-            'institutions', 'financials', 'locations', 'history', 'failures', 'field_metadata'
+            'institutions',
+            'financials',
+            'financials_kv',
+            'fdic_field_dictionary',
+            'locations',
+            'history',
+            'failures',
+            'field_metadata',
         ]
     
     def validate(self, sql: str) -> Tuple[bool, Optional[str]]:

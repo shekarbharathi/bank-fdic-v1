@@ -12,6 +12,13 @@ import {
 } from '../utils/columnPickerQuery';
 import { buildFieldMetaMap, mergeMetricDefs } from '../utils/columnPickerMetrics';
 import { computeDiffHighlightRanges } from '../utils/queryDiffHighlight';
+import { resolveExperience } from '../utils/vizRouting';
+import BankComparisonViz from './viz/BankComparisonViz';
+import TrendChartViz from './viz/TrendChartViz';
+import MetricExplorerViz from './viz/MetricExplorerViz';
+import StateOverviewViz from './viz/StateOverviewViz';
+import PeerGroupViz from './viz/PeerGroupViz';
+import SurprisingFactsCarousel from './viz/SurprisingFactsCarousel';
 import './BankExploreHome.css';
 
 const STATES = [
@@ -389,8 +396,11 @@ const BankExploreHome = () => {
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [viewMode, setViewMode] = useState('table'); // 'table' | 'scalar' | 'suggestions'
+  /** table | scalar | suggestions | compare_banks | trend_tracker | metric_explorer | state_explorer | peer_group */
+  const [viewMode, setViewMode] = useState('table');
   const [scalarValue, setScalarValue] = useState(null);
+  const [vizMeta, setVizMeta] = useState({ title: '', config: {} });
+  const [vizData, setVizData] = useState([]);
 
   const [chatInput, setChatInput] = useState('top 5 banks');
   const [queryHighlightRanges, setQueryHighlightRanges] = useState(null);
@@ -493,6 +503,8 @@ Limit 20.`;
         setRows(normalized);
         setViewMode('table');
         setScalarValue(null);
+        setVizMeta({ title: '', config: {} });
+        setVizData([]);
 
         // Ensure the ranking metric is visible (progressive exploration).
         const metricKey =
@@ -566,9 +578,18 @@ Limit 20.`;
       setBranchLoading(false);
       setViewMode('table');
       setScalarValue(null);
+      setVizMeta({ title: '', config: {} });
+      setVizData([]);
 
       try {
         const res = await chatAPI.sendMessage(text?.trim() || text);
+
+        if (res?.error_code === 'out_of_scope' || res?.error === 'out_of_scope') {
+          setViewMode('suggestions');
+          setRows([]);
+          setScalarValue(null);
+          return;
+        }
 
         if (res?.error) {
           setViewMode('suggestions');
@@ -592,9 +613,17 @@ Limit 20.`;
           return;
         }
 
-        const isScalar = data.length === 1 && data[0] && Object.keys(data[0]).length === 1;
-        if (isScalar) {
-          const val = Object.values(data[0])[0];
+        const { experience, title, config } = resolveExperience(res.intent, res.visualization, data);
+
+        if (experience === 'scalar') {
+          const row0 = data[0];
+          if (!row0 || Object.keys(row0).length === 0) {
+            setViewMode('suggestions');
+            setRows([]);
+            setScalarValue(null);
+            return;
+          }
+          const val = Object.values(row0)[0];
           if (isRefusalResponse(val) || isRefusalResponse(res?.response)) {
             setViewMode('suggestions');
             setRows([]);
@@ -604,43 +633,58 @@ Limit 20.`;
           setViewMode('scalar');
           setScalarValue(val);
           setRows([]);
+          setVizMeta({ title, config });
+          setVizData([]);
           return;
         }
 
-        const nextVisible = new Set((visibleMetricOverride ?? visibleMetricIds).map(canonicalFieldName));
-        for (const m of requestedMetrics) nextVisible.add(canonicalFieldName(m));
-        if (inferredRanking === 'profitability') nextVisible.add('roa');
-        if (inferredRanking === 'safety') nextVisible.add('capital_ratio');
-        const effectiveExtra = Array.from(nextVisible);
+        if (experience === 'table') {
+          const nextVisible = new Set((visibleMetricOverride ?? visibleMetricIds).map(canonicalFieldName));
+          for (const m of requestedMetrics) nextVisible.add(canonicalFieldName(m));
+          if (inferredRanking === 'profitability') nextVisible.add('roa');
+          if (inferredRanking === 'safety') nextVisible.add('capital_ratio');
+          const effectiveExtra = Array.from(nextVisible);
 
-        const normalized = normalizeBankRows(data, {
-          extraFieldNames: effectiveExtra,
-          fieldMetaByName,
-        });
-        setRows(normalized);
+          const normalized = normalizeBankRows(data, {
+            extraFieldNames: effectiveExtra,
+            fieldMetaByName,
+          });
+          setRows(normalized);
 
-        setVisibleMetricIds(effectiveExtra);
+          setVisibleMetricIds(effectiveExtra);
 
-        setSortState({
-          key:
-            inferredRanking === 'size'
-              ? 'assets'
-              : inferredRanking === 'profitability'
-                ? 'roa'
-                : 'capital_ratio',
-          direction: 'desc',
-        });
+          setSortState({
+            key:
+              inferredRanking === 'size'
+                ? 'assets'
+                : inferredRanking === 'profitability'
+                  ? 'roa'
+                  : 'capital_ratio',
+            direction: 'desc',
+          });
 
-        updateConfirmationFromIntent({
-          inferredRanking,
-          inferredRegionAbbr: nextRegionAbbr,
-          inferredLimit: nextLimit,
-          requestedMetrics,
-        });
+          updateConfirmationFromIntent({
+            inferredRanking,
+            inferredRegionAbbr: nextRegionAbbr,
+            inferredLimit: nextLimit,
+            requestedMetrics,
+          });
+          setVizMeta({ title, config });
+          setVizData([]);
+          return;
+        }
+
+        setViewMode(experience);
+        setVizMeta({ title, config });
+        setVizData(data);
+        setRows([]);
+        setScalarValue(null);
       } catch {
         setViewMode('suggestions');
         setRows([]);
         setScalarValue(null);
+        setVizMeta({ title: '', config: {} });
+        setVizData([]);
       } finally {
         setIsLoading(false);
         shouldFocusAfterLoad.current = true;
@@ -702,6 +746,14 @@ Limit 20.`;
     [handleChatSubmit]
   );
 
+  const handleExploreFactQuery = useCallback(
+    (q) => {
+      setChatInput(q);
+      handleChatSubmit(q);
+    },
+    [handleChatSubmit]
+  );
+
   const handleExpandClick = useCallback(
     async () => {
       setIsLoading(true);
@@ -716,6 +768,8 @@ Limit 20.`;
       } catch (e) {
         setError(e?.response?.data?.detail || e?.message || 'Failed to expand');
         setViewMode('suggestions');
+        setVizMeta({ title: '', config: {} });
+        setVizData([]);
       } finally {
         setIsLoading(false);
       }
@@ -799,6 +853,8 @@ Limit 20.`;
             onHighlightClear={clearQueryHighlight}
           />
 
+          <SurprisingFactsCarousel onExploreQuery={handleExploreFactQuery} disabled={isLoading} />
+
           <ChatResponsePanel
             isVisible={showChatPanel}
             isLoading={isLoading}
@@ -828,8 +884,25 @@ Limit 20.`;
 
           {viewMode === 'scalar' && (
             <div className="bank-explore-scalar" aria-live="polite">
+              {vizMeta.title ? <h3 className="bank-explore-scalar-title">{vizMeta.title}</h3> : null}
               <span className="bank-explore-scalar-value">{String(scalarValue ?? '')}</span>
             </div>
+          )}
+
+          {viewMode === 'compare_banks' && (
+            <BankComparisonViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
+          )}
+          {viewMode === 'trend_tracker' && (
+            <TrendChartViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
+          )}
+          {viewMode === 'metric_explorer' && (
+            <MetricExplorerViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
+          )}
+          {viewMode === 'state_explorer' && (
+            <StateOverviewViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
+          )}
+          {viewMode === 'peer_group' && (
+            <PeerGroupViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
           )}
 
           {viewMode === 'table' && (

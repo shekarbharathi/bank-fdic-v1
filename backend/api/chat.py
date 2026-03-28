@@ -18,6 +18,7 @@ try:
     from services.text_to_sql import TextToSQLService
     from services.response_formatter import ResponseFormatter
     from services.llm_providers import get_llm_provider
+    from services.llm_response_parser import OutOfScopeError
     from config import LLM_PROVIDER
 except ImportError:
     from backend.models.chat import ChatRequest, ChatResponse, ExpandRequest, ExpandResponse, HealthResponse
@@ -25,6 +26,7 @@ except ImportError:
     from backend.services.text_to_sql import TextToSQLService
     from backend.services.response_formatter import ResponseFormatter
     from backend.services.llm_providers import get_llm_provider
+    from backend.services.llm_response_parser import OutOfScopeError
     from backend.config import LLM_PROVIDER
 
 router = APIRouter()
@@ -57,33 +59,43 @@ async def chat_endpoint(request: ChatRequest):
     
     try:
         db_service, text_to_sql_service, response_formatter = get_services()
-        
-        # Convert natural language to SQL
-        sql_query = await text_to_sql_service.generate_sql(request.message)
-        
-        # Execute query
+
+        plan = await text_to_sql_service.generate_query_plan(request.message)
+        sql_query = plan.sql
+
         results = await db_service.execute_query(sql_query)
-        
-        # Format response
+
         formatted_response = response_formatter.format_response(
             request.message, sql_query, results
         )
-        
+
         execution_time = time.time() - start_time
-        
+
         return ChatResponse(
             response=formatted_response,
             sql=sql_query,
             data=results,
-            execution_time=execution_time
+            intent=plan.intent,
+            visualization=plan.visualization,
+            entities=plan.entities or None,
+            execution_time=execution_time,
         )
-    
+
+    except OutOfScopeError:
+        execution_time = time.time() - start_time
+        return ChatResponse(
+            response="I only answer questions about FDIC bank data. Try asking about banks, assets, deposits, or safety metrics.",
+            error="out_of_scope",
+            error_code="out_of_scope",
+            execution_time=execution_time,
+        )
+
     except Exception as e:
         execution_time = time.time() - start_time
         return ChatResponse(
             response=f"I encountered an error: {str(e)}",
             error=str(e),
-            execution_time=execution_time
+            execution_time=execution_time,
         )
 
 

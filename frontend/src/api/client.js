@@ -59,12 +59,25 @@ const client = axios.create({
   },
 });
 
+/**
+ * @typedef {Object} ChatApiResponse
+ * @property {string} response - Human-readable answer text
+ * @property {string} [sql] - Executed SQL
+ * @property {Array<Record<string, unknown>>} [data] - Query rows
+ * @property {string} [error] - Error message when present
+ * @property {'out_of_scope' | string} [error_code] - Machine-readable error (e.g. out_of_scope)
+ * @property {string} [intent] - Query intent from LLM plan (browse_table, compare_banks, …)
+ * @property {{ type?: string, title?: string, config?: Record<string, unknown> }} [visualization]
+ * @property {Record<string, unknown>} [entities] - Optional extracted entities
+ * @property {number} [execution_time]
+ */
+
 export const chatAPI = {
   /**
    * Send a chat message to the backend
    * @param {string} message - User's question
    * @param {string} conversationId - Optional conversation ID
-   * @returns {Promise} API response
+   * @returns {Promise<ChatApiResponse>}
    */
   sendMessage: async (message, conversationId = null) => {
     const response = await client.post('/api/chat', {

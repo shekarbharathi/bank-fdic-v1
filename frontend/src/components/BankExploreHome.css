@@ -102,6 +102,13 @@
   min-height: 120px;
 }
 
+.bank-explore-scalar-title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #374151;
+}
+
 .bank-explore-scalar-value {
   display: inline-block;
   font-size: 1.25rem;

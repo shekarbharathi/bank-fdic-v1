@@ -1,5 +1,6 @@
 """
 Text-to-SQL service using LLM to convert natural language to SQL queries
+and structured visualization intent (JSON envelope).
 """
 import os
 import sys
@@ -20,19 +21,87 @@ try:
     from services.sql_validator import SQLValidator
     from services.database import DatabaseService
     from services.bank_name_mapping import get_bank_name_mapping_text, get_bank_name_instructions
+    from services.llm_response_parser import (
+        QueryPlan,
+        OutOfScopeError,
+        parse_structured_response,
+        build_fallback_plan_from_sql,
+    )
 except ImportError:
     from backend.services.llm_providers import get_llm_provider, LLMProvider
     from backend.services.schema_builder import SchemaBuilder
     from backend.services.sql_validator import SQLValidator
     from backend.services.database import DatabaseService
     from backend.services.bank_name_mapping import get_bank_name_mapping_text, get_bank_name_instructions
+    from backend.services.llm_response_parser import (
+        QueryPlan,
+        OutOfScopeError,
+        parse_structured_response,
+        build_fallback_plan_from_sql,
+    )
 
 logger = logging.getLogger(__name__)
 
 
+INTENT_JSON_RULES = """
+## RESPONSE FORMAT (REQUIRED)
+
+Respond with ONLY a single JSON object (no markdown outside the JSON). Shape:
+
+{
+  "intent": "<intent_type>",
+  "sql": "<valid PostgreSQL SELECT only>",
+  "visualization": {
+    "type": "<viz_type>",
+    "title": "<short human-readable title>",
+    "config": { }
+  },
+  "entities": { }
+}
+
+### intent_type (choose one)
+
+- browse_table — general lists, filters, top N banks, state filters, metrics (default if unsure)
+- scalar — single aggregate answer (one row, one numeric column) e.g. counts, one total
+- compare_banks — user compares 2–4 named banks (keywords: compare, vs, versus, difference between)
+- trend_tracker — time series / over time / history / growth / since YEAR
+- metric_explorer — distribution or ranking by one metric (highest, lowest, top, bottom, ranked by)
+- state_explorer — state-level banking overview (state name or abbreviation in question)
+- peer_group — similar banks, peers, comparable to, like [bank]
+
+### visualization.type
+
+Mirror intent when possible: "table", "scalar", "comparison", "time_series", "metric_distribution",
+"state_overview", "peer_comparison". Use "table" for browse_table if unsure.
+
+### visualization.config
+
+Optional keys depending on intent, e.g. columns, metrics, state, chart_type, limit — only if helpful.
+
+### entities
+
+Extract useful slots: state, limit, bank names, metric names, time range — as strings/numbers.
+
+### REFUSAL
+
+If the question is NOT about FDIC banking data, respond with ONLY:
+{"error":"out_of_scope"}
+
+### SQL RULES
+
+- SELECT only; use schema tables from the context (institutions, financials, financials_kv, fdic_field_dictionary, etc.)
+- Include columns the user asked for (metrics) in SELECT
+- Most recent quarter: use MAX(repdte) subqueries where appropriate
+- Active banks: filter institutions.active = 1 when listing banks
+- Bank names: ILIKE '%Name%'
+- NULL handling: IS NOT NULL / COALESCE / NULLIF as needed
+- LIMIT for large lists
+"""
+
+
 class TextToSQLService:
-    """Service for converting natural language to SQL queries"""
-    
+    """Service for converting natural language to SQL queries and visualization intent"""
+
     def __init__(self, db_service: DatabaseService):
         self.db_service = db_service
         self.schema_builder = SchemaBuilder(db_service)
@@ -40,7 +109,7 @@ class TextToSQLService:
         self.llm_provider: Optional[LLMProvider] = None
         self._schema_description: Optional[str] = None
         self._example_queries: Optional[str] = None
-    
+
     async def _initialize_llm(self):
         """Lazy initialization of LLM provider"""
         if self.llm_provider is None:
@@ -49,38 +118,65 @@ class TextToSQLService:
             except Exception as e:
                 logger.error(f"Failed to initialize LLM provider: {e}")
                 raise
-    
+
     async def _get_schema_context(self) -> str:
         """Get schema description (cached)"""
         if self._schema_description is None:
             self._schema_description = await self.schema_builder.get_schema_description()
         return self._schema_description
-    
+
     async def _get_example_queries(self) -> str:
         """Get example queries (cached)"""
         if self._example_queries is None:
             self._example_queries = await self.schema_builder.get_example_queries()
         return self._example_queries
-    
-    async def generate_sql(self, user_question: str) -> str:
+
+    def _validate_and_sanitize_sql(self, sql: str) -> str:
+        sql = self.sql_validator.extract_sql_from_markdown(sql)
+        sql = self.sql_validator.sanitize(sql)
+        is_valid, error_msg = self.sql_validator.validate(sql)
+        if not is_valid:
+            raise ValueError(f"Generated SQL failed safety validation: {error_msg}")
+        return sql
+
+    def _plan_from_raw_llm_response(self, raw_response: str) -> QueryPlan:
+        """Parse JSON envelope or fall back to SQL-only legacy response."""
+        raw_stripped = raw_response.strip()
+
+        # Fast path: refusal JSON without full parse
+        if '"out_of_scope"' in raw_response and '"error"' in raw_response:
+            try:
+                probe = json.loads(raw_stripped)
+                if isinstance(probe, dict) and probe.get("error") == "out_of_scope":
+                    raise OutOfScopeError()
+            except json.JSONDecodeError:
+                pass
+
+        try:
+            return parse_structured_response(raw_response)
+        except OutOfScopeError:
+            raise
+        except (ValueError, TypeError) as e:
+            logger.info("Structured JSON parse failed, trying legacy SQL-only: %s", e)
+            sql = self._validate_and_sanitize_sql(raw_response)
+            return build_fallback_plan_from_sql(sql)
+
+    async def generate_query_plan(self, user_question: str) -> QueryPlan:
         """
-        Convert natural language question to SQL query
-        
-        Args:
-            user_question: User's natural language question
-            
-        Returns:
-            Validated SQL query string
+        Convert natural language to a QueryPlan (SQL + intent + visualization metadata).
+
+        Raises:
+            OutOfScopeError: question not FDIC-related
+            ValueError: SQL validation failed
         """
         await self._initialize_llm()
-        
-        # Build prompt with schema context
+
         schema_desc = await self._get_schema_context()
         examples = await self._get_example_queries()
         bank_mapping = get_bank_name_mapping_text()
         bank_instructions = get_bank_name_instructions()
-        
-        prompt = f"""You are a SQL expert for FDIC bank data. Convert the user's question to PostgreSQL SQL.
+
+        prompt = f"""You are a PostgreSQL expert for FDIC bank data. Classify the user's intent and return ONLY valid JSON (no prose before or after).
 
 {schema_desc}
 
@@ -90,80 +186,32 @@ class TextToSQLService:
 
 {examples}
 
+{INTENT_JSON_RULES}
+
 User Question: {user_question}
 
-CRITICAL: First, determine if the user's question is related to banks, financial institutions, FDIC data, or banking metrics (assets, deposits, loans, ROA, capital ratio, etc.).
+JSON response:"""
 
-If the question is NOT related (e.g., "blah blah", "aaaaa", "what's the weather", random text, test inputs), respond with ONLY this exact JSON, nothing else:
-{{"error": "out_of_scope"}}
+        logger.debug("LLM prompt length: %s", len(prompt))
 
-Otherwise, generate the SQL query as instructed below.
+        raw_response = await self.llm_provider.generate(prompt)
+        logger.debug("LLM raw response length: %s", len(raw_response or ""))
 
-Instructions:
-- Generate ONLY the SQL query, no explanations or markdown formatting
-- If the user names specific banking metrics or FDIC fields (by display name, abbreviation, or field code), include those columns in the SELECT list (from financials, financials_kv, or joined tables as appropriate) so results can show those values
-- Use the most recent data available (use MAX(repdte) subqueries when needed)
-- Always filter for active banks when appropriate (WHERE active = 1)
-- Handle NULL values properly (use IS NOT NULL, COALESCE, NULLIF)
-- Use proper JOINs to combine data from multiple tables
-- Limit results appropriately (use LIMIT for top N queries)
-- When matching bank names, ALWAYS use ILIKE with % wildcards (e.g., name ILIKE '%JPMorgan Chase%')
-- If available, prefer using fdic_field_dictionary for field lookup and financials_kv for full-field metrics
-- For dollar metrics from financials_kv.value_num, multiply by 1000 to return actual dollars
+        plan = self._plan_from_raw_llm_response(raw_response)
 
-SQL Query:"""
-        
-        # Debug: Log the prompt being sent to LLM
-        logger.debug("=" * 80)
-        logger.debug("LLM PROMPT PREPARED:")
-        logger.debug("=" * 80)
-        logger.debug(f"User Question: {user_question}")
-        logger.debug(f"Prompt Length: {len(prompt)} characters")
-        logger.debug("Full Prompt:")
-        logger.debug(prompt)
-        logger.debug("=" * 80)
-        
-        try:
-            # Generate SQL using LLM
-            raw_response = await self.llm_provider.generate(prompt)
-            
-            # Debug: Log the raw response from LLM
-            logger.debug("=" * 80)
-            logger.debug("LLM RAW RESPONSE RECEIVED:")
-            logger.debug("=" * 80)
-            logger.debug(f"Response Length: {len(raw_response)} characters")
-            logger.debug("Full Response:")
-            logger.debug(raw_response)
-            logger.debug("=" * 80)
-            
-            # Check for out_of_scope response before extracting SQL
-            raw_stripped = raw_response.strip()
-            try:
-                parsed = json.loads(raw_stripped)
-                if isinstance(parsed, dict) and parsed.get("error") == "out_of_scope":
-                    raise ValueError("out_of_scope")
-            except json.JSONDecodeError:
-                pass
-            if '"out_of_scope"' in raw_response and '"error"' in raw_response:
-                raise ValueError("out_of_scope")
-            
-            # Extract SQL from markdown if present
-            sql = self.sql_validator.extract_sql_from_markdown(raw_response)
-            
-            # Sanitize SQL
-            sql = self.sql_validator.sanitize(sql)
-            
-            # Validate SQL
-            is_valid, error_msg = self.sql_validator.validate(sql)
-            
-            if not is_valid:
-                logger.warning(f"Generated SQL failed validation: {error_msg}")
-                logger.warning(f"Generated SQL: {sql}")
-                raise ValueError(f"Generated SQL failed safety validation: {error_msg}")
-            
-            logger.info(f"Generated SQL: {sql}")
-            return sql
-            
-        except Exception as e:
-            logger.error(f"Error generating SQL: {e}")
-            raise
+        # Validate SQL inside accepted plan
+        sql = self._validate_and_sanitize_sql(plan.sql)
+        plan = QueryPlan(
+            sql=sql,
+            intent=plan.intent,
+            visualization=dict(plan.visualization),
+            entities=dict(plan.entities),
+        )
+
+        logger.info("Query plan intent=%s sql=%s...", plan.intent, plan.sql[:120])
+        return plan
+
+    async def generate_sql(self, user_question: str) -> str:
+        """Backward-compatible: return only the SQL string."""
+        plan = await self.generate_query_plan(user_question)
+        return plan.sql
