@@ -21,6 +21,8 @@ const ChatFilterBox = forwardRef(
       highlightRanges = null,
       onHighlightClear,
       onFocus: onFocusProp,
+      /** Muted text color for cycling typewriter preview (not user input). */
+      typewriterSuggestion = false,
     },
     ref
   ) => {
@@ -116,7 +118,7 @@ const ChatFilterBox = forwardRef(
                 placeholder={placeholder}
                 disabled={isDisabled}
                 rows={1}
-                className={`chat-filter-textarea ${hasHighlight ? 'chat-filter-textarea-mirror-mode' : ''}`}
+                className={`chat-filter-textarea ${hasHighlight ? 'chat-filter-textarea-mirror-mode' : ''} ${typewriterSuggestion && !hasHighlight ? 'chat-filter-textarea--typewriter' : ''}`}
                 aria-label="Ask to show banks"
               />
             </div>

@@ -25,8 +25,8 @@ import './BankExploreHome.css';
 const SHOW_INSIGHTS_CAROUSEL = false;
 
 const LANDING_EXAMPLE_QUERIES = [
-  'Compare JP Morgan Chase with Bank of America',
-  'Wells Fargo assets over time',
+  'Compare JPMorgan Chase with CitiBank',
+  'Bank of America assets over time',
   "What's the ROA distribution across banks",
   'Overview of banks in New York',
   'All banks in texas with more than 20 billion but less than 50 billion in assets',
@@ -446,6 +446,12 @@ const BankExploreHome = () => {
     if (!userHasInteracted) return typewriterDisplay;
     return chatInput;
   }, [hasSubmittedQuery, userHasInteracted, chatInput, typewriterDisplay]);
+
+  /** Lighter textarea color while cycling typewriter; normal color once user types. */
+  const isTypewriterMuted = useMemo(
+    () => !hasSubmittedQuery && !userHasInteracted && chatInput === '',
+    [hasSubmittedQuery, userHasInteracted, chatInput]
+  );
 
   const handleOpenDetail = useCallback((bankRow) => {
     setDetailBank(bankRow);
@@ -900,6 +906,7 @@ Limit 20.`;
                     highlightRanges={queryHighlightRanges}
                     onHighlightClear={clearQueryHighlight}
                     onFocus={handleChatFilterFocus}
+                    typewriterSuggestion={isTypewriterMuted}
                   />
                   <section className="bank-explore-landing-examples" aria-label="Example queries">
                     <p className="bank-explore-landing-examples-heading">Try these examples</p>

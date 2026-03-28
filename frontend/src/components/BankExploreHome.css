@@ -65,25 +65,20 @@
   text-align: left;
   padding: 0.85rem 1rem;
   border-radius: 12px;
-  border: 1px solid rgba(229, 231, 235, 1);
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  border: none;
+  background: #e5e7eb;
+  box-shadow: none;
   font-size: 0.92rem;
   font-weight: 400;
   color: #111827;
   cursor: pointer;
   font-family: inherit;
   line-height: 1.35;
-  transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    background 0.15s ease;
+  transition: background 0.15s ease;
 }
 
 .bank-explore-landing-example-tile:hover:not(:disabled) {
-  border-color: #93c5fd;
-  background: rgba(239, 246, 255, 0.65);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+  background: #d1d5db;
 }
 
 .bank-explore-landing-example-tile:disabled {
