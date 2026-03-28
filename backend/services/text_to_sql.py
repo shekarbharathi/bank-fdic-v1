@@ -61,18 +61,25 @@ Respond with ONLY a single JSON object (no markdown outside the JSON). Shape:
 
 ### intent_type (choose one)
 
-- browse_table — general lists, filters, top N banks, state filters, metrics (default if unsure)
+- browse_table — DEFAULT for lists, filters, and rankings: "top N banks", "top N by assets", "show banks in CA",
+  "banks with ROA above X%", "highest ROA banks" (as a ranked table), "safest banks" when the user wants a list to browse.
+  Use browse_table whenever the answer is "show me banks (rows) sorted or filtered by a metric" — not a distribution analysis.
 - scalar — single aggregate answer (one row, one numeric column) e.g. counts, one total
 - compare_banks — user compares 2–4 named banks (keywords: compare, vs, versus, difference between)
 - trend_tracker — time series / over time / history / growth / since YEAR
-- metric_explorer — distribution or ranking by one metric (highest, lowest, top, bottom, ranked by)
+- metric_explorer — ONLY when the question is clearly about **distribution, landscape, or system-wide patterns** across many banks
+  (not a simple ranked list). Examples: "What's the ROA distribution across banks?", "credit card lending landscape",
+  "How much do banks lend in credit cards (overall / across the industry)?", "How safe are US banks?" (as a pattern/distribution),
+  "What makes a bank safe?" (exploratory / multi-faceted view). Do NOT use metric_explorer for plain "top 5 banks",
+  "top 5 by assets", or "show me high ROA banks" — those are browse_table.
 - state_explorer — state-level banking overview (state name or abbreviation in question)
 - peer_group — similar banks, peers, comparable to, like [bank]
 
 ### visualization.type
 
 Mirror intent when possible: "table", "scalar", "comparison", "time_series", "metric_distribution",
-"state_overview", "peer_comparison". Use "table" for browse_table if unsure.
+"state_overview", "peer_comparison". Use "table" for browse_table. Use "metric_distribution" only with intent
+metric_explorer (not for ordinary top-N / ranked tables).
 
 ### visualization.config
 
