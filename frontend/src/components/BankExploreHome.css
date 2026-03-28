@@ -39,7 +39,7 @@
 .bank-explore-landing-examples-heading {
   margin: 0 0 0.85rem;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 400;
   color: #374151;
   text-align: center;
 }
@@ -48,9 +48,16 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 0.65rem;
+}
+
+.bank-explore-landing-example-list li:nth-child(5) {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: calc((100% - 0.65rem) / 2);
+  max-width: 100%;
 }
 
 .bank-explore-landing-example-tile {
@@ -62,7 +69,7 @@
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
   font-size: 0.92rem;
-  font-weight: 600;
+  font-weight: 400;
   color: #111827;
   cursor: pointer;
   font-family: inherit;
@@ -82,6 +89,18 @@
 .bank-explore-landing-example-tile:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .bank-explore-landing-example-list {
+    grid-template-columns: 1fr;
+  }
+
+  .bank-explore-landing-example-list li:nth-child(5) {
+    grid-column: auto;
+    width: 100%;
+    justify-self: stretch;
+  }
 }
 
 .bank-explore-banks-root--landing .chat-filter {
