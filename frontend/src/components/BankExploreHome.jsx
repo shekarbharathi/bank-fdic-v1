@@ -32,6 +32,14 @@ const LANDING_EXAMPLE_QUERIES = [
   'All banks in texas with more than 20 billion but less than 50 billion in assets',
 ];
 
+const TYPEWRITER_PHRASES = [
+  'top 10 banks by assets',
+  'top 10 banks in california by deposits',
+  'poorest 5 banks by assets',
+  'top 5 banks in New York with highest net interest margin',
+  '10 banks with lowest equity capital ratio',
+];
+
 const STATES = [
   { abbr: 'AL', name: 'Alabama' },
   { abbr: 'AK', name: 'Alaska' },
@@ -404,6 +412,9 @@ const BankExploreHome = () => {
   const [hasSubmittedQuery, setHasSubmittedQuery] = useState(false);
 
   const [chatInput, setChatInput] = useState('');
+  /** When false and landing, show cycling typewriter in the chat field; any real input sets true until cleared. */
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
+  const [typewriterDisplay, setTypewriterDisplay] = useState('');
   const [queryHighlightRanges, setQueryHighlightRanges] = useState(null);
 
   const [sortState, setSortState] = useState({ key: 'assets', direction: 'desc' });
@@ -422,6 +433,19 @@ const BankExploreHome = () => {
   const [detailBank, setDetailBank] = useState(null);
   const [branchRows, setBranchRows] = useState([]);
   const [branchLoading, setBranchLoading] = useState(false);
+
+  const hasSubmittedQueryRef = useRef(hasSubmittedQuery);
+  const userHasInteractedRef = useRef(userHasInteracted);
+  const chatInputRef = useRef(chatInput);
+  hasSubmittedQueryRef.current = hasSubmittedQuery;
+  userHasInteractedRef.current = userHasInteracted;
+  chatInputRef.current = chatInput;
+
+  const displayValue = useMemo(() => {
+    if (hasSubmittedQuery) return chatInput;
+    if (!userHasInteracted) return typewriterDisplay;
+    return chatInput;
+  }, [hasSubmittedQuery, userHasInteracted, chatInput, typewriterDisplay]);
 
   const handleOpenDetail = useCallback((bankRow) => {
     setDetailBank(bankRow);
@@ -495,6 +519,47 @@ Limit 20.`;
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (hasSubmittedQuery || isLoading) return;
+    if (userHasInteracted || chatInput !== '') return;
+
+    let cancelled = false;
+    const phrases = TYPEWRITER_PHRASES;
+    const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    const shouldStop = () =>
+      cancelled ||
+      hasSubmittedQueryRef.current ||
+      userHasInteractedRef.current ||
+      chatInputRef.current !== '';
+
+    (async () => {
+      while (!cancelled) {
+        for (const phrase of phrases) {
+          if (shouldStop()) return;
+          for (let i = 0; i <= phrase.length; i++) {
+            if (shouldStop()) return;
+            setTypewriterDisplay(phrase.slice(0, i));
+            await delay(42);
+          }
+          if (shouldStop()) return;
+          await delay(1800);
+          for (let i = phrase.length; i >= 0; i--) {
+            if (shouldStop()) return;
+            setTypewriterDisplay(phrase.slice(0, i));
+            await delay(22);
+          }
+          if (shouldStop()) return;
+          await delay(550);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hasSubmittedQuery, userHasInteracted, chatInput, isLoading]);
 
   const handleChatSubmit = useCallback(
     async (text, submitOptions = {}) => {
@@ -633,9 +698,26 @@ Limit 20.`;
 
   const clearQueryHighlight = useCallback(() => setQueryHighlightRanges(null), []);
 
+  const handleChatFilterFocus = useCallback(
+    (e) => {
+      if (hasSubmittedQuery || userHasInteracted || (chatInput && chatInput.length > 0)) return;
+      const ta = e.target;
+      if (typewriterDisplay.length > 0 && ta && typeof ta.select === 'function') {
+        requestAnimationFrame(() => ta.select());
+      }
+    },
+    [hasSubmittedQuery, userHasInteracted, chatInput, typewriterDisplay.length]
+  );
+
   const handleChatInputChange = useCallback((next) => {
     setQueryHighlightRanges(null);
     setChatInput(next);
+    if (next === '') {
+      setUserHasInteracted(false);
+      setTypewriterDisplay('');
+    } else {
+      setUserHasInteracted(true);
+    }
   }, []);
 
   const handleColumnPickerApply = useCallback(
@@ -666,6 +748,7 @@ Limit 20.`;
       const colRanges = computeDiffHighlightRanges(prevText, q);
       setQueryHighlightRanges(colRanges.length ? colRanges : null);
       setColumnPickerOpen(false);
+      setUserHasInteracted(true);
       handleChatSubmit(q, { visibleMetricOverride: mergedVisible });
     },
     [chatInput, handleChatSubmit, visibleMetricIds, fieldMetaByName, metricDefsMerged]
@@ -673,6 +756,7 @@ Limit 20.`;
 
   const handleSuggestionClick = useCallback(
     (optionText) => {
+      setUserHasInteracted(true);
       setChatInput(optionText);
       handleChatSubmit(optionText);
     },
@@ -681,6 +765,7 @@ Limit 20.`;
 
   const handleExploreFactQuery = useCallback(
     (q) => {
+      setUserHasInteracted(true);
       setChatInput(q);
       handleChatSubmit(q);
     },
@@ -694,6 +779,7 @@ Limit 20.`;
       const prevText = chatInput;
       try {
         const expanded = await chatAPI.expandQuery(chatInput);
+        setUserHasInteracted(true);
         setChatInput(expanded);
         const expRanges = computeDiffHighlightRanges(prevText, expanded);
         setQueryHighlightRanges(expRanges.length ? expRanges : null);
@@ -791,7 +877,7 @@ Limit 20.`;
               {hasSubmittedQuery ? (
                 <ChatFilterBox
                   ref={chatFilterRef}
-                  value={chatInput}
+                  value={displayValue}
                   onChange={handleChatInputChange}
                   onSubmit={handleChatSubmit}
                   isLoading={isLoading}
@@ -799,12 +885,13 @@ Limit 20.`;
                   placeholder="Show me..."
                   highlightRanges={queryHighlightRanges}
                   onHighlightClear={clearQueryHighlight}
+                  onFocus={handleChatFilterFocus}
                 />
               ) : (
                 <div className="bank-explore-landing-stack">
                   <ChatFilterBox
                     ref={chatFilterRef}
-                    value={chatInput}
+                    value={displayValue}
                     onChange={handleChatInputChange}
                     onSubmit={handleChatSubmit}
                     isLoading={isLoading}
@@ -812,6 +899,7 @@ Limit 20.`;
                     placeholder="Show me..."
                     highlightRanges={queryHighlightRanges}
                     onHighlightClear={clearQueryHighlight}
+                    onFocus={handleChatFilterFocus}
                   />
                   <section className="bank-explore-landing-examples" aria-label="Example queries">
                     <p className="bank-explore-landing-examples-heading">Try these examples</p>

@@ -20,6 +20,7 @@ const ChatFilterBox = forwardRef(
       placeholder = 'Show me...',
       highlightRanges = null,
       onHighlightClear,
+      onFocus: onFocusProp,
     },
     ref
   ) => {
@@ -106,7 +107,10 @@ const ChatFilterBox = forwardRef(
                 value={value}
                 onChange={(e) => onChange?.(e.target.value)}
                 onKeyDown={handleKeyDown}
-                onFocus={() => setIsFocused(true)}
+                onFocus={(e) => {
+                  setIsFocused(true);
+                  onFocusProp?.(e);
+                }}
                 onBlur={() => setIsFocused(false)}
                 onScroll={handleScroll}
                 placeholder={placeholder}
