@@ -1045,7 +1045,7 @@ Limit 20.`;
                     onSubmit={handleChatSubmit}
                     isLoading={isLoading}
                     disabled={isLoading}
-                    placeholder="Show me..."
+                    placeholder=""
                     highlightRanges={queryHighlightRanges}
                     onHighlightClear={clearQueryHighlight}
                     onFocus={handleChatFilterFocus}
