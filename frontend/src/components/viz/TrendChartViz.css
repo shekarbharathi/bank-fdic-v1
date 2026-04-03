@@ -1,0 +1,66 @@
+.trend-metric-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.trend-metric-toggle {
+  padding: 4px 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 16px;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #9ca3af;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.trend-metric-toggle:hover {
+  background: #f9fafb;
+}
+
+.trend-metric-toggle.active {
+  background: #eff6ff;
+}
+
+.trend-tooltip {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  font-size: 0.82rem;
+}
+
+.trend-tooltip-date {
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.trend-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 0;
+}
+
+.trend-tooltip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.trend-tooltip-label {
+  color: #6b7280;
+  flex: 1;
+}
+
+.trend-tooltip-value {
+  font-weight: 600;
+  color: #111827;
+  font-variant-numeric: tabular-nums;
+}

@@ -1,0 +1,65 @@
+.viz-state-overview {
+  position: relative;
+}
+
+.state-map-container {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto 1rem;
+}
+
+.state-map-container svg {
+  width: 100%;
+  height: auto;
+}
+
+.state-map-tooltip {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: #111827;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+  z-index: 10;
+}
+
+.state-map-tooltip strong {
+  font-weight: 700;
+}
+
+.state-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.state-map-legend-swatch {
+  display: inline-block;
+  width: 24px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.state-map-legend-label {
+  font-weight: 600;
+  margin: 0 4px;
+}
+
+.state-map-legend-metric {
+  margin-left: 8px;
+  font-style: italic;
+}

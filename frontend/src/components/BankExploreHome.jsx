@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { chatAPI, sendClientDebugLog } from '../api/client';
 import ChatFilterBox from './ChatFilterBox';
 import ChatResponsePanel from './ChatResponsePanel';
@@ -13,401 +13,27 @@ import {
 import { buildFieldMetaMap, mergeMetricDefs } from '../utils/columnPickerMetrics';
 import { computeDiffHighlightRanges } from '../utils/queryDiffHighlight';
 import { resolveExperience } from '../utils/vizRouting';
-import BankComparisonViz from './viz/BankComparisonViz';
-import TrendChartViz from './viz/TrendChartViz';
-import MetricExplorerViz from './viz/MetricExplorerViz';
-import StateOverviewViz from './viz/StateOverviewViz';
-import PeerGroupViz from './viz/PeerGroupViz';
+import { INITIAL_VIEW_STATE, viewStateReducer } from '../reducers/viewStateReducer';
+import { normalizeBankRows, pickCaseInsensitive } from '../utils/bankDataNormalization';
+import { extractTopN, extractStateAbbr, extractRankingCriteria, extractRequestedMetrics } from '../utils/queryParsing';
+import { isRefusalResponse } from '../utils/responseValidation';
+import { stateNameByAbbr } from '../constants/states';
+import { LANDING_EXAMPLE_QUERIES, TYPEWRITER_PHRASES, SUGGESTION_OPTIONS } from '../constants/uiContent';
+import VizRenderer from './viz/VizRenderer';
 import SurprisingFactsCarousel from './viz/SurprisingFactsCarousel';
 import './BankExploreHome.css';
 
 /** Set to true to show the Surprising Facts (Insights) carousel again. */
 const SHOW_INSIGHTS_CAROUSEL = false;
 
-const LANDING_EXAMPLE_QUERIES = [
-  'Compare JPMorgan Chase with CitiBank',
-  'Bank of America assets over time',
-  "What's the ROA distribution across banks",
-  'Overview of banks in New York',
-  'All banks in texas with more than 20 billion but less than 50 billion in assets',
-];
-
-const TYPEWRITER_PHRASES = [
-  'top 10 banks by assets',
-  'top 10 banks in california by deposits',
-  'poorest 5 banks by assets',
-  'top 5 banks in New York with highest net interest margin',
-  '10 banks with lowest equity capital ratio',
-];
-
-const STATES = [
-  { abbr: 'AL', name: 'Alabama' },
-  { abbr: 'AK', name: 'Alaska' },
-  { abbr: 'AZ', name: 'Arizona' },
-  { abbr: 'AR', name: 'Arkansas' },
-  { abbr: 'CA', name: 'California' },
-  { abbr: 'CO', name: 'Colorado' },
-  { abbr: 'CT', name: 'Connecticut' },
-  { abbr: 'DE', name: 'Delaware' },
-  { abbr: 'FL', name: 'Florida' },
-  { abbr: 'GA', name: 'Georgia' },
-  { abbr: 'HI', name: 'Hawaii' },
-  { abbr: 'ID', name: 'Idaho' },
-  { abbr: 'IL', name: 'Illinois' },
-  { abbr: 'IN', name: 'Indiana' },
-  { abbr: 'IA', name: 'Iowa' },
-  { abbr: 'KS', name: 'Kansas' },
-  { abbr: 'KY', name: 'Kentucky' },
-  { abbr: 'LA', name: 'Louisiana' },
-  { abbr: 'ME', name: 'Maine' },
-  { abbr: 'MD', name: 'Maryland' },
-  { abbr: 'MA', name: 'Massachusetts' },
-  { abbr: 'MI', name: 'Michigan' },
-  { abbr: 'MN', name: 'Minnesota' },
-  { abbr: 'MS', name: 'Mississippi' },
-  { abbr: 'MO', name: 'Missouri' },
-  { abbr: 'MT', name: 'Montana' },
-  { abbr: 'NE', name: 'Nebraska' },
-  { abbr: 'NV', name: 'Nevada' },
-  { abbr: 'NH', name: 'New Hampshire' },
-  { abbr: 'NJ', name: 'New Jersey' },
-  { abbr: 'NM', name: 'New Mexico' },
-  { abbr: 'NY', name: 'New York' },
-  { abbr: 'NC', name: 'North Carolina' },
-  { abbr: 'ND', name: 'North Dakota' },
-  { abbr: 'OH', name: 'Ohio' },
-  { abbr: 'OK', name: 'Oklahoma' },
-  { abbr: 'OR', name: 'Oregon' },
-  { abbr: 'PA', name: 'Pennsylvania' },
-  { abbr: 'RI', name: 'Rhode Island' },
-  { abbr: 'SC', name: 'South Carolina' },
-  { abbr: 'SD', name: 'South Dakota' },
-  { abbr: 'TN', name: 'Tennessee' },
-  { abbr: 'TX', name: 'Texas' },
-  { abbr: 'UT', name: 'Utah' },
-  { abbr: 'VT', name: 'Vermont' },
-  { abbr: 'VA', name: 'Virginia' },
-  { abbr: 'WA', name: 'Washington' },
-  { abbr: 'WV', name: 'West Virginia' },
-  { abbr: 'WI', name: 'Wisconsin' },
-  { abbr: 'WY', name: 'Wyoming' },
-];
-
-const stateNameByAbbr = STATES.reduce((acc, s) => {
-  acc[s.abbr] = s.name;
-  return acc;
-}, {});
-
-const rankingCriteriaLabels = {
-  size: 'assets',
-  profitability: 'ROA',
-  safety: 'capital ratio',
-};
-
-const SUGGESTION_OPTIONS = [
-  'Show me the top 10 banks by assets',
-  'Which banks have the best capital ratios?',
-  'top 10 banks in California with ROA greater than 1%?',
-  'top 5 banks in texas less than 50 billion in assets',
-];
-
-const REFUSAL_PATTERNS = [
-  'test query',
-  'please provide a specific',
-  'provide a specific question',
-  'not a valid question',
-  'cannot convert',
-  "i don't understand",
-  "i do not understand",
-  'not related to fdic',
-  'try asking about',
-  'rephrase your',
-  'unable to generate',
-  'cannot generate sql',
-];
-
-const isRefusalResponse = (val) => {
-  if (val == null) return false;
-  const s = String(val).toLowerCase();
-  return REFUSAL_PATTERNS.some((p) => s.includes(p.toLowerCase()));
-};
-
-const extractTopN = (text) => {
-  const m = String(text || '').match(/top\s+(\d{1,3})/i);
-  if (!m) return 5;
-  const n = Number(m[1]);
-  if (!Number.isFinite(n)) return 5;
-  return Math.max(1, Math.min(30, n));
-};
-
-const extractStateAbbr = (text) => {
-  const t = String(text || '');
-  const lower = t.toLowerCase();
-
-  // Check full state names first.
-  for (const s of STATES) {
-    if (lower.includes(s.name.toLowerCase())) return s.abbr;
-  }
-
-  // Then check state abbreviations (word-ish boundaries).
-  for (const s of STATES) {
-    const re = new RegExp(`\\b${s.abbr}\\b`, 'i');
-    if (re.test(t)) return s.abbr;
-  }
-
-  return null;
-};
-
-const extractRankingCriteria = (text) => {
-  const lower = String(text || '').toLowerCase();
-  if (/\bcapital\b|\bsafety\b|\bcapital ratio\b|\bequity\b/.test(lower)) return 'safety';
-  if (/\broa\b|\bprofit\b|\bprofitability\b/.test(lower)) return 'profitability';
-  return 'size';
-};
-
-const extractRequestedMetrics = (text) => {
-  const lower = String(text || '').toLowerCase();
-  const metrics = [];
-
-  if (/\broa\b|\bprofit\b/.test(lower)) metrics.push('roa');
-  if (/\bcapital\b|\bsafety\b|\bcapital ratio\b|\bequity\b/.test(lower)) metrics.push('capital_ratio');
-  if (/\bdeposit\b/.test(lower)) metrics.push('deposits');
-  if (/\bnet income\b|\bnetinc\b|\bnet earnings\b/.test(lower)) metrics.push('netinc');
-  if (/\bnet interest margin\b|\bnim\b/.test(lower)) metrics.push('nimy');
-
-  return Array.from(new Set(metrics));
-};
-
-const pickCaseInsensitive = (row, ...candidates) => {
-  if (!row) return undefined;
-  const lowerMap = new Map(Object.keys(row).map((k) => [k.toLowerCase(), k]));
-  for (const c of candidates) {
-    const k = lowerMap.get(String(c).toLowerCase());
-    if (k !== undefined) return row[k];
-  }
-  return undefined;
-};
-
-const maybeThousandsToDollars = (v) => {
-  const n = Number(v);
-  if (!Number.isFinite(n)) return undefined;
-  // Heuristic: values above 1e11 are probably already dollars.
-  if (Math.abs(n) >= 100_000_000_000) return n;
-  return n * 1000;
-};
-
-/** LLM/SQL may alias columns with descriptive snake_case; map metadata field_name → extra JSON keys. */
-const EXTRA_FIELD_JSON_ALIASES = {
-  asset: ['total_assets_dollars'],
-  dep: ['total_deposits_dollars'],
-  nimy: ['net_interest_margin'],
-  intinc: ['total_interest_income_dollars'],
-  depdom: ['domestic_deposits_dollars'],
-  eqtot: ['total_equity_capital_dollars'],
-  roa: ['return_on_assets'],
-  numemp: ['number_of_employees'],
-};
-
-const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
-  const meta = fieldMetaByName.get(fieldName);
-  // LLM *_dollars / descriptive keys are whole dollars, not FDIC thousands
-  if (fieldName === 'netinc') {
-    const d = pickCaseInsensitive(
-      row,
-      'net_income_dollars',
-      'netinc_dollars',
-      'total_netinc_dollars'
-    );
-    if (d !== undefined && d !== null) {
-      const n = Number(d);
-      return Number.isFinite(n) ? n : null;
-    }
-  }
-  const aliases = EXTRA_FIELD_JSON_ALIASES[fieldName] || [];
-  const raw = pickCaseInsensitive(
-    row,
-    fieldName,
-    fieldName.toUpperCase(),
-    ...aliases,
-    `total_${fieldName}_dollars`
-  );
-  if (raw === undefined || raw === null) return null;
-  if (meta?.is_currency && meta?.unit === 'thousands') {
-    return maybeThousandsToDollars(Number(raw));
-  }
-  const n = Number(raw);
-  if (!Number.isFinite(n)) return null;
-  return n;
-};
-
-const normalizeBankRows = (rawRows, options = {}) => {
-  const { extraFieldNames = [], fieldMetaByName = new Map() } = options;
-  const extra = new Set(extraFieldNames.map((k) => canonicalFieldName(k)).filter(Boolean));
-
-  if (!Array.isArray(rawRows)) return [];
-
-  return rawRows.map((row) => {
-    const cert = pickCaseInsensitive(row, 'cert', 'CERT');
-    const bank_name = pickCaseInsensitive(row, 'bank_name', 'BANK_NAME', 'name', 'NAME', 'institution_name', 'INSTITUTION_NAME');
-
-    // Dollars columns might be aliased as *_dollars; otherwise we try to convert from thousands.
-    const assets_dollars_raw = pickCaseInsensitive(
-      row,
-      'assets_dollars',
-      'ASSETS_DOLLARS',
-      'total_assets_dollars',
-      'TOTAL_ASSETS_DOLLARS',
-      'assets',
-      'ASSETS',
-      'asset_dollars',
-      'ASSET_DOLLARS'
-    );
-    const asset_thousands_raw = pickCaseInsensitive(row, 'asset', 'ASSET');
-
-    const assets =
-      assets_dollars_raw !== undefined
-        ? Number(assets_dollars_raw)
-        : asset_thousands_raw !== undefined
-          ? maybeThousandsToDollars(asset_thousands_raw)
-          : undefined;
-
-    const deposits_dollars_raw = pickCaseInsensitive(
-      row,
-      'deposits_dollars',
-      'DEPOSITS_DOLLARS',
-      'total_deposits_dollars',
-      'TOTAL_DEPOSITS_DOLLARS',
-      'deposits',
-      'DEPOSITS',
-      'deposit_dollars',
-      'DEP_DOLLARS',
-      'dep_dollars',
-      'DEP_DOLLARS'
-    );
-    const dep_thousands_raw =
-      pickCaseInsensitive(row, 'dep', 'DEP') ?? pickCaseInsensitive(row, 'depdom', 'DEPDOM');
-
-    const deposits =
-      deposits_dollars_raw !== undefined
-        ? Number(deposits_dollars_raw)
-        : dep_thousands_raw !== undefined
-          ? maybeThousandsToDollars(dep_thousands_raw)
-          : undefined;
-
-    const netinc_dollars_raw = pickCaseInsensitive(
-      row,
-      'netinc_dollars',
-      'NETINC_DOLLARS',
-      'net_income_dollars',
-      'NET_INCOME_DOLLARS',
-      'total_netinc_dollars',
-      'TOTAL_NETINC_DOLLARS'
-    );
-    const netinc_thousands_raw = pickCaseInsensitive(row, 'netinc', 'NETINC');
-    const netinc =
-      netinc_dollars_raw !== undefined
-        ? Number(netinc_dollars_raw)
-        : netinc_thousands_raw !== undefined
-          ? maybeThousandsToDollars(netinc_thousands_raw)
-          : undefined;
-
-    const roa = pickCaseInsensitive(
-      row,
-      'roa',
-      'ROA',
-      'return_on_assets',
-      'RETURN_ON_ASSETS',
-      'calculated_roa',
-      'CALCULATED_ROA'
-    );
-
-    let capital_ratio = pickCaseInsensitive(row, 'capital_ratio', 'CAPITAL_RATIO');
-    const eqtot_thousands = pickCaseInsensitive(row, 'eqtot', 'EQTOT');
-    const asset_thousands_for_ratio = pickCaseInsensitive(row, 'asset', 'ASSET');
-
-    if (capital_ratio === undefined && eqtot_thousands !== undefined && asset_thousands_for_ratio !== undefined) {
-      const a = Number(asset_thousands_for_ratio);
-      const e = Number(eqtot_thousands);
-      if (Number.isFinite(a) && a !== 0 && Number.isFinite(e)) {
-        capital_ratio = (e / a) * 100;
-      }
-    }
-
-    const stname = pickCaseInsensitive(row, 'stname', 'STNAME');
-    const stalp = pickCaseInsensitive(row, 'stalp', 'STALP');
-    const city = pickCaseInsensitive(row, 'city', 'CITY');
-
-    const report_date =
-      pickCaseInsensitive(row, 'report_date', 'REPORT_DATE', 'repdte', 'REPDTE');
-
-    const nimy = pickCaseInsensitive(
-      row,
-      'nimy',
-      'NIMY',
-      'net_interest_margin',
-      'NET_INTEREST_MARGIN'
-    );
-    const roaptx = pickCaseInsensitive(row, 'roaptx', 'ROAPTX');
-    const lnlsnet = pickCaseInsensitive(row, 'lnlsnet', 'LNLSNET');
-    const elnatr = pickCaseInsensitive(row, 'elnatr', 'ELNATR');
-
-    const assets_growth_pct = pickCaseInsensitive(row, 'assets_growth_pct', 'ASSETS_GROWTH_PCT', 'growth_pct', 'GROWTH_PCT');
-
-    const out = {
-      cert: cert ?? null,
-      bank_name: bank_name ?? 'Unknown Bank',
-      city: city ?? null,
-      stalp: stalp ?? null,
-      stname: stname ?? null,
-      report_date: report_date ?? null,
-      assets: assets !== undefined ? Number(assets) : null,
-      deposits: deposits !== undefined ? Number(deposits) : null,
-      netinc: netinc !== undefined ? Number(netinc) : null,
-      roa: roa !== undefined ? Number(roa) : null,
-      capital_ratio: capital_ratio !== undefined ? Number(capital_ratio) : null,
-      nimy: nimy !== undefined ? Number(nimy) : null,
-      roaptx: roaptx !== undefined ? Number(roaptx) : null,
-      lnlsnet: lnlsnet !== undefined ? Number(lnlsnet) : null,
-      elnatr: elnatr !== undefined ? Number(elnatr) : null,
-      assets_growth_pct: assets_growth_pct !== undefined ? Number(assets_growth_pct) : undefined,
-      raw: row,
-    };
-
-    for (const fname of extra) {
-      if (fname === 'assets') continue;
-      if (fname === 'repdte') {
-        out.repdte = out.report_date ?? pickCaseInsensitive(row, 'repdte', 'REPDTE') ?? null;
-        continue;
-      }
-      if (out[fname] !== undefined && out[fname] !== null) continue;
-      if (fname === 'dep') {
-        out.dep = out.deposits ?? extractExtraMetric(row, 'dep', fieldMetaByName);
-        continue;
-      }
-      if (fname === 'deposits') {
-        out.deposits = out.deposits ?? extractExtraMetric(row, 'dep', fieldMetaByName);
-        continue;
-      }
-      const v = extractExtraMetric(row, fname, fieldMetaByName);
-      if (v !== null && v !== undefined) out[fname] = v;
-    }
-
-    return out;
-  });
-};
-
 const BankExploreHome = () => {
   const chatFilterRef = useRef(null);
   const shouldFocusAfterLoad = useRef(false);
   const [activeTopTab, setActiveTopTab] = useState('banks');
-  const [rows, setRows] = useState([]);
+  const [viewState, dispatchView] = useReducer(viewStateReducer, INITIAL_VIEW_STATE);
+  const { viewMode, rows, scalarValue, vizMeta, vizData } = viewState;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-  /** pending = awaiting API; then table | scalar | suggestions | compare_banks | trend_tracker | metric_explorer | state_explorer | peer_group */
-  const [viewMode, setViewMode] = useState('table');
-  const [scalarValue, setScalarValue] = useState(null);
-  const [vizMeta, setVizMeta] = useState({ title: '', config: {} });
-  const [vizData, setVizData] = useState([]);
   /** After first successful chat submit, chat moves to top and results area is shown. */
   const [hasSubmittedQuery, setHasSubmittedQuery] = useState(false);
 
@@ -605,41 +231,29 @@ Limit 20.`;
       setDetailBank(null);
       setBranchRows([]);
       setBranchLoading(false);
-      setViewMode('pending');
-      setRows([]);
-      setScalarValue(null);
-      setVizMeta({ title: '', config: {} });
-      setVizData([]);
+      dispatchView({ type: 'RESET' });
 
       try {
         const res = await chatAPI.sendMessage(trimmed);
 
         if (res?.error_code === 'out_of_scope' || res?.error === 'out_of_scope') {
-          setViewMode('suggestions');
-          setRows([]);
-          setScalarValue(null);
+          dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
 
         if (res?.error) {
-          setViewMode('suggestions');
-          setRows([]);
-          setScalarValue(null);
+          dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
 
         const data = res?.data;
         if (!Array.isArray(data)) {
-          setViewMode('suggestions');
-          setRows([]);
-          setScalarValue(null);
+          dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
 
         if (isRefusalResponse(res?.response)) {
-          setViewMode('suggestions');
-          setRows([]);
-          setScalarValue(null);
+          dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
 
@@ -664,23 +278,15 @@ Limit 20.`;
         if (experience === 'scalar') {
           const row0 = data[0];
           if (!row0 || Object.keys(row0).length === 0) {
-            setViewMode('suggestions');
-            setRows([]);
-            setScalarValue(null);
+            dispatchView({ type: 'SHOW_SUGGESTIONS' });
             return;
           }
           const val = Object.values(row0)[0];
           if (isRefusalResponse(val) || isRefusalResponse(res?.response)) {
-            setViewMode('suggestions');
-            setRows([]);
-            setScalarValue(null);
+            dispatchView({ type: 'SHOW_SUGGESTIONS' });
             return;
           }
-          setViewMode('scalar');
-          setScalarValue(val);
-          setRows([]);
-          setVizMeta({ title, config });
-          setVizData([]);
+          dispatchView({ type: 'SHOW_SCALAR', value: val, vizMeta: { title, config } });
           return;
         }
 
@@ -705,7 +311,6 @@ Limit 20.`;
             extraFieldNames: effectiveExtra,
             fieldMetaByName,
           });
-          setRows(normalized);
 
           setVisibleMetricIds(effectiveExtra);
 
@@ -725,9 +330,7 @@ Limit 20.`;
             inferredLimit: nextLimit,
             requestedMetrics,
           });
-          setVizMeta({ title, config });
-          setVizData([]);
-          setViewMode('table');
+          dispatchView({ type: 'SHOW_TABLE', rows: normalized, vizMeta: { title, config } });
           // #region agent log
           sendClientDebugLog({
             sessionId: '073e07',
@@ -741,17 +344,9 @@ Limit 20.`;
           return;
         }
 
-        setViewMode(experience);
-        setVizMeta({ title, config });
-        setVizData(data);
-        setRows([]);
-        setScalarValue(null);
+        dispatchView({ type: 'SHOW_VIZ', experience, data, vizMeta: { title, config } });
       } catch {
-        setViewMode('suggestions');
-        setRows([]);
-        setScalarValue(null);
-        setVizMeta({ title: '', config: {} });
-        setVizData([]);
+        dispatchView({ type: 'SHOW_SUGGESTIONS' });
       } finally {
         setIsLoading(false);
         shouldFocusAfterLoad.current = true;
@@ -862,9 +457,7 @@ Limit 20.`;
         await handleChatSubmit(expanded);
       } catch (e) {
         setError(e?.response?.data?.detail || e?.message || 'Failed to expand');
-        setViewMode('suggestions');
-        setVizMeta({ title: '', config: {} });
-        setVizData([]);
+        dispatchView({ type: 'SHOW_SUGGESTIONS' });
       }
     },
     [chatInput, handleChatSubmit]
@@ -1035,21 +628,12 @@ Limit 20.`;
                     </div>
                   )}
 
-                  {viewMode === 'compare_banks' && (
-                    <BankComparisonViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-                  )}
-                  {viewMode === 'trend_tracker' && (
-                    <TrendChartViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-                  )}
-                  {viewMode === 'metric_explorer' && (
-                    <MetricExplorerViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-                  )}
-                  {viewMode === 'state_explorer' && (
-                    <StateOverviewViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-                  )}
-                  {viewMode === 'peer_group' && (
-                    <PeerGroupViz data={vizData} title={vizMeta.title} config={vizMeta.config} />
-                  )}
+                  <VizRenderer
+                    experience={viewMode}
+                    data={vizData}
+                    title={vizMeta.title}
+                    config={vizMeta.config}
+                  />
 
                   {viewMode === 'table' && (
                     <div className="bank-explore-table-wrap">
