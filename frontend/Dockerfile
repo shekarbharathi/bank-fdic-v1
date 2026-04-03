@@ -1,6 +1,6 @@
 # Frontend Dockerfile for Railway
 # This should be used when root directory is set to 'frontend'
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
