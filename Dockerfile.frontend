@@ -6,7 +6,7 @@ WORKDIR /app
 # Copy package files and npm config
 COPY frontend/package*.json ./
 COPY frontend/.npmrc ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
 
 # Copy frontend source
 COPY frontend/ ./
