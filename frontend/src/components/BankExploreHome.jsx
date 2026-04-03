@@ -67,6 +67,8 @@ const BankExploreHome = () => {
   const hasSubmittedQueryRef = useRef(hasSubmittedQuery);
   const userHasInteractedRef = useRef(userHasInteracted);
   const chatInputRef = useRef(chatInput);
+  const lastSubmittedQueryRef = useRef('');
+  const handleChatSubmitRef = useRef(null);
   hasSubmittedQueryRef.current = hasSubmittedQuery;
   userHasInteractedRef.current = userHasInteracted;
   chatInputRef.current = chatInput;
@@ -212,6 +214,7 @@ Limit 20.`;
       if (!trimmed) return;
 
       const { visibleMetricOverride } = submitOptions;
+      lastSubmittedQueryRef.current = trimmed;
       setHasSubmittedQuery(true);
       setUserChatMessages((prev) => [...prev, trimmed]);
       setChatInput('');
@@ -315,6 +318,7 @@ Limit 20.`;
               setPickerSession((s) => s + 1);
               setColumnPickerOpen(true);
             },
+            onExpandQuery: handleExpandClick,
           };
           dispatchView({ type: 'SHOW_VIZ', experience: 'table', data, vizMeta: { title, config: tableConfig } });
           return;
@@ -330,6 +334,7 @@ Limit 20.`;
     },
     [updateConfirmationFromIntent, visibleMetricIds, fieldMetaByName]
   );
+  handleChatSubmitRef.current = handleChatSubmit;
 
   const pickerSelectedFieldNames = useMemo(
     () => visibleMetricIds.map((id) => canonicalFieldName(id)),
@@ -392,6 +397,26 @@ Limit 20.`;
       handleChatSubmit(q, { visibleMetricOverride: mergedVisible });
     },
     [chatInput, handleChatSubmit, visibleMetricIds, fieldMetaByName, metricDefsMerged]
+  );
+
+  const handleExpandClick = useCallback(
+    async () => {
+      const queryText = lastSubmittedQueryRef.current;
+      if (!queryText) return;
+      setError(null);
+      try {
+        const expanded = await chatAPI.expandQuery(queryText);
+        setUserHasInteracted(true);
+        setChatInput(expanded);
+        const expRanges = computeDiffHighlightRanges(queryText, expanded);
+        setQueryHighlightRanges(expRanges.length ? expRanges : null);
+        await handleChatSubmitRef.current(expanded);
+      } catch (e) {
+        setError(e?.response?.data?.detail || e?.message || 'Failed to expand');
+        dispatchView({ type: 'SHOW_SUGGESTIONS' });
+      }
+    },
+    []
   );
 
   const handleSuggestionClick = useCallback(
