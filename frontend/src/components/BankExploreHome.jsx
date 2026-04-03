@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { chatAPI, sendClientDebugLog } from '../api/client';
 import ChatFilterBox from './ChatFilterBox';
 import ChatResponsePanel from './ChatResponsePanel';
-import BankExplorerTable from './BankExplorerTable';
 import { METRIC_DEFS_DEFAULT } from '../constants/metricDefsDefault';
 import ColumnPickerModal from './ColumnPickerModal';
 import {
@@ -14,7 +13,7 @@ import { buildFieldMetaMap, mergeMetricDefs } from '../utils/columnPickerMetrics
 import { computeDiffHighlightRanges } from '../utils/queryDiffHighlight';
 import { resolveExperience } from '../utils/vizRouting';
 import { INITIAL_VIEW_STATE, viewStateReducer } from '../reducers/viewStateReducer';
-import { normalizeBankRows, pickCaseInsensitive } from '../utils/bankDataNormalization';
+import { pickCaseInsensitive } from '../utils/bankDataNormalization';
 import { extractTopN, extractStateAbbr, extractRankingCriteria, extractRequestedMetrics } from '../utils/queryParsing';
 import { isRefusalResponse } from '../utils/responseValidation';
 import { stateNameByAbbr } from '../constants/states';
@@ -31,7 +30,7 @@ const BankExploreHome = () => {
   const shouldFocusAfterLoad = useRef(false);
   const [activeTopTab, setActiveTopTab] = useState('banks');
   const [viewState, dispatchView] = useReducer(viewStateReducer, INITIAL_VIEW_STATE);
-  const { viewMode, rows, scalarValue, vizMeta, vizData } = viewState;
+  const { viewMode, scalarValue, vizMeta, vizData } = viewState;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   /** After first successful chat submit, chat moves to top and results area is shown. */
@@ -42,8 +41,6 @@ const BankExploreHome = () => {
   const [userHasInteracted, setUserHasInteracted] = useState(false);
   const [typewriterDisplay, setTypewriterDisplay] = useState('');
   const [queryHighlightRanges, setQueryHighlightRanges] = useState(null);
-
-  const [sortState, setSortState] = useState({ key: 'assets', direction: 'desc' });
 
   const [visibleMetricIds, setVisibleMetricIds] = useState([]);
 
@@ -291,38 +288,13 @@ Limit 20.`;
         }
 
         if (experience === 'table') {
-          // #region agent log
-          sendClientDebugLog({
-            sessionId: '073e07',
-            hypothesisId: 'H1',
-            location: 'BankExploreHome.jsx:handleChatSubmit:tableBranchEntry',
-            message: 'entered table branch before setRows',
-            data: { experience },
-            timestamp: Date.now(),
-          });
-          // #endregion
           const nextVisible = new Set((visibleMetricOverride ?? visibleMetricIds).map(canonicalFieldName));
           for (const m of requestedMetrics) nextVisible.add(canonicalFieldName(m));
           if (inferredRanking === 'profitability') nextVisible.add('roa');
           if (inferredRanking === 'safety') nextVisible.add('capital_ratio');
           const effectiveExtra = Array.from(nextVisible);
 
-          const normalized = normalizeBankRows(data, {
-            extraFieldNames: effectiveExtra,
-            fieldMetaByName,
-          });
-
           setVisibleMetricIds(effectiveExtra);
-
-          setSortState({
-            key:
-              inferredRanking === 'size'
-                ? 'assets'
-                : inferredRanking === 'profitability'
-                  ? 'roa'
-                  : 'capital_ratio',
-            direction: 'desc',
-          });
 
           updateConfirmationFromIntent({
             inferredRanking,
@@ -330,17 +302,17 @@ Limit 20.`;
             inferredLimit: nextLimit,
             requestedMetrics,
           });
-          dispatchView({ type: 'SHOW_TABLE', rows: normalized, vizMeta: { title, config } });
-          // #region agent log
-          sendClientDebugLog({
-            sessionId: '073e07',
-            hypothesisId: 'H1',
-            location: 'BankExploreHome.jsx:handleChatSubmit:tableBranchExit',
-            message: 'table branch return after setViewMode(table)',
-            data: { note: 'viewMode should be table' },
-            timestamp: Date.now(),
-          });
-          // #endregion
+
+          const tableConfig = {
+            ...config,
+            visibleMetrics: effectiveExtra,
+            ranking: inferredRanking,
+            sortKey: inferredRanking === 'size' ? 'assets' : inferredRanking === 'profitability' ? 'roa' : 'capital_ratio',
+            sortDirection: 'desc',
+            metricDefs: metricDefsMerged,
+            fieldMetaByName,
+          };
+          dispatchView({ type: 'SHOW_VIZ', experience: 'table', data, vizMeta: { title, config: tableConfig } });
           return;
         }
 
@@ -444,25 +416,6 @@ Limit 20.`;
     [handleChatSubmit]
   );
 
-  const handleExpandClick = useCallback(
-    async () => {
-      setError(null);
-      const prevText = chatInput;
-      try {
-        const expanded = await chatAPI.expandQuery(chatInput);
-        setUserHasInteracted(true);
-        setChatInput(expanded);
-        const expRanges = computeDiffHighlightRanges(prevText, expanded);
-        setQueryHighlightRanges(expRanges.length ? expRanges : null);
-        await handleChatSubmit(expanded);
-      } catch (e) {
-        setError(e?.response?.data?.detail || e?.message || 'Failed to expand');
-        dispatchView({ type: 'SHOW_SUGGESTIONS' });
-      }
-    },
-    [chatInput, handleChatSubmit]
-  );
-
   useEffect(() => {
     if (!isLoading && shouldFocusAfterLoad.current && activeTopTab === 'banks') {
       shouldFocusAfterLoad.current = false;
@@ -485,27 +438,6 @@ Limit 20.`;
     }, 0);
     return () => window.clearTimeout(id);
   }, [activeTopTab, hasSubmittedQuery]);
-
-  const handleSortChange = useCallback(
-    (nextSort) => {
-      setSortState(nextSort);
-      const key = nextSort?.key;
-      const label =
-        key === 'assets'
-          ? 'assets'
-          : key === 'bank_name'
-            ? 'bank name'
-            : key === 'capital_ratio'
-              ? 'capital ratio'
-              : key === 'roa'
-                ? 'ROA'
-                : key;
-
-      const dir = nextSort?.direction === 'asc' ? 'low to high' : 'high to low';
-      setConfirmation(`Okay, sorting by ${label} (${dir}).`);
-    },
-    []
-  );
 
   const showChatPanel = true;
 
@@ -635,41 +567,8 @@ Limit 20.`;
                     config={vizMeta.config}
                   />
 
-                  {viewMode === 'table' && (
-                    <div className="bank-explore-table-wrap">
-                      <BankExplorerTable
-                        rows={rows}
-                        sortState={sortState}
-                        visibleMetricIds={visibleMetricIds}
-                        metricDefs={metricDefsMerged}
-                        onSortChange={handleSortChange}
-                        onOpenDetail={handleOpenDetail}
-                        onRequestBranches={handleRequestBranches}
-                        onOpenColumnPicker={() => {
-                          setPickerSession((s) => s + 1);
-                          setColumnPickerOpen(true);
-                        }}
-                        columnPickerDisabled={isLoading}
-                      />
-                      <button
-                        type="button"
-                        className="bank-explore-expand-chevron"
-                        onClick={handleExpandClick}
-                        disabled={isLoading}
-                        aria-label="Show 5 more results"
-                      >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                          <path
-                            d="M7 10l5 5 5-5"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
+
+
                 </div>
 
                 <div className="bank-explore-chat-footer">

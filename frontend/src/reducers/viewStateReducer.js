@@ -1,6 +1,5 @@
 const INITIAL_VIEW_STATE = {
   viewMode: 'table',
-  rows: [],
   scalarValue: null,
   vizMeta: { title: '', config: {} },
   vizData: [],
@@ -19,14 +18,6 @@ function viewStateReducer(state, action) {
         ...INITIAL_VIEW_STATE,
         viewMode: 'scalar',
         scalarValue: action.value,
-        vizMeta: action.vizMeta ?? INITIAL_VIEW_STATE.vizMeta,
-      };
-
-    case 'SHOW_TABLE':
-      return {
-        ...INITIAL_VIEW_STATE,
-        viewMode: 'table',
-        rows: action.rows,
         vizMeta: action.vizMeta ?? INITIAL_VIEW_STATE.vizMeta,
       };
 

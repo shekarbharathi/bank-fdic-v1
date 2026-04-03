@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react';
 
 const VIZ_REGISTRY = {
+  table: lazy(() => import('./InteractiveTableViz')),
   compare_banks: lazy(() => import('./BankComparisonViz')),
   trend_tracker: lazy(() => import('./TrendChartViz')),
   metric_explorer: lazy(() => import('./MetricExplorerViz')),
