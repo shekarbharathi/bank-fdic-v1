@@ -311,6 +311,10 @@ Limit 20.`;
             sortDirection: 'desc',
             metricDefs: metricDefsMerged,
             fieldMetaByName,
+            onOpenColumnPicker: () => {
+              setPickerSession((s) => s + 1);
+              setColumnPickerOpen(true);
+            },
           };
           dispatchView({ type: 'SHOW_VIZ', experience: 'table', data, vizMeta: { title, config: tableConfig } });
           return;

@@ -157,9 +157,26 @@ export default function InteractiveTableViz({ data, title, config }) {
     );
   }
 
+  const onOpenColumnPicker = config?.onOpenColumnPicker;
+
   return (
     <div className="viz-placeholder viz-interactive-table" role="region" aria-label={title || 'Interactive table'}>
-      {title ? <h3 className="viz-placeholder-title">{title}</h3> : null}
+      <div className="ivt-toolbar">
+        {title ? <h3 className="viz-placeholder-title">{title}</h3> : null}
+        {onOpenColumnPicker ? (
+          <button
+            type="button"
+            className="ivt-add-col-btn"
+            onClick={onOpenColumnPicker}
+            aria-label="Add columns"
+            title="Add columns"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+        ) : null}
+      </div>
 
       {selectedRow ? (
         <div className="ivt-detail-bar">
