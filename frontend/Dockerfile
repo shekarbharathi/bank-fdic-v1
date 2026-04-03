@@ -4,8 +4,9 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy package files and npm config
 COPY package*.json ./
+COPY .npmrc ./
 RUN npm ci
 
 # Copy frontend source
