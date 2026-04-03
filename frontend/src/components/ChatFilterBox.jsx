@@ -34,9 +34,10 @@ const ChatFilterBox = forwardRef(
       focus: () => textareaRef.current?.focus(),
     }));
 
-    const isDisabled = disabled || isLoading;
+    const inputDisabled = Boolean(disabled) || isLoading;
+    const shellDimmed = Boolean(disabled);
     const trimmed = (value || '').trim();
-    const canSubmit = !isDisabled && trimmed.length > 0;
+    const canSubmit = !inputDisabled && trimmed.length > 0;
 
     const hasHighlight = Array.isArray(highlightRanges) && highlightRanges.length > 0;
     const segments = hasHighlight ? buildHighlightSegments(value || '', highlightRanges) : [];
@@ -69,7 +70,7 @@ const ChatFilterBox = forwardRef(
     return (
       <div className="chat-filter">
         <div
-          className={`chat-filter-shell ${isFocused ? 'focused' : ''} ${isDisabled ? 'disabled' : ''}`}
+          className={`chat-filter-shell ${isFocused ? 'focused' : ''} ${shellDimmed ? 'disabled' : ''}`}
         >
           <form
             className="chat-filter-form"
@@ -116,7 +117,7 @@ const ChatFilterBox = forwardRef(
                 onBlur={() => setIsFocused(false)}
                 onScroll={handleScroll}
                 placeholder={placeholder}
-                disabled={isDisabled}
+                disabled={inputDisabled}
                 rows={1}
                 className={`chat-filter-textarea ${hasHighlight ? 'chat-filter-textarea-mirror-mode' : ''} ${typewriterSuggestion && !hasHighlight ? 'chat-filter-textarea--typewriter' : ''}`}
                 aria-label="Ask to show banks"

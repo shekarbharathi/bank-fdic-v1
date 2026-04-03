@@ -13,7 +13,7 @@
   min-height: 0;
 }
 
-.bank-explore-chat-layout {
+.bank-explore-results-column {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -52,26 +52,15 @@
   word-break: break-word;
 }
 
-.bank-explore-chat-footer {
+.bank-explore-page-bottom-examples {
   flex-shrink: 0;
-  padding: 0.5rem 1rem 1rem;
+  padding: 0.75rem 1rem 1.25rem;
   border-top: 1px solid rgba(229, 231, 235, 1);
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), #fafafa);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.92), #fafafa);
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
-}
-
-.bank-explore-chat-footer .chat-filter {
-  max-width: 100%;
-  padding-left: 0;
-  padding-right: 0;
-}
-
-.bank-explore-chat-footer .chat-filter-shell {
-  width: 100%;
-  max-width: 100%;
 }
 
 .bank-explore-footer-examples {
@@ -106,6 +95,12 @@
   outline: 2px solid #93c5fd;
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+.bank-explore-footer-examples-toggle:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  color: #9ca3af;
 }
 
 .bank-explore-footer-examples-panel {
@@ -149,6 +144,12 @@
 
 .bank-explore-banks-root--has-query {
   flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  padding: 1rem 1rem 0.65rem;
+  box-sizing: border-box;
 }
 
 .bank-explore-landing-stack {
@@ -229,6 +230,17 @@
 }
 
 .bank-explore-banks-root--landing .chat-filter-shell {
+  width: 100%;
+  max-width: 100%;
+}
+
+.bank-explore-banks-root--has-query .chat-filter {
+  max-width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.bank-explore-banks-root--has-query .chat-filter-shell {
   width: 100%;
   max-width: 100%;
 }

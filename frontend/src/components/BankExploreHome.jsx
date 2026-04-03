@@ -497,22 +497,26 @@ Limit 20.`;
       {activeTopTab === 'banks' ? (
         <>
           <div className="bank-explore-banks-shell">
-            {!hasSubmittedQuery ? (
-              <div className="bank-explore-banks-root bank-explore-banks-root--landing">
-                <div className="bank-explore-landing-stack">
-                  <ChatFilterBox
-                    ref={chatFilterRef}
-                    value={displayValue}
-                    onChange={handleChatInputChange}
-                    onSubmit={handleChatSubmit}
-                    isLoading={isLoading}
-                    disabled={false}
-                    placeholder=""
-                    highlightRanges={queryHighlightRanges}
-                    onHighlightClear={clearQueryHighlight}
-                    onFocus={handleChatFilterFocus}
-                    typewriterSuggestion={isTypewriterMuted}
-                  />
+            <div
+              className={`bank-explore-banks-root ${
+                hasSubmittedQuery ? 'bank-explore-banks-root--has-query' : 'bank-explore-banks-root--landing'
+              }`}
+            >
+              <div className="bank-explore-landing-stack">
+                <ChatFilterBox
+                  ref={chatFilterRef}
+                  value={displayValue}
+                  onChange={handleChatInputChange}
+                  onSubmit={handleChatSubmit}
+                  isLoading={isLoading}
+                  disabled={false}
+                  placeholder=""
+                  highlightRanges={queryHighlightRanges}
+                  onHighlightClear={clearQueryHighlight}
+                  onFocus={handleChatFilterFocus}
+                  typewriterSuggestion={!hasSubmittedQuery && isTypewriterMuted}
+                />
+                {!hasSubmittedQuery ? (
                   <section className="bank-explore-landing-examples" aria-label="Example queries">
                     <p className="bank-explore-landing-examples-heading">Try these examples</p>
                     <ul className="bank-explore-landing-example-list">
@@ -530,10 +534,12 @@ Limit 20.`;
                       ))}
                     </ul>
                   </section>
-                </div>
+                ) : null}
               </div>
-            ) : (
-              <div className="bank-explore-chat-layout">
+            </div>
+
+            {hasSubmittedQuery ? (
+              <div className="bank-explore-results-column">
                 <div className="bank-explore-chat-main">
                   <div className="bank-explore-chat-bubbles" aria-live="polite">
                     {userChatMessages.map((msg, i) => (
@@ -595,41 +601,27 @@ Limit 20.`;
                     title={vizMeta.title}
                     config={vizMeta.config}
                   />
-
-
-
                 </div>
 
-                <div className="bank-explore-chat-footer">
-                  <ChatFilterBox
-                    ref={chatFilterRef}
-                    value={displayValue}
-                    onChange={handleChatInputChange}
-                    onSubmit={handleChatSubmit}
-                    isLoading={isLoading}
-                    disabled={isLoading}
-                    placeholder=""
-                    highlightRanges={queryHighlightRanges}
-                    onHighlightClear={clearQueryHighlight}
-                    onFocus={handleChatFilterFocus}
-                  />
+                <div className="bank-explore-page-bottom-examples">
                   <div className="bank-explore-footer-examples">
                     <button
                       type="button"
                       className="bank-explore-footer-examples-toggle"
                       onClick={() => setFooterExamplesOpen((open) => !open)}
                       aria-expanded={footerExamplesOpen}
-                      aria-controls="bank-explore-footer-examples-panel"
-                      id="bank-explore-footer-examples-label"
+                      aria-controls="bank-explore-page-bottom-examples-panel"
+                      id="bank-explore-page-bottom-examples-label"
+                      disabled={isLoading}
                     >
                       Try these examples
                     </button>
-                    {footerExamplesOpen ? (
+                    {footerExamplesOpen && !isLoading ? (
                       <div
                         className="bank-explore-footer-examples-panel"
-                        id="bank-explore-footer-examples-panel"
+                        id="bank-explore-page-bottom-examples-panel"
                         role="region"
-                        aria-labelledby="bank-explore-footer-examples-label"
+                        aria-labelledby="bank-explore-page-bottom-examples-label"
                       >
                         <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
                           {LANDING_EXAMPLE_QUERIES.map((q) => (
@@ -650,7 +642,7 @@ Limit 20.`;
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
           </div>
 
           <ColumnPickerModal
