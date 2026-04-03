@@ -4,8 +4,9 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files and npm config
-COPY package*.json ./
+# Copy package.json and npm config (skip lockfile -- it has macOS-specific
+# optional deps that won't resolve on Alpine Linux)
+COPY package.json ./
 COPY .npmrc ./
 RUN npm install --no-audit --no-fund
 
