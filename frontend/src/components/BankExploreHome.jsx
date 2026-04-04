@@ -563,7 +563,11 @@ Limit 20.`;
                 hasSubmittedQuery ? 'bank-explore-banks-root--has-query' : 'bank-explore-banks-root--landing'
               }`}
             >
-              <div className="bank-explore-landing-stack">
+              <div
+                className={`bank-explore-landing-stack${
+                  hasSubmittedQuery ? ' bank-explore-landing-stack--post-submit' : ''
+                }`}
+              >
                 <ChatFilterBox
                   ref={chatFilterRef}
                   value={displayValue}
