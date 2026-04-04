@@ -57,11 +57,9 @@ const BankExploreHome = () => {
   const [branchRows, setBranchRows] = useState([]);
   const [branchLoading, setBranchLoading] = useState(false);
 
-  /** Right-aligned user query bubbles after submit (persists across turns). */
-  const [userChatMessages, setUserChatMessages] = useState([]);
-  /** Shown above composer while loading: Interpreting → Fetching Data */
+  /** Shown while loading: Interpreting → Fetching Data */
   const [statusPhase, setStatusPhase] = useState(null);
-  /** Collapsible “Try these examples” under the bottom chatbox (after first submit). */
+  /** Collapsible “Try these examples” at the bottom (after first submit). */
   const [footerExamplesOpen, setFooterExamplesOpen] = useState(false);
 
   const hasSubmittedQueryRef = useRef(hasSubmittedQuery);
@@ -216,7 +214,6 @@ Limit 20.`;
       const { visibleMetricOverride } = submitOptions;
       lastSubmittedQueryRef.current = trimmed;
       setHasSubmittedQuery(true);
-      setUserChatMessages((prev) => [...prev, trimmed]);
       setChatInput('');
       setTypewriterDisplay('');
       setUserHasInteracted(false);
@@ -540,17 +537,9 @@ Limit 20.`;
 
             {hasSubmittedQuery ? (
               <div className="bank-explore-results-column">
-                <div className="bank-explore-chat-main">
-                  <div className="bank-explore-chat-bubbles" aria-live="polite">
-                    {userChatMessages.map((msg, i) => (
-                      <div key={`user-msg-${i}`} className="bank-explore-chat-user-bubble">
-                        {msg}
-                      </div>
-                    ))}
-                  </div>
-
+                <div className="bank-explore-results-main">
                   {isLoading && statusPhase ? (
-                    <div className="bank-explore-chat-status bank-explore-chat-status--below-bubble" aria-live="polite">
+                    <div className="bank-explore-results-status" aria-live="polite">
                       {statusPhase === 'interpreting' ? 'Interpreting...' : 'Fetching Data...'}
                     </div>
                   ) : null}
