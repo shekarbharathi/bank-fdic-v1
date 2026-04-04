@@ -64,6 +64,8 @@ const BankExploreHome = () => {
   const [statusPhase, setStatusPhase] = useState(null);
   /** Bumped on each successful viz dispatch so VizRenderer remounts and onVizReady runs again. */
   const [vizRenderGeneration, setVizRenderGeneration] = useState(0);
+  /** Collapsible Examples panel under the chatbox after the first send. */
+  const [postSubmitExamplesOpen, setPostSubmitExamplesOpen] = useState(false);
 
   const requestStartTimeRef = useRef(0);
   const apiResolvedRef = useRef(false);
@@ -247,6 +249,7 @@ Limit 20.`;
       const inferredRanking = extractRankingCriteria(trimmed);
       const requestedMetrics = extractRequestedMetrics(trimmed);
       setError(null);
+      setPostSubmitExamplesOpen(false);
       setStatusPhase('interpreting');
       setIsLoading(true);
       setDetailBank(null);
@@ -592,7 +595,49 @@ Limit 20.`;
                       ))}
                     </ul>
                   </section>
-                ) : null}
+                ) : (
+                  <div className="bank-explore-examples-below-chat">
+                    <div className="bank-explore-footer-examples">
+                      <button
+                        type="button"
+                        className="bank-explore-footer-examples-toggle"
+                        onClick={() => setPostSubmitExamplesOpen((open) => !open)}
+                        aria-expanded={postSubmitExamplesOpen}
+                        aria-controls="bank-explore-post-submit-examples-panel"
+                        id="bank-explore-examples-link-label"
+                        disabled={isLoading}
+                      >
+                        Examples
+                      </button>
+                      {postSubmitExamplesOpen && !isLoading ? (
+                        <div
+                          className="bank-explore-footer-examples-panel"
+                          id="bank-explore-post-submit-examples-panel"
+                          role="region"
+                          aria-labelledby="bank-explore-examples-link-label"
+                        >
+                          <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
+                            {LANDING_EXAMPLE_QUERIES.map((q) => (
+                              <li key={q}>
+                                <button
+                                  type="button"
+                                  className="bank-explore-landing-example-tile"
+                                  onClick={() => {
+                                    setPostSubmitExamplesOpen(false);
+                                    handleSuggestionClick(q);
+                                  }}
+                                  disabled={isLoading}
+                                >
+                                  {q}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
