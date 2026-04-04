@@ -13,7 +13,7 @@ export default function VizRenderer({ experience, data, title, config }) {
   const Component = VIZ_REGISTRY[experience];
   if (!Component) return null;
   return (
-    <Suspense fallback={<div className="viz-loading">Loading visualization…</div>}>
+    <Suspense fallback={null}>
       <Component data={data} title={title} config={config} />
     </Suspense>
   );
