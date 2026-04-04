@@ -54,4 +54,29 @@ export const METRIC_DEFS_DEFAULT = {
     kind: 'percent',
     explanation: 'A FDIC risk metric related to expected losses and net charge-offs.',
   },
+  /** Loan breakdowns — API columns often use *_dollars; normalized in bankDataNormalization.extractExtraMetric */
+  credit_card_loans: {
+    id: 'credit_card_loans',
+    label: 'Credit Card Loans',
+    kind: 'dollar',
+    explanation: 'Credit card loans outstanding.',
+  },
+  real_estate_loans: {
+    id: 'real_estate_loans',
+    label: 'Real Estate Loans',
+    kind: 'dollar',
+    explanation: 'Real estate loans outstanding.',
+  },
+  commercial_industrial_loans: {
+    id: 'commercial_industrial_loans',
+    label: 'Commercial & Industrial Loans',
+    kind: 'dollar',
+    explanation: 'Commercial and industrial loans outstanding.',
+  },
+  residential_real_estate_loans: {
+    id: 'residential_real_estate_loans',
+    label: 'Residential Real Estate Loans',
+    kind: 'dollar',
+    explanation: 'Residential real estate loans outstanding.',
+  },
 };

@@ -44,11 +44,17 @@ export const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
     }
   }
   const aliases = EXTRA_FIELD_JSON_ALIASES[fieldName] || [];
+  const fn = String(fieldName);
+  /** API often returns e.g. credit_card_loans_dollars while field_name is credit_card_loans */
+  const dollarSuffixCandidates =
+    fn.toLowerCase().endsWith('_dollars') ? [] : [`${fn}_dollars`];
+
   const raw = pickCaseInsensitive(
     row,
     fieldName,
     fieldName.toUpperCase(),
     ...aliases,
+    ...dollarSuffixCandidates,
     `total_${fieldName}_dollars`
   );
   if (raw === undefined || raw === null) return null;
