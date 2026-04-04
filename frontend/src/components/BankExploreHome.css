@@ -31,64 +31,6 @@
   gap: 0.75rem;
 }
 
-.bank-explore-examples-below-chat {
-  width: 100%;
-  max-width: min(720px, 100%);
-  margin-top: 0.15rem;
-  padding-bottom: 0.15rem;
-  box-sizing: border-box;
-}
-
-.bank-explore-footer-examples {
-  margin-top: 0.35rem;
-  padding-bottom: 0.15rem;
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.bank-explore-footer-examples-toggle {
-  margin: 0;
-  padding: 0.2rem 0.35rem;
-  border: none;
-  background: transparent;
-  font-family: inherit;
-  font-size: 0.8rem;
-  font-weight: 500;
-  color: #2563eb;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-  line-height: 1.3;
-}
-
-.bank-explore-footer-examples-toggle:hover {
-  color: #1d4ed8;
-}
-
-.bank-explore-footer-examples-toggle:focus-visible {
-  outline: 2px solid #93c5fd;
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
-.bank-explore-footer-examples-toggle:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  color: #9ca3af;
-}
-
-.bank-explore-footer-examples-panel {
-  width: 100%;
-  margin-top: 0.65rem;
-  padding-top: 0.15rem;
-}
-
-.bank-explore-footer-examples-list {
-  margin-top: 0;
-}
-
 .bank-explore-results-status {
   font-size: 0.8rem;
   font-weight: 600;
@@ -130,6 +72,14 @@
   flex-direction: column;
   align-items: stretch;
   gap: 1.5rem;
+}
+
+.bank-explore-landing-examples-heading {
+  margin: 0 0 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 400;
+  color: #6b7280;
+  text-align: center;
 }
 
 .bank-explore-landing-example-list {

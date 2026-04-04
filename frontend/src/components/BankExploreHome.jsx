@@ -59,8 +59,6 @@ const BankExploreHome = () => {
 
   /** Shown while loading: Interpreting → Fetching Data */
   const [statusPhase, setStatusPhase] = useState(null);
-  /** Collapsible “Try these examples” at the bottom (after first submit). */
-  const [footerExamplesOpen, setFooterExamplesOpen] = useState(false);
 
   const hasSubmittedQueryRef = useRef(hasSubmittedQuery);
   const userHasInteractedRef = useRef(userHasInteracted);
@@ -426,14 +424,6 @@ Limit 20.`;
     [handleChatSubmit]
   );
 
-  const handleFooterExamplePick = useCallback(
-    (optionText) => {
-      setFooterExamplesOpen(false);
-      handleSuggestionClick(optionText);
-    },
-    [handleSuggestionClick]
-  );
-
   const handleExploreFactQuery = useCallback(
     (q) => {
       setUserHasInteracted(true);
@@ -514,44 +504,25 @@ Limit 20.`;
                   onFocus={handleChatFilterFocus}
                   typewriterSuggestion={!hasSubmittedQuery && isTypewriterMuted}
                 />
-                <div className="bank-explore-examples-below-chat">
-                  <div className="bank-explore-footer-examples">
-                    <button
-                      type="button"
-                      className="bank-explore-footer-examples-toggle"
-                      onClick={() => setFooterExamplesOpen((open) => !open)}
-                      aria-expanded={footerExamplesOpen}
-                      aria-controls="bank-explore-examples-panel"
-                      id="bank-explore-examples-label"
-                      disabled={isLoading}
-                    >
-                      Examples
-                    </button>
-                    {footerExamplesOpen && !isLoading ? (
-                      <div
-                        className="bank-explore-footer-examples-panel"
-                        id="bank-explore-examples-panel"
-                        role="region"
-                        aria-labelledby="bank-explore-examples-label"
-                      >
-                        <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
-                          {LANDING_EXAMPLE_QUERIES.map((q) => (
-                            <li key={q}>
-                              <button
-                                type="button"
-                                className="bank-explore-landing-example-tile"
-                                onClick={() => handleFooterExamplePick(q)}
-                                disabled={isLoading}
-                              >
-                                {q}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
+                {!hasSubmittedQuery ? (
+                  <section className="bank-explore-landing-examples" aria-label="Example queries">
+                    <p className="bank-explore-landing-examples-heading">Try these examples</p>
+                    <ul className="bank-explore-landing-example-list">
+                      {LANDING_EXAMPLE_QUERIES.map((q) => (
+                        <li key={q}>
+                          <button
+                            type="button"
+                            className="bank-explore-landing-example-tile"
+                            onClick={() => handleSuggestionClick(q)}
+                            disabled={isLoading}
+                          >
+                            {q}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ) : null}
               </div>
             </div>
 
