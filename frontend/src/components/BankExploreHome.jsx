@@ -25,6 +25,9 @@ import './BankExploreHome.css';
 /** Set to true to show the Surprising Facts (Insights) carousel again. */
 const SHOW_INSIGHTS_CAROUSEL = false;
 
+/** Minimum time to show “Interpreting…” before “Fetching data…” (if API still pending). */
+const INTERPRETING_MS = 800;
+
 const BankExploreHome = () => {
   const chatFilterRef = useRef(null);
   const shouldFocusAfterLoad = useRef(false);
@@ -57,8 +60,16 @@ const BankExploreHome = () => {
   const [branchRows, setBranchRows] = useState([]);
   const [branchLoading, setBranchLoading] = useState(false);
 
-  /** Shown while loading: Interpreting → Fetching Data */
+  /** null | 'interpreting' | 'fetching' | 'loading_viz' */
   const [statusPhase, setStatusPhase] = useState(null);
+  /** Bumped on each successful viz dispatch so VizRenderer remounts and onVizReady runs again. */
+  const [vizRenderGeneration, setVizRenderGeneration] = useState(0);
+
+  const requestStartTimeRef = useRef(0);
+  const apiResolvedRef = useRef(false);
+  const pendingLoadingVizRef = useRef(false);
+  const vizReadyPendingRef = useRef(false);
+  const phase800TimerRef = useRef(null);
 
   const hasSubmittedQueryRef = useRef(hasSubmittedQuery);
   const userHasInteractedRef = useRef(userHasInteracted);
@@ -195,14 +206,28 @@ Limit 20.`;
     };
   }, [hasSubmittedQuery, userHasInteracted, chatInput, isLoading]);
 
+  const handleVizRenderComplete = useCallback(() => {
+    setStatusPhase((prev) => {
+      if (prev === 'loading_viz') return null;
+      vizReadyPendingRef.current = true;
+      return prev;
+    });
+  }, []);
+
   useEffect(() => {
-    if (!isLoading) {
+    if (statusPhase !== 'loading_viz') return;
+    if (vizReadyPendingRef.current) {
+      vizReadyPendingRef.current = false;
       setStatusPhase(null);
-      return;
     }
-    const t = window.setTimeout(() => setStatusPhase('fetching'), 800);
-    return () => window.clearTimeout(t);
-  }, [isLoading]);
+  }, [statusPhase]);
+
+  const clearPhase800Timer = useCallback(() => {
+    if (phase800TimerRef.current != null) {
+      clearTimeout(phase800TimerRef.current);
+      phase800TimerRef.current = null;
+    }
+  }, []);
 
   const handleChatSubmit = useCallback(
     async (text, submitOptions = {}) => {
@@ -229,26 +254,62 @@ Limit 20.`;
       setBranchLoading(false);
       dispatchView({ type: 'RESET' });
 
+      requestStartTimeRef.current = Date.now();
+      apiResolvedRef.current = false;
+      pendingLoadingVizRef.current = false;
+      vizReadyPendingRef.current = false;
+      clearPhase800Timer();
+      phase800TimerRef.current = window.setTimeout(() => {
+        phase800TimerRef.current = null;
+        if (!apiResolvedRef.current) {
+          setStatusPhase('fetching');
+        } else if (pendingLoadingVizRef.current) {
+          setStatusPhase('loading_viz');
+        }
+      }, INTERPRETING_MS);
+
+      const markApiFailure = () => {
+        apiResolvedRef.current = true;
+        pendingLoadingVizRef.current = false;
+        clearPhase800Timer();
+        setStatusPhase(null);
+      };
+
+      const applySuccessfulVizDispatch = (dispatchFn) => {
+        apiResolvedRef.current = true;
+        pendingLoadingVizRef.current = true;
+        const elapsed = Date.now() - requestStartTimeRef.current;
+        setVizRenderGeneration((g) => g + 1);
+        if (elapsed >= INTERPRETING_MS) {
+          setStatusPhase('loading_viz');
+        }
+        dispatchFn();
+      };
+
       try {
         const res = await chatAPI.sendMessage(trimmed);
 
         if (res?.error_code === 'out_of_scope' || res?.error === 'out_of_scope') {
+          markApiFailure();
           dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
 
         if (res?.error) {
+          markApiFailure();
           dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
 
         const data = res?.data;
         if (!Array.isArray(data)) {
+          markApiFailure();
           dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
 
         if (isRefusalResponse(res?.response)) {
+          markApiFailure();
           dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
@@ -274,15 +335,19 @@ Limit 20.`;
         if (experience === 'scalar') {
           const row0 = data[0];
           if (!row0 || Object.keys(row0).length === 0) {
+            markApiFailure();
             dispatchView({ type: 'SHOW_SUGGESTIONS' });
             return;
           }
           const val = Object.values(row0)[0];
           if (isRefusalResponse(val) || isRefusalResponse(res?.response)) {
+            markApiFailure();
             dispatchView({ type: 'SHOW_SUGGESTIONS' });
             return;
           }
-          dispatchView({ type: 'SHOW_SCALAR', value: val, vizMeta: { title, config } });
+          applySuccessfulVizDispatch(() => {
+            dispatchView({ type: 'SHOW_SCALAR', value: val, vizMeta: { title, config } });
+          });
           return;
         }
 
@@ -316,19 +381,24 @@ Limit 20.`;
             },
             onExpandQuery: handleExpandClick,
           };
-          dispatchView({ type: 'SHOW_VIZ', experience: 'table', data, vizMeta: { title, config: tableConfig } });
+          applySuccessfulVizDispatch(() => {
+            dispatchView({ type: 'SHOW_VIZ', experience: 'table', data, vizMeta: { title, config: tableConfig } });
+          });
           return;
         }
 
-        dispatchView({ type: 'SHOW_VIZ', experience, data, vizMeta: { title, config } });
+        applySuccessfulVizDispatch(() => {
+          dispatchView({ type: 'SHOW_VIZ', experience, data, vizMeta: { title, config } });
+        });
       } catch {
+        markApiFailure();
         dispatchView({ type: 'SHOW_SUGGESTIONS' });
       } finally {
         setIsLoading(false);
         shouldFocusAfterLoad.current = true;
       }
     },
-    [updateConfirmationFromIntent, visibleMetricIds, fieldMetaByName]
+    [updateConfirmationFromIntent, visibleMetricIds, fieldMetaByName, clearPhase800Timer]
   );
   handleChatSubmitRef.current = handleChatSubmit;
 
@@ -529,9 +599,13 @@ Limit 20.`;
             {hasSubmittedQuery ? (
               <div className="bank-explore-results-column">
                 <div className="bank-explore-results-main">
-                  {isLoading && statusPhase ? (
+                  {statusPhase ? (
                     <div className="bank-explore-results-status" aria-live="polite">
-                      {statusPhase === 'interpreting' ? 'Interpreting...' : 'Fetching Data...'}
+                      {statusPhase === 'interpreting'
+                        ? 'Interpreting...'
+                        : statusPhase === 'fetching'
+                          ? 'Fetching data...'
+                          : 'Loading visualization...'}
                     </div>
                   ) : null}
 
@@ -576,10 +650,12 @@ Limit 20.`;
                   )}
 
                   <VizRenderer
+                    key={vizRenderGeneration}
                     experience={viewMode}
                     data={vizData}
                     title={vizMeta.title}
                     config={vizMeta.config}
+                    onVizReady={handleVizRenderComplete}
                   />
                 </div>
               </div>

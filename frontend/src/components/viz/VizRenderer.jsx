@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useLayoutEffect } from 'react';
 
 const VIZ_REGISTRY = {
   table: lazy(() => import('./InteractiveTableViz')),
@@ -9,12 +9,30 @@ const VIZ_REGISTRY = {
   peer_group: lazy(() => import('./PeerGroupViz')),
 };
 
-export default function VizRenderer({ experience, data, title, config }) {
+function VizReadyGate({ onReady, children }) {
+  useLayoutEffect(() => {
+    onReady?.();
+  }, [onReady]);
+  return children;
+}
+
+function VizNullNotifier({ onReady }) {
+  useLayoutEffect(() => {
+    onReady?.();
+  }, [onReady]);
+  return null;
+}
+
+export default function VizRenderer({ experience, data, title, config, onVizReady }) {
   const Component = VIZ_REGISTRY[experience];
-  if (!Component) return null;
+  if (!Component) {
+    return <VizNullNotifier onReady={onVizReady} />;
+  }
   return (
     <Suspense fallback={null}>
-      <Component data={data} title={title} config={config} />
+      <VizReadyGate onReady={onVizReady}>
+        <Component data={data} title={title} config={config} />
+      </VizReadyGate>
     </Suspense>
   );
 }
