@@ -2,16 +2,12 @@
   padding: 0.75rem 1rem 1rem;
 }
 
-/* Toolbar row: title + add-columns button */
+/* Toolbar row: add-columns button (top right) */
 .ivt-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-bottom: 8px;
-}
-
-.ivt-toolbar .viz-placeholder-title {
-  margin: 0;
 }
 
 .ivt-add-col-btn {

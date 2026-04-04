@@ -151,7 +151,6 @@ export default function InteractiveTableViz({ data, title, config }) {
   if (sortedRows.length === 0) {
     return (
       <div className="viz-placeholder" role="region" aria-label={title || 'Table'}>
-        {title ? <h3 className="viz-placeholder-title">{title}</h3> : null}
         <p className="viz-placeholder-hint">No data to display.</p>
       </div>
     );
@@ -162,9 +161,8 @@ export default function InteractiveTableViz({ data, title, config }) {
 
   return (
     <div className="viz-placeholder viz-interactive-table" role="region" aria-label={title || 'Interactive table'}>
-      <div className="ivt-toolbar">
-        {title ? <h3 className="viz-placeholder-title">{title}</h3> : null}
-        {onOpenColumnPicker ? (
+      {onOpenColumnPicker ? (
+        <div className="ivt-toolbar">
           <button
             type="button"
             className="ivt-add-col-btn"
@@ -176,8 +174,8 @@ export default function InteractiveTableViz({ data, title, config }) {
               <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {selectedRow ? (
         <div className="ivt-detail-bar">
