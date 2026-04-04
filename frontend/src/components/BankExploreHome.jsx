@@ -208,15 +208,16 @@ Limit 20.`;
 
   const handleChatSubmit = useCallback(
     async (text, submitOptions = {}) => {
-      const trimmed = String(text ?? '').trim();
+      const raw = String(text ?? '');
+      const trimmed = raw.trim();
       if (!trimmed) return;
 
       const { visibleMetricOverride } = submitOptions;
       lastSubmittedQueryRef.current = trimmed;
       setHasSubmittedQuery(true);
-      setChatInput('');
+      setChatInput(raw);
       setTypewriterDisplay('');
-      setUserHasInteracted(false);
+      setUserHasInteracted(true);
 
       const nextLimit = extractTopN(trimmed);
       const nextRegionAbbr = extractStateAbbr(trimmed);
@@ -513,25 +514,44 @@ Limit 20.`;
                   onFocus={handleChatFilterFocus}
                   typewriterSuggestion={!hasSubmittedQuery && isTypewriterMuted}
                 />
-                {!hasSubmittedQuery ? (
-                  <section className="bank-explore-landing-examples" aria-label="Example queries">
-                    <p className="bank-explore-landing-examples-heading">Try these examples</p>
-                    <ul className="bank-explore-landing-example-list">
-                      {LANDING_EXAMPLE_QUERIES.map((q) => (
-                        <li key={q}>
-                          <button
-                            type="button"
-                            className="bank-explore-landing-example-tile"
-                            onClick={() => handleSuggestionClick(q)}
-                            disabled={isLoading}
-                          >
-                            {q}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
-                ) : null}
+                <div className="bank-explore-examples-below-chat">
+                  <div className="bank-explore-footer-examples">
+                    <button
+                      type="button"
+                      className="bank-explore-footer-examples-toggle"
+                      onClick={() => setFooterExamplesOpen((open) => !open)}
+                      aria-expanded={footerExamplesOpen}
+                      aria-controls="bank-explore-examples-panel"
+                      id="bank-explore-examples-label"
+                      disabled={isLoading}
+                    >
+                      Examples
+                    </button>
+                    {footerExamplesOpen && !isLoading ? (
+                      <div
+                        className="bank-explore-footer-examples-panel"
+                        id="bank-explore-examples-panel"
+                        role="region"
+                        aria-labelledby="bank-explore-examples-label"
+                      >
+                        <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
+                          {LANDING_EXAMPLE_QUERIES.map((q) => (
+                            <li key={q}>
+                              <button
+                                type="button"
+                                className="bank-explore-landing-example-tile"
+                                onClick={() => handleFooterExamplePick(q)}
+                                disabled={isLoading}
+                              >
+                                {q}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -590,45 +610,6 @@ Limit 20.`;
                     title={vizMeta.title}
                     config={vizMeta.config}
                   />
-                </div>
-
-                <div className="bank-explore-page-bottom-examples">
-                  <div className="bank-explore-footer-examples">
-                    <button
-                      type="button"
-                      className="bank-explore-footer-examples-toggle"
-                      onClick={() => setFooterExamplesOpen((open) => !open)}
-                      aria-expanded={footerExamplesOpen}
-                      aria-controls="bank-explore-page-bottom-examples-panel"
-                      id="bank-explore-page-bottom-examples-label"
-                      disabled={isLoading}
-                    >
-                      Try these examples
-                    </button>
-                    {footerExamplesOpen && !isLoading ? (
-                      <div
-                        className="bank-explore-footer-examples-panel"
-                        id="bank-explore-page-bottom-examples-panel"
-                        role="region"
-                        aria-labelledby="bank-explore-page-bottom-examples-label"
-                      >
-                        <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
-                          {LANDING_EXAMPLE_QUERIES.map((q) => (
-                            <li key={q}>
-                              <button
-                                type="button"
-                                className="bank-explore-landing-example-tile"
-                                onClick={() => handleFooterExamplePick(q)}
-                                disabled={isLoading}
-                              >
-                                {q}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </div>
                 </div>
               </div>
             ) : null}

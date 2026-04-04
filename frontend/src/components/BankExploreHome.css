@@ -31,14 +31,11 @@
   gap: 0.75rem;
 }
 
-.bank-explore-page-bottom-examples {
-  flex-shrink: 0;
-  padding: 0.75rem 1rem 1.25rem;
-  border-top: 1px solid rgba(229, 231, 235, 1);
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.92), #fafafa);
-  max-width: 1200px;
-  margin: 0 auto;
+.bank-explore-examples-below-chat {
   width: 100%;
+  max-width: min(720px, 100%);
+  margin-top: 0.15rem;
+  padding-bottom: 0.15rem;
   box-sizing: border-box;
 }
 
@@ -133,14 +130,6 @@
   flex-direction: column;
   align-items: stretch;
   gap: 1.5rem;
-}
-
-.bank-explore-landing-examples-heading {
-  margin: 0 0 0.85rem;
-  font-size: 0.95rem;
-  font-weight: 400;
-  color: #6b7280;
-  text-align: center;
 }
 
 .bank-explore-landing-example-list {
