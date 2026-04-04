@@ -27,6 +27,13 @@ const EXTRA_FIELD_JSON_ALIASES = {
   eqtot: ['total_equity_capital_dollars'],
   roa: ['return_on_assets'],
   numemp: ['number_of_employees'],
+  /** Display names sometimes produce "and" in field_name; API uses shorter snake_case *_dollars */
+  net_loans_leases: ['net_loans_leases_dollars'],
+  net_loans_and_leases: ['net_loans_leases_dollars'],
+  earning_assets: ['earning_assets_dollars'],
+  domestic_loans: ['domestic_loans_dollars'],
+  cash_balances: ['cash_balances_dollars'],
+  cash_and_balances: ['cash_balances_dollars'],
 };
 
 export const extractExtraMetric = (row, fieldName, fieldMetaByName) => {

@@ -79,4 +79,28 @@ export const METRIC_DEFS_DEFAULT = {
     kind: 'dollar',
     explanation: 'Residential real estate loans outstanding.',
   },
+  net_loans_leases: {
+    id: 'net_loans_leases',
+    label: 'Net Loans and Leases',
+    kind: 'dollar',
+    explanation: 'Net loans and leases outstanding.',
+  },
+  earning_assets: {
+    id: 'earning_assets',
+    label: 'Earning Assets',
+    kind: 'dollar',
+    explanation: 'Earning assets.',
+  },
+  domestic_loans: {
+    id: 'domestic_loans',
+    label: 'Domestic Loans',
+    kind: 'dollar',
+    explanation: 'Domestic loans outstanding.',
+  },
+  cash_balances: {
+    id: 'cash_balances',
+    label: 'Cash and Balances',
+    kind: 'dollar',
+    explanation: 'Cash and balances due.',
+  },
 };
