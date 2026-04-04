@@ -70,7 +70,7 @@
   font-family: inherit;
   font-size: 0.8rem;
   font-weight: 500;
-  color: #2563eb;
+  color: #6b7280;
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
@@ -78,11 +78,11 @@
 }
 
 .bank-explore-footer-examples-toggle:hover {
-  color: #1d4ed8;
+  color: #4b5563;
 }
 
 .bank-explore-footer-examples-toggle:focus-visible {
-  outline: 2px solid #93c5fd;
+  outline: 2px solid #d1d5db;
   outline-offset: 2px;
   border-radius: 4px;
 }
