@@ -175,7 +175,6 @@ export default function MetricExplorerViz({ data, title, config }) {
 
   return (
     <div className="viz-placeholder" role="region" aria-label={title || 'Metric explorer'}>
-      {title ? <h3 className="viz-placeholder-title">{title}</h3> : null}
       <p className="viz-placeholder-hint">
         Metric: <strong>{displayName}</strong>
         {histogram ? (
@@ -222,10 +221,6 @@ export default function MetricExplorerViz({ data, title, config }) {
       {histogram && histogramData.length === 0 ? (
         <p className="viz-placeholder-hint">No numeric values to chart for this metric.</p>
       ) : null}
-      <details className="viz-config-details">
-        <summary>Raw rows ({Array.isArray(data) ? data.length : 0})</summary>
-        <pre className="viz-placeholder-pre">{JSON.stringify((Array.isArray(data) ? data : []).slice(0, 8), null, 2)}</pre>
-      </details>
     </div>
   );
 }
