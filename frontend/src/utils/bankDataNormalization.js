@@ -70,6 +70,15 @@ const EXTRA_FIELD_JSON_ALIASES = {
   domestic_loans: ['domestic_loans_dollars'],
   cash_balances: ['cash_balances_dollars', 'cash_and_balances_dollars'],
   cash_and_balances: ['cash_balances_dollars', 'cash_and_balances_dollars'],
+  /** Deposit breakdown — FDIC codes vs descriptive SQL aliases */
+  dpmmd: ['money_market_deposit_accounts_dollars'],
+  dpsav: ['other_savings_deposits_dollars'],
+  brttrans: ['total_transaction_accounts_dollars'],
+  p2215: ['ipc_transaction_accounts_dollars'],
+  money_market_deposit_accounts: ['money_market_deposit_accounts_dollars'],
+  other_savings_deposits: ['other_savings_deposits_dollars'],
+  total_transaction_accounts: ['total_transaction_accounts_dollars'],
+  ipc_transaction_accounts: ['ipc_transaction_accounts_dollars'],
 };
 
 export const extractExtraMetric = (row, fieldName, fieldMetaByName) => {

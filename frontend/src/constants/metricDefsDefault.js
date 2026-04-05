@@ -66,6 +66,30 @@ export const METRIC_DEFS_DEFAULT = {
     kind: 'dollar',
     explanation: 'Cash and balances due (FDIC CHBAL).',
   },
+  dpmmd: {
+    id: 'dpmmd',
+    label: 'Money Market Deposit Accounts',
+    kind: 'dollar',
+    explanation: 'MMDAs (FDIC DPMMD).',
+  },
+  dpsav: {
+    id: 'dpsav',
+    label: 'Other Savings Deposits',
+    kind: 'dollar',
+    explanation: 'Savings excluding MMDAs (FDIC DPSAV).',
+  },
+  brttrans: {
+    id: 'brttrans',
+    label: 'Total Transaction Accounts',
+    kind: 'dollar',
+    explanation: 'Domestic transaction accounts (FDIC BRTTRANS).',
+  },
+  p2215: {
+    id: 'p2215',
+    label: 'IPC Transaction Accounts',
+    kind: 'dollar',
+    explanation: 'IPC transaction accounts (FDIC P2215).',
+  },
   elnatr: {
     id: 'elnatr',
     label: 'ELNATR',
