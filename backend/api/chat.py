@@ -1,6 +1,7 @@
 """
 Chat API endpoints
 """
+import logging
 import os
 import sys
 
@@ -30,6 +31,7 @@ except ImportError:
     from backend.config import LLM_PROVIDER
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Initialize services (will be initialized on first request)
 _db_service = None
@@ -65,8 +67,40 @@ async def chat_endpoint(request: ChatRequest):
 
         results = await db_service.execute_query(sql_query)
 
+        intent_norm = (plan.intent or "").lower().strip()
+        if intent_norm == "trend_tracker" and not results:
+            logger.warning(
+                "trend_tracker returned 0 rows sql=%s entities=%s",
+                sql_query[:500],
+                plan.entities,
+            )
+            bank_name = plan.entities.get("bank_name") if plan.entities else None
+            if isinstance(bank_name, str) and bank_name.strip():
+                try:
+                    retry_plan = await text_to_sql_service.generate_trend_retry_plan(
+                        request.message,
+                        sql_query,
+                        plan.entities or {},
+                    )
+                    sql_retry = retry_plan.sql
+                    results_retry = await db_service.execute_query(sql_retry)
+                    if results_retry:
+                        sql_query = sql_retry
+                        results = results_retry
+                        logger.info(
+                            "trend_tracker retry succeeded: %s rows",
+                            len(results),
+                        )
+                    else:
+                        logger.warning(
+                            "trend_tracker retry still 0 rows sql=%s",
+                            sql_retry[:500],
+                        )
+                except Exception as e:
+                    logger.warning("trend_tracker retry failed: %s", e, exc_info=True)
+
         formatted_response = response_formatter.format_response(
-            request.message, sql_query, results
+            request.message, sql_query, results, intent=plan.intent
         )
 
         execution_time = time.time() - start_time

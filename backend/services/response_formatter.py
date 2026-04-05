@@ -173,7 +173,8 @@ class ResponseFormatter:
         self,
         user_question: str,
         sql_query: str,
-        results: List[Dict[str, Any]]
+        results: List[Dict[str, Any]],
+        intent: Optional[str] = None,
     ) -> str:
         """
         Format query results into a natural language response
@@ -182,12 +183,13 @@ class ResponseFormatter:
             user_question: Original user question
             sql_query: SQL query that was executed
             results: Query results as list of dictionaries
+            intent: Optional LLM intent (e.g. trend_tracker) for empty-result messaging
             
         Returns:
             Formatted natural language response
         """
         if not results:
-            return self._format_empty_response(user_question)
+            return self._format_empty_response(user_question, intent=intent)
         
         # Convert dollar amounts from thousands to actual dollars
         results = self._convert_thousands_to_dollars(results)
@@ -209,9 +211,19 @@ class ResponseFormatter:
         else:
             return self._format_general_response(user_question, results, show_actual)
     
-    def _format_empty_response(self, user_question: str) -> str:
+    def _format_empty_response(self, user_question: str, intent: Optional[str] = None) -> str:
         """Format response when no results found"""
-        return "I couldn't find any data matching your query. Try rephrasing your question or checking if the data exists in the database."
+        base = (
+            "I couldn't find any data matching your query. Try rephrasing your question "
+            "or checking if the data exists in the database."
+        )
+        if intent and str(intent).lower().strip() == "trend_tracker":
+            return (
+                base
+                + " For a bank over time, check the bank name matches an active institution "
+                "with call-report history in the database."
+            )
+        return base
     
     def _format_ranking_response(
         self,

@@ -42,6 +42,24 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
+# Referenced from INTENT_JSON_RULES and trend retry prompts.
+TREND_SQL_RULES = """
+### trend_tracker / time_series SQL (CRITICAL)
+
+When intent is **trend_tracker** (or visualization.type is **time_series**), the user wants a **time series** from `financials` for one bank (or compare banks).
+
+**Bank resolution — avoid empty results:**
+- Do **not** use `WHERE cert = (SELECT cert FROM institutions WHERE name ILIKE '%X%' LIMIT 1)` with **no ORDER BY**. `LIMIT 1` without ordering picks an arbitrary row; that cert may have **no rows in financials**. If the subquery matches nothing, `(SELECT cert ...)` is NULL and `WHERE cert = NULL` returns **no rows** (SQL unknown semantics).
+- **Do** pick the principal charter: among name matches, prefer the **largest** institution by `institutions.asset` that **has** `financials` history:
+  - Use: `SELECT i.cert FROM institutions i WHERE i.active = 1 AND i.name ILIKE '%Pattern%' AND EXISTS (SELECT 1 FROM financials f0 WHERE f0.cert = i.cert) ORDER BY i.asset DESC NULLS LAST LIMIT 1`
+  - Then: `SELECT f.repdte, ... FROM financials f WHERE f.cert = (<subquery above>) ORDER BY f.repdte ASC` (or DESC).
+- Alternatively `FROM financials f INNER JOIN institutions i ON i.cert = f.cert WHERE i.active = 1 AND i.name ILIKE '%Pattern%'` — if multiple certs match, aggregate or restrict to one cert via a CTE that picks `ORDER BY i.asset DESC LIMIT 1`.
+
+**Metrics:** Multiply thousand-dollar columns in `financials` by 1000 in SQL (e.g. `f.asset * 1000 AS assets_dollars`) per schema.
+
+**entities:** Include **bank_name** (string) when the user names a bank.
+"""
+
 
 INTENT_JSON_RULES = """
 ## RESPONSE FORMAT (REQUIRED)
@@ -111,7 +129,7 @@ If the question is NOT about FDIC banking data, respond with ONLY:
 - Bank names: ILIKE '%Name%'
 - NULL handling: IS NOT NULL / COALESCE / NULLIF as needed
 - LIMIT for large lists
-"""
+""" + TREND_SQL_RULES
 
 
 class TextToSQLService:
@@ -225,6 +243,53 @@ JSON response:"""
 
         logger.info("Query plan intent=%s sql=%s...", plan.intent, plan.sql[:120])
         return plan
+
+    async def generate_trend_retry_plan(
+        self,
+        user_question: str,
+        failed_sql: str,
+        entities: dict,
+    ) -> QueryPlan:
+        """
+        Second LLM pass when trend_tracker SQL returned 0 rows.
+        Uses TREND_SQL_RULES to force safe bank resolution (EXISTS financials, ORDER BY asset).
+        """
+        await self._initialize_llm()
+        schema_desc = await self._get_schema_context()
+        entities_json = json.dumps(entities or {}, ensure_ascii=True)
+        prompt = f"""You are a PostgreSQL expert for FDIC bank data. The previous SQL returned **zero rows**.
+
+{TREND_SQL_RULES}
+
+Full schema context:
+{schema_desc}
+
+Previous SQL (returned 0 rows — rewrite it):
+{failed_sql}
+
+Entities JSON (use bank_name for ILIKE if present):
+{entities_json}
+
+User question:
+{user_question}
+
+Return ONLY a JSON object with: intent, sql, visualization (type, title, config), entities.
+- intent: "trend_tracker"
+- visualization.type: "time_series"
+- sql: valid SELECT only; MUST resolve bank cert using EXISTS (SELECT 1 FROM financials ...), ORDER BY institutions.asset DESC NULLS LAST LIMIT 1, then query financials for that cert ordered by repdte.
+
+JSON response:"""
+
+        logger.info("trend_tracker retry: invoking LLM after empty result")
+        raw_response = await self.llm_provider.generate(prompt)
+        plan = self._plan_from_raw_llm_response(raw_response)
+        sql = self._validate_and_sanitize_sql(plan.sql)
+        return QueryPlan(
+            sql=sql,
+            intent=plan.intent,
+            visualization=dict(plan.visualization),
+            entities=dict(plan.entities),
+        )
 
     async def generate_sql(self, user_question: str) -> str:
         """Backward-compatible: return only the SQL string."""

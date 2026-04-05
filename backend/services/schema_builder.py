@@ -226,5 +226,19 @@ Example SQL Queries:
      )
    ORDER BY kv.value_num DESC
    LIMIT 20;
+
+8. "Bank of America assets over time" (named bank — safe cert resolution; avoids empty rows):
+   SELECT f.repdte, f.asset * 1000 AS assets_dollars
+   FROM financials f
+   WHERE f.cert = (
+     SELECT i.cert
+     FROM institutions i
+     WHERE i.active = 1
+       AND i.name ILIKE '%Bank of America%'
+       AND EXISTS (SELECT 1 FROM financials f0 WHERE f0.cert = i.cert)
+     ORDER BY i.asset DESC NULLS LAST
+     LIMIT 1
+   )
+   ORDER BY f.repdte ASC;
 """
         return examples
