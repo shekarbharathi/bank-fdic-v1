@@ -1,4 +1,5 @@
 import { STATES } from '../constants/states';
+import { stripTrailingWithClause } from './columnPickerQuery';
 
 export const extractTopN = (text) => {
   const m = String(text || '').match(/top\s+(\d{1,3})/i);
@@ -25,14 +26,15 @@ export const extractStateAbbr = (text) => {
 };
 
 export const extractRankingCriteria = (text) => {
-  const lower = String(text || '').toLowerCase();
+  /** Ignore trailing " with …" from the column picker so metric display names (e.g. Total Equity Capital) do not flip ranking. */
+  const lower = stripTrailingWithClause(String(text || '')).toLowerCase();
   if (/\bcapital\b|\bsafety\b|\bcapital ratio\b|\bequity\b/.test(lower)) return 'safety';
   if (/\broa\b|\bprofit\b|\bprofitability\b/.test(lower)) return 'profitability';
   return 'size';
 };
 
 export const extractRequestedMetrics = (text) => {
-  const lower = String(text || '').toLowerCase();
+  const lower = stripTrailingWithClause(String(text || '')).toLowerCase();
   const metrics = [];
 
   if (/\broa\b|\bprofit\b/.test(lower)) metrics.push('roa');

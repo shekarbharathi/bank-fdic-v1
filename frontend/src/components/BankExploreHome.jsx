@@ -357,8 +357,11 @@ Limit 20.`;
         if (experience === 'table') {
           const nextVisible = new Set((visibleMetricOverride ?? visibleMetricIds).map(canonicalFieldName));
           for (const m of requestedMetrics) nextVisible.add(canonicalFieldName(m));
-          if (inferredRanking === 'profitability') nextVisible.add('roa');
-          if (inferredRanking === 'safety') nextVisible.add('capital_ratio');
+          /** Do not inject rank columns when the user explicitly chose visible columns in the modal. */
+          if (!visibleMetricOverride) {
+            if (inferredRanking === 'profitability') nextVisible.add('roa');
+            if (inferredRanking === 'safety') nextVisible.add('capital_ratio');
+          }
           const effectiveExtra = Array.from(nextVisible);
 
           setVisibleMetricIds(effectiveExtra);
