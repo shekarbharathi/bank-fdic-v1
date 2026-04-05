@@ -55,7 +55,15 @@ const EXTRA_FIELD_JSON_ALIASES = {
   eqtot: ['total_equity_capital_dollars'],
   roa: ['return_on_assets'],
   numemp: ['number_of_employees'],
-  /** API may return either spelling for the same concept; try both before giving up */
+  /**
+   * field_metadata.field_name uses FDIC short codes; LLM/SQL often aliases columns as descriptive *_dollars names.
+   * @see backend/migrations/0003_optimized_financials.sql field_metadata inserts
+   */
+  lnlsnet: ['net_loans_leases_dollars', 'net_loans_and_leases_dollars'],
+  earna: ['earning_assets_dollars'],
+  ilndom: ['domestic_loans_dollars'],
+  chbal: ['cash_balances_dollars', 'cash_and_balances_dollars'],
+  /** Same metrics when metadata uses long snake_case instead of FDIC codes */
   net_loans_leases: ['net_loans_leases_dollars', 'net_loans_and_leases_dollars'],
   net_loans_and_leases: ['net_loans_leases_dollars', 'net_loans_and_leases_dollars'],
   earning_assets: ['earning_assets_dollars'],

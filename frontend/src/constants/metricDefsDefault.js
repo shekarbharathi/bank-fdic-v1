@@ -44,9 +44,27 @@ export const METRIC_DEFS_DEFAULT = {
   },
   lnlsnet: {
     id: 'lnlsnet',
-    label: 'LNLSNET',
-    kind: 'percent',
-    explanation: 'A FDIC efficiency/loan loss net metric. Higher/lower indicates different risk patterns depending on definition.',
+    label: 'Net Loans and Leases',
+    kind: 'dollar',
+    explanation: 'Net loans and leases (FDIC LNLSNET); merged with field_metadata display name when available.',
+  },
+  earna: {
+    id: 'earna',
+    label: 'Earning Assets',
+    kind: 'dollar',
+    explanation: 'Earning assets (FDIC EARNA).',
+  },
+  ilndom: {
+    id: 'ilndom',
+    label: 'Domestic Loans',
+    kind: 'dollar',
+    explanation: 'Domestic office loans (FDIC ILNDOM).',
+  },
+  chbal: {
+    id: 'chbal',
+    label: 'Cash and Balances',
+    kind: 'dollar',
+    explanation: 'Cash and balances due (FDIC CHBAL).',
   },
   elnatr: {
     id: 'elnatr',
