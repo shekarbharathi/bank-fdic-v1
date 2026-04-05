@@ -138,6 +138,30 @@ export const METRIC_DEFS_DEFAULT = {
     kind: 'dollar',
     explanation: 'Service charges on deposits (FDIC SC).',
   },
+  eq: {
+    id: 'eq',
+    label: 'Equity Capital Ratio',
+    kind: 'percent',
+    explanation: 'Equity / assets (FDIC EQ).',
+  },
+  rbct: {
+    id: 'rbct',
+    label: 'Tier 1 Capital',
+    kind: 'dollar',
+    explanation: 'Tier 1 capital (FDIC RBCT1).',
+  },
+  rbcrwaj: {
+    id: 'rbcrwaj',
+    label: 'Risk-Weighted Assets',
+    kind: 'dollar',
+    explanation: 'Risk-weighted assets (FDIC RWAJ).',
+  },
+  lnatres: {
+    id: 'lnatres',
+    label: 'Loan Loss Allowance',
+    kind: 'dollar',
+    explanation: 'Allowance for loan and lease losses (FDIC LNATRES).',
+  },
   elnatr: {
     id: 'elnatr',
     label: 'ELNATR',

@@ -95,6 +95,11 @@ const EXTRA_FIELD_JSON_ALIASES = {
   noninterest_income: ['noninterest_income_dollars'],
   noninterest_expense: ['noninterest_expense_dollars'],
   service_charges: ['service_charges_dollars'],
+  /** Asset quality / capital — FDIC codes vs descriptive API names */
+  eq: ['equity_capital_ratio'],
+  rbct: ['tier_1_capital_dollars'],
+  rbcrwaj: ['risk_weighted_assets_dollars'],
+  lnatres: ['loan_loss_allowance_dollars'],
 };
 
 export const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
