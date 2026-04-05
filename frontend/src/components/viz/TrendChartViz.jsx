@@ -104,6 +104,50 @@ function labelFor(key) {
   return METRIC_LABELS[key] || METRIC_LABELS[key.toLowerCase()] || key.replace(/_/g, ' ');
 }
 
+/** Y-axis domain for currency: pad data range so line isn't flattened against zero when values are huge. */
+function computeCurrencyYDomain(chartData, keys) {
+  if (!keys?.length || !chartData?.length) return undefined;
+  const vals = [];
+  for (const row of chartData) {
+    for (const k of keys) {
+      const v = row[k];
+      if (typeof v === 'number' && Number.isFinite(v)) vals.push(v);
+    }
+  }
+  if (vals.length === 0) return undefined;
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const span = maxV - minV;
+  const pad = span > 0 ? span * 0.12 : Math.max(Math.abs(maxV) * 0.02, 1);
+  const low = minV - pad;
+  const high = maxV + pad;
+  if (minV === maxV) {
+    const b = Math.max(Math.abs(minV) * 0.05, 1);
+    return [minV - b, maxV + b];
+  }
+  return [low, high];
+}
+
+/** Y-axis domain for rate metrics (percent): keep readable floor unless all values high. */
+function computeRateYDomain(chartData, keys) {
+  if (!keys?.length || !chartData?.length) return undefined;
+  const vals = [];
+  for (const row of chartData) {
+    for (const k of keys) {
+      const v = row[k];
+      if (typeof v === 'number' && Number.isFinite(v)) vals.push(v);
+    }
+  }
+  if (vals.length === 0) return undefined;
+  const minV = Math.min(...vals);
+  const maxV = Math.max(...vals);
+  const span = maxV - minV;
+  const pad = span > 0 ? span * 0.15 : 0.1;
+  const low = Math.min(0, minV - pad);
+  const high = maxV + pad;
+  return [low, high];
+}
+
 function pickNumericKeys(sample) {
   if (!sample || typeof sample !== 'object') return [];
   const skip = new Set(['cert', '_x', '_date']);
@@ -168,6 +212,26 @@ export default function TrendChartViz({ data, title, config }) {
 
   const needsDualAxis = rateKeys.length > 0 && currencyKeys.length > 0;
 
+  const leftYDomain = useMemo(() => {
+    if (needsDualAxis) {
+      return computeCurrencyYDomain(chartData, currencyKeys);
+    }
+    const rates = activeKeys.filter(isRateMetric);
+    const currencies = activeKeys.filter((k) => !isRateMetric(k));
+    if (rates.length && !currencies.length) {
+      return computeRateYDomain(chartData, activeKeys);
+    }
+    if (rates.length && currencies.length) {
+      return undefined;
+    }
+    return computeCurrencyYDomain(chartData, currencies);
+  }, [chartData, needsDualAxis, currencyKeys, activeKeys]);
+
+  const rightYDomain = useMemo(
+    () => (needsDualAxis ? computeRateYDomain(chartData, rateKeys) : undefined),
+    [chartData, needsDualAxis, rateKeys]
+  );
+
   const xKey = chartData[0]?._x !== undefined ? '_x' : Object.keys(chartData[0] || {})[0];
 
   const chartType = config?.chart_type === 'area' ? 'area' : 'line';
@@ -190,8 +254,7 @@ export default function TrendChartViz({ data, title, config }) {
 
   if (chartData.length === 0 || allMetrics.length === 0) {
     return (
-      <div className="viz-placeholder viz-trend" role="region" aria-label={title || 'Trend chart'}>
-        {title ? <h3 className="viz-placeholder-title">{title}</h3> : null}
+      <div className="viz-placeholder viz-trend" role="region" aria-label="Trend chart">
         <p className="viz-placeholder-hint">No time-series data available.</p>
         <pre className="viz-placeholder-pre">{JSON.stringify(rows.slice(0, 5), null, 2)}</pre>
       </div>
@@ -199,8 +262,7 @@ export default function TrendChartViz({ data, title, config }) {
   }
 
   return (
-    <div className="viz-placeholder viz-trend" role="region" aria-label={title || 'Trend chart'}>
-      {title ? <h3 className="viz-placeholder-title">{title}</h3> : null}
+    <div className="viz-placeholder viz-trend" role="region" aria-label="Trend chart">
       {bankName ? (
         <p className="viz-placeholder-hint">{bankName} &mdash; {chartData.length} data points</p>
       ) : (
@@ -226,32 +288,35 @@ export default function TrendChartViz({ data, title, config }) {
         </div>
       ) : null}
 
-      <div className="viz-chart-wrap">
-        <ResponsiveContainer width="100%" height={360}>
-          <Chart data={chartData} margin={{ top: 8, right: needsDualAxis ? 60 : 20, bottom: 8, left: 20 }}>
+      <div className="viz-chart-wrap viz-chart-wrap--trend">
+        <ResponsiveContainer width="100%" height={chartData.length > 25 ? 400 : 360}>
+          <Chart data={chartData} margin={{ top: 8, right: needsDualAxis ? 56 : 16, bottom: 16, left: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis
               dataKey={xKey}
               tickFormatter={formatDate}
               tick={{ fontSize: 11, fill: '#6b7280' }}
-              interval="preserveStartEnd"
+              interval={chartData.length > 40 ? 'preserveStart' : 'preserveStartEnd'}
+              minTickGap={chartData.length > 25 ? 8 : 4}
             />
             <YAxis
               yAxisId="left"
+              domain={leftYDomain || ['auto', 'auto']}
               tick={{ fontSize: 11, fill: '#6b7280' }}
               tickFormatter={(v) => {
                 const ref = currencyKeys[0] || activeKeys[0];
                 return formatAxisTick(v, ref);
               }}
-              width={70}
+              width={78}
             />
             {needsDualAxis ? (
               <YAxis
                 yAxisId="right"
                 orientation="right"
+                domain={rightYDomain || ['auto', 'auto']}
                 tick={{ fontSize: 11, fill: '#6b7280' }}
                 tickFormatter={(v) => formatAxisTick(v, rateKeys[0])}
-                width={50}
+                width={52}
               />
             ) : null}
             <Tooltip content={<CustomTooltip />} />

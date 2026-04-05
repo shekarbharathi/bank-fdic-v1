@@ -1,3 +1,17 @@
+/* Use most of the viewport width; parent chat column is full-width after submit */
+.viz-placeholder.viz-trend {
+  max-width: min(100vw - 2rem, 1720px);
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+.viz-chart-wrap--trend {
+  width: 100%;
+  min-width: 0;
+}
+
 .trend-metric-toggles {
   display: flex;
   flex-wrap: wrap;
