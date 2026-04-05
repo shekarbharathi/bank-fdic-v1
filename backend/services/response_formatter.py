@@ -197,6 +197,10 @@ class ResponseFormatter:
         # Check if user wants actual values
         show_actual = self._should_show_actual_values(user_question)
         
+        intent_norm = (intent or "").lower().strip() if intent else ""
+        if intent_norm == "metric_explorer":
+            return self._format_metric_distribution_response(results)
+        
         # Detect question type and format accordingly
         question_lower = user_question.lower()
         
@@ -210,6 +214,18 @@ class ResponseFormatter:
             return self._format_ratio_response(user_question, results, show_actual)
         else:
             return self._format_general_response(user_question, results, show_actual)
+    
+    def _format_metric_distribution_response(self, results: List[Dict[str, Any]]) -> str:
+        """Format response for distribution / metric_explorer (many per-bank numeric rows)."""
+        n = len(results)
+        if n == 0:
+            return "No distribution data found."
+        if n == 1:
+            return "Found 1 value for this distribution."
+        return (
+            f"Found **{n:,}** values for this distribution. "
+            "The chart uses these values to show how many banks fall into each range."
+        )
     
     def _format_empty_response(self, user_question: str, intent: Optional[str] = None) -> str:
         """Format response when no results found"""

@@ -17,6 +17,26 @@
   color: #6b7280;
 }
 
+.viz-histogram-sub {
+  font-weight: 400;
+  color: #9ca3af;
+}
+
+.viz-tooltip-inner {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(229, 231, 235, 1);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.viz-tooltip-label {
+  margin-bottom: 0.25rem;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
 .viz-placeholder-pre {
   margin: 0;
   padding: 0.75rem;

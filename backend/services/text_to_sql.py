@@ -61,6 +61,20 @@ When intent is **trend_tracker** (or visualization.type is **time_series**), the
 """
 
 
+DISTRIBUTION_SQL_RULES = """
+### metric_explorer / metric_distribution SQL (optional patterns)
+
+Raw **one row per bank** with the metric column (e.g. `SELECT f.roa FROM financials f ...`) is valid; the UI can bin client-side.
+
+For **very large** result sets you may optionally return **pre-aggregated buckets** to shrink the payload, e.g.:
+
+- `SELECT width_bucket(f.roa, <min>, <max>, <nbins>) AS bucket, COUNT(*) AS n FROM financials f ... GROUP BY 1 ORDER BY 1`
+- or `SELECT FLOOR(f.roa * 10) / 10 AS bucket_start, COUNT(*) AS n ... GROUP BY 1`
+
+Prefer still returning per-bank rows unless the user or schema context suggests aggregation.
+"""
+
+
 INTENT_JSON_RULES = """
 ## RESPONSE FORMAT (REQUIRED)
 
@@ -110,6 +124,7 @@ metric_explorer (not for ordinary top-N / ranked tables).
 ### visualization.config
 
 Optional keys depending on intent, e.g. columns, metrics, state, chart_type, limit — only if helpful.
+For **metric_explorer**, you may set `metric` (e.g. `roa`) and `metric_display_name`; the client infers the numeric column if omitted.
 
 ### entities
 
@@ -129,7 +144,7 @@ If the question is NOT about FDIC banking data, respond with ONLY:
 - Bank names: ILIKE '%Name%'
 - NULL handling: IS NOT NULL / COALESCE / NULLIF as needed
 - LIMIT for large lists
-""" + TREND_SQL_RULES
+""" + TREND_SQL_RULES + DISTRIBUTION_SQL_RULES
 
 
 class TextToSQLService:
