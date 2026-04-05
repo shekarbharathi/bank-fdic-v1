@@ -162,6 +162,12 @@ export const METRIC_DEFS_DEFAULT = {
     kind: 'dollar',
     explanation: 'Allowance for loan and lease losses (FDIC LNATRES).',
   },
+  offdom: {
+    id: 'offdom',
+    label: 'Domestic Offices',
+    kind: 'number',
+    explanation: 'Number of domestic offices/branches (FDIC OFFDOM).',
+  },
   elnatr: {
     id: 'elnatr',
     label: 'ELNATR',

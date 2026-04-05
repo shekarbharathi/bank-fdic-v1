@@ -100,6 +100,8 @@ const EXTRA_FIELD_JSON_ALIASES = {
   rbct: ['tier_1_capital_dollars'],
   rbcrwaj: ['risk_weighted_assets_dollars'],
   lnatres: ['loan_loss_allowance_dollars'],
+  /** Operations — FDIC code vs descriptive API name (integer count, not *_dollars) */
+  offdom: ['domestic_offices'],
 };
 
 export const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
