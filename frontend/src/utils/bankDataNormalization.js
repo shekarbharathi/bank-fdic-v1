@@ -71,11 +71,13 @@ const EXTRA_FIELD_JSON_ALIASES = {
   cash_balances: ['cash_balances_dollars', 'cash_and_balances_dollars'],
   cash_and_balances: ['cash_balances_dollars', 'cash_and_balances_dollars'],
   /** Deposit breakdown — FDIC codes vs descriptive SQL aliases */
-  dpmmd: ['money_market_deposit_accounts_dollars'],
+  /** MMDA: API may use "deposits" or "deposit_accounts" in the column name */
+  dpmmd: ['money_market_deposits_dollars', 'money_market_deposit_accounts_dollars'],
   dpsav: ['other_savings_deposits_dollars'],
   brttrans: ['total_transaction_accounts_dollars'],
   p2215: ['ipc_transaction_accounts_dollars'],
-  money_market_deposit_accounts: ['money_market_deposit_accounts_dollars'],
+  money_market_deposit_accounts: ['money_market_deposits_dollars', 'money_market_deposit_accounts_dollars'],
+  money_market_deposits: ['money_market_deposits_dollars', 'money_market_deposit_accounts_dollars'],
   other_savings_deposits: ['other_savings_deposits_dollars'],
   total_transaction_accounts: ['total_transaction_accounts_dollars'],
   ipc_transaction_accounts: ['ipc_transaction_accounts_dollars'],
