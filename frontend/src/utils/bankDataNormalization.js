@@ -86,6 +86,15 @@ const EXTRA_FIELD_JSON_ALIASES = {
   lnre: ['real_estate_loans_dollars'],
   lnci: ['commercial_industrial_loans_dollars'],
   lnresre: ['residential_real_estate_loans_dollars'],
+  /** Income statement — FDIC codes vs descriptive SQL aliases */
+  intexp: ['total_interest_expense_dollars'],
+  nonii: ['noninterest_income_dollars'],
+  nonix: ['noninterest_expense_dollars'],
+  sc: ['service_charges_dollars'],
+  total_interest_expense: ['total_interest_expense_dollars'],
+  noninterest_income: ['noninterest_income_dollars'],
+  noninterest_expense: ['noninterest_expense_dollars'],
+  service_charges: ['service_charges_dollars'],
 };
 
 export const extractExtraMetric = (row, fieldName, fieldMetaByName) => {

@@ -114,6 +114,30 @@ export const METRIC_DEFS_DEFAULT = {
     kind: 'dollar',
     explanation: 'Residential RE loans (FDIC LNRESRE).',
   },
+  intexp: {
+    id: 'intexp',
+    label: 'Total Interest Expense',
+    kind: 'dollar',
+    explanation: 'Interest expense (FDIC INTEXP).',
+  },
+  nonii: {
+    id: 'nonii',
+    label: 'Noninterest Income',
+    kind: 'dollar',
+    explanation: 'Noninterest income (FDIC NONII).',
+  },
+  nonix: {
+    id: 'nonix',
+    label: 'Noninterest Expense',
+    kind: 'dollar',
+    explanation: 'Noninterest expense (FDIC NONIX).',
+  },
+  sc: {
+    id: 'sc',
+    label: 'Service Charges',
+    kind: 'dollar',
+    explanation: 'Service charges on deposits (FDIC SC).',
+  },
   elnatr: {
     id: 'elnatr',
     label: 'ELNATR',
