@@ -81,6 +81,11 @@ const EXTRA_FIELD_JSON_ALIASES = {
   other_savings_deposits: ['other_savings_deposits_dollars'],
   total_transaction_accounts: ['total_transaction_accounts_dollars'],
   ipc_transaction_accounts: ['ipc_transaction_accounts_dollars'],
+  /** Loan breakdown — FDIC codes vs descriptive SQL aliases */
+  lncrcd: ['credit_card_loans_dollars'],
+  lnre: ['real_estate_loans_dollars'],
+  lnci: ['commercial_industrial_loans_dollars'],
+  lnresre: ['residential_real_estate_loans_dollars'],
 };
 
 export const extractExtraMetric = (row, fieldName, fieldMetaByName) => {

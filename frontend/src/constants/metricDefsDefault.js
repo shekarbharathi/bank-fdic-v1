@@ -90,6 +90,30 @@ export const METRIC_DEFS_DEFAULT = {
     kind: 'dollar',
     explanation: 'IPC transaction accounts (FDIC P2215).',
   },
+  lncrcd: {
+    id: 'lncrcd',
+    label: 'Credit Card Loans',
+    kind: 'dollar',
+    explanation: 'Credit card loans (FDIC LNCRCD).',
+  },
+  lnre: {
+    id: 'lnre',
+    label: 'Real Estate Loans',
+    kind: 'dollar',
+    explanation: 'Real estate loans (FDIC LNRE).',
+  },
+  lnci: {
+    id: 'lnci',
+    label: 'Commercial & Industrial Loans',
+    kind: 'dollar',
+    explanation: 'C&I loans (FDIC LNCI).',
+  },
+  lnresre: {
+    id: 'lnresre',
+    label: 'Residential Real Estate Loans',
+    kind: 'dollar',
+    explanation: 'Residential RE loans (FDIC LNRESRE).',
+  },
   elnatr: {
     id: 'elnatr',
     label: 'ELNATR',
