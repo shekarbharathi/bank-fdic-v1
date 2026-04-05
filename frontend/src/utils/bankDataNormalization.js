@@ -17,6 +17,34 @@ export const maybeThousandsToDollars = (v) => {
   return n * 1000;
 };
 
+/**
+ * Normalize a field or column name so metadata `net_loans_leases` matches API `net_loans_and_leases_dollars`.
+ */
+const normalizeDollarFieldBase = (name) =>
+  String(name)
+    .toLowerCase()
+    .replace(/_dollars$/i, '')
+    .replace(/_and_/g, '_')
+    .replace(/_+/g, '_');
+
+/**
+ * When explicit aliases miss, find a row key ending in _dollars whose base matches fieldName (after _and_ normalization).
+ */
+const findDollarColumnByNormalizedBase = (row, fieldName) => {
+  if (!row || typeof row !== 'object') return undefined;
+  const target = normalizeDollarFieldBase(fieldName);
+  if (!target) return undefined;
+  for (const key of Object.keys(row)) {
+    const lk = String(key).toLowerCase();
+    if (!lk.endsWith('_dollars')) continue;
+    if (normalizeDollarFieldBase(key) === target) {
+      const v = row[key];
+      if (v !== undefined && v !== null) return v;
+    }
+  }
+  return undefined;
+};
+
 /** LLM/SQL may alias columns with descriptive snake_case; map metadata field_name to extra JSON keys. */
 const EXTRA_FIELD_JSON_ALIASES = {
   asset: ['total_assets_dollars'],
@@ -56,7 +84,7 @@ export const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
   const dollarSuffixCandidates =
     fn.toLowerCase().endsWith('_dollars') ? [] : [`${fn}_dollars`];
 
-  const raw = pickCaseInsensitive(
+  let raw = pickCaseInsensitive(
     row,
     fieldName,
     fieldName.toUpperCase(),
@@ -64,6 +92,9 @@ export const extractExtraMetric = (row, fieldName, fieldMetaByName) => {
     ...dollarSuffixCandidates,
     `total_${fieldName}_dollars`
   );
+  if (raw === undefined || raw === null) {
+    raw = findDollarColumnByNormalizedBase(row, fieldName);
+  }
   if (raw === undefined || raw === null) return null;
   if (meta?.is_currency && meta?.unit === 'thousands') {
     return maybeThousandsToDollars(Number(raw));
