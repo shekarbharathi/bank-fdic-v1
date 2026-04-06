@@ -137,7 +137,8 @@
   padding: 0.35rem 0.4rem;
   border-radius: 0;
   transition: color 200ms ease, transform 200ms ease;
-  color: #6b7280;
+  /* enabled: light blue */
+  color: #93c5fd;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -149,17 +150,18 @@
 }
 
 .chat-filter-send:hover:not(:disabled) {
-  color: #374151;
+  color: #60a5fa;
   transform: translateY(-1px);
 }
 
 .chat-filter-send:disabled {
   cursor: not-allowed;
-  color: #9ca3af;
+  /* disabled: light gray */
+  color: #d1d5db;
 }
 
 .chat-filter-send-icon {
-  color: #6b7280;
+  color: inherit;
   display: flex;
 }
 
@@ -169,12 +171,12 @@
 
 .chat-filter-send:hover:not(:disabled) .chat-filter-send-icon,
 .chat-filter-send:hover:not(:disabled) .chat-filter-send-svg {
-  color: #374151;
+  color: inherit;
 }
 
 .chat-filter-send:disabled .chat-filter-send-icon,
 .chat-filter-send:disabled .chat-filter-send-svg {
-  color: #9ca3af;
+  color: inherit;
 }
 
 /* Override any browser/default button border */
