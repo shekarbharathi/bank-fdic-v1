@@ -28,6 +28,12 @@ const SHOW_INSIGHTS_CAROUSEL = false;
 /** Minimum time to show “Interpreting…” before “Fetching data…” (if API still pending). */
 const INTERPRETING_MS = 800;
 
+/** Merge API `entities` (e.g. state) into viz config so components like StateOverviewViz can resolve geography when rows omit stalp. */
+function mergeVizEntities(config, entities) {
+  if (!entities || typeof entities !== 'object') return config;
+  return { ...config, ...entities };
+}
+
 const BankExploreHome = () => {
   const chatFilterRef = useRef(null);
   const shouldFocusAfterLoad = useRef(false);
@@ -318,6 +324,7 @@ Limit 20.`;
         }
 
         const { experience, title, config } = resolveExperience(res.intent, res.visualization, data);
+        const mergedConfig = mergeVizEntities(config, res.entities);
 
         // #region agent log
         sendClientDebugLog({
@@ -349,7 +356,7 @@ Limit 20.`;
             return;
           }
           applySuccessfulVizDispatch(() => {
-            dispatchView({ type: 'SHOW_SCALAR', value: val, vizMeta: { title, config } });
+            dispatchView({ type: 'SHOW_SCALAR', value: val, vizMeta: { title, config: mergedConfig } });
           });
           return;
         }
@@ -374,7 +381,7 @@ Limit 20.`;
           });
 
           const tableConfig = {
-            ...config,
+            ...mergedConfig,
             visibleMetrics: effectiveExtra,
             ranking: inferredRanking,
             sortKey: inferredRanking === 'size' ? 'assets' : inferredRanking === 'profitability' ? 'roa' : 'capital_ratio',
@@ -394,7 +401,7 @@ Limit 20.`;
         }
 
         applySuccessfulVizDispatch(() => {
-          dispatchView({ type: 'SHOW_VIZ', experience, data, vizMeta: { title, config } });
+          dispatchView({ type: 'SHOW_VIZ', experience, data, vizMeta: { title, config: mergedConfig } });
         });
       } catch {
         markApiFailure();
