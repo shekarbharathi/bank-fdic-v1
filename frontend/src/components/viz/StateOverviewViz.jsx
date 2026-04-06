@@ -1,10 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ComposableMap,
   Geographies,
   Geography,
   ZoomableGroup,
 } from 'react-simple-maps';
+import { geoPath } from 'd3-geo';
+import {
+  approximateLonLatForCity,
+  boundsFromFeature,
+  buildNameByAbbr,
+  clampLonLat,
+  fetchUsStatesTopo,
+  getStateFeatureFromTopo,
+  offsetForBankIndex,
+  projectionForState,
+} from '../../utils/stateSingleMap';
 import './StateOverviewViz.css';
 import './VizPlaceholder.css';
 
@@ -25,6 +36,8 @@ const STATE_ABBR_BY_NAME = {
   Wyoming: 'WY', 'District of Columbia': 'DC',
 };
 
+const NAME_BY_ABBR = buildNameByAbbr(STATE_ABBR_BY_NAME);
+
 function pickInsensitive(row, ...keys) {
   if (!row) return undefined;
   const lower = new Map(Object.keys(row).map((k) => [k.toLowerCase(), k]));
@@ -40,6 +53,14 @@ function resolveStateKey(row) {
   if (stalp && typeof stalp === 'string' && stalp.length === 2) return stalp.toUpperCase();
   const name = pickInsensitive(row, 'stname', 'state_name');
   if (name && STATE_ABBR_BY_NAME[name]) return STATE_ABBR_BY_NAME[name];
+  return null;
+}
+
+function resolveStateFromConfig(config) {
+  const c = config?.state_code;
+  if (c && typeof c === 'string' && c.length === 2) return c.toUpperCase();
+  const n = config?.state;
+  if (n && typeof n === 'string' && STATE_ABBR_BY_NAME[n]) return STATE_ABBR_BY_NAME[n];
   return null;
 }
 
@@ -92,6 +113,9 @@ function labelForKey(key) {
     avg_nimy: 'Avg NIM',
     asset: 'Assets',
     dep: 'Deposits',
+    assets_dollars: 'Assets',
+    assets: 'Assets',
+    roa: 'ROA',
   };
   return map[key] || key.replace(/_/g, ' ');
 }
@@ -115,8 +139,186 @@ function quantileScale(values, buckets) {
   };
 }
 
+function formatBankRowSnippet(row) {
+  const name = pickInsensitive(row, 'bank_name', 'name', 'institution_name') || '—';
+  const city = pickInsensitive(row, 'city', 'CITY');
+  const cert = pickInsensitive(row, 'cert', 'CERT');
+  const asset = pickInsensitive(row, 'assets_dollars', 'asset', 'asset_dollars', 'assets', 'ASSET');
+  const roa = pickInsensitive(row, 'roa', 'ROA');
+  const metrics = [];
+  if (asset != null && asset !== '') {
+    const n = Number(asset);
+    if (Number.isFinite(n)) metrics.push(`${labelForKey('asset')}: ${formatValue(n, 'asset')}`);
+  }
+  if (roa != null && roa !== '') {
+    const n = Number(roa);
+    if (Number.isFinite(n)) metrics.push(`${labelForKey('roa')}: ${formatValue(n, 'roa')}`);
+  }
+  return { name, city, cert, metrics };
+}
+
+const MAP_W = 960;
+const MAP_H = 620;
+
+/** Single-state map with bank pins (coordinates from API or approximated by city). */
+function SingleStateBankMap({ stateAbbr, rows }) {
+  const wrapRef = useRef(null);
+  const [stateFeature, setStateFeature] = useState(null);
+  const [loadError, setLoadError] = useState(null);
+  const [hover, setHover] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const topo = await fetchUsStatesTopo();
+        const feat = getStateFeatureFromTopo(topo, stateAbbr, NAME_BY_ABBR);
+        if (cancelled) return;
+        if (!feat) {
+          setLoadError(`Could not load outline for ${stateAbbr}.`);
+          return;
+        }
+        setStateFeature(feat);
+        setLoadError(null);
+      } catch (e) {
+        if (!cancelled) setLoadError(e?.message || 'Map failed to load.');
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [stateAbbr]);
+
+  const projection = useMemo(() => {
+    if (!stateFeature) return null;
+    return projectionForState(stateFeature, MAP_W, MAP_H);
+  }, [stateFeature]);
+
+  const outlineD = useMemo(() => {
+    if (!stateFeature || !projection) return '';
+    const path = geoPath(projection);
+    return path(stateFeature);
+  }, [stateFeature, projection]);
+
+  const geoBounds = useMemo(() => (stateFeature ? boundsFromFeature(stateFeature) : null), [stateFeature]);
+
+  const markers = useMemo(() => {
+    if (!projection || !geoBounds || !rows.length) return [];
+    const byCity = new Map();
+    rows.forEach((row, idx) => {
+      const city = String(pickInsensitive(row, 'city', 'CITY') || '').trim() || 'Unknown';
+      if (!byCity.has(city)) byCity.set(city, []);
+      byCity.get(city).push({ row, idx });
+    });
+
+    const out = [];
+    for (const [city, list] of byCity) {
+      list.forEach((item, i) => {
+        const { row } = item;
+        const lat = pickInsensitive(row, 'latitude', 'lat', 'LATITUDE');
+        const lon = pickInsensitive(row, 'longitude', 'lon', 'lng', 'LONGITUDE');
+        let lonLat;
+        if (lat != null && lon != null && Number.isFinite(Number(lat)) && Number.isFinite(Number(lon))) {
+          lonLat = clampLonLat(Number(lon), Number(lat), geoBounds);
+        } else {
+          const base = approximateLonLatForCity(geoBounds, stateAbbr, city);
+          const off = offsetForBankIndex(i, list.length, geoBounds);
+          lonLat = clampLonLat(base[0] + off[0], base[1] + off[1], geoBounds);
+        }
+        const xy = projection(lonLat);
+        if (!xy || !Number.isFinite(xy[0]) || !Number.isFinite(xy[1])) return;
+        const cert = pickInsensitive(row, 'cert', 'CERT');
+        out.push({
+          key: `pin-${cert ?? city}-${i}-${item.idx}`,
+          x: xy[0],
+          y: xy[1],
+          row,
+          city,
+        });
+      });
+    }
+    return out;
+  }, [projection, geoBounds, rows, stateAbbr]);
+
+  const handlePinEnter = (e, row) => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setHover({
+      row,
+      left: e.clientX - rect.left + 12,
+      top: e.clientY - rect.top - 8,
+    });
+  };
+
+  if (loadError) {
+    return <p className="viz-placeholder-hint">{loadError}</p>;
+  }
+
+  if (!stateFeature || !projection) {
+    return <p className="viz-placeholder-hint">Loading state map…</p>;
+  }
+
+  return (
+    <div className="state-single-map-wrap" ref={wrapRef}>
+      <svg
+        viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+        className="state-single-map-svg"
+        role="img"
+        aria-label={`Banks in ${stateAbbr}`}
+      >
+        <path d={outlineD} className="state-single-outline" />
+        {markers.map((m) => (
+          <g
+            key={m.key}
+            className="state-bank-pin"
+            transform={`translate(${m.x},${m.y})`}
+            onMouseEnter={(e) => handlePinEnter(e, m.row)}
+            onMouseLeave={() => setHover(null)}
+          >
+            <title>{formatBankRowSnippet(m.row).name}</title>
+            <circle r="14" className="state-bank-pin-hit" />
+            <circle r="6" className="state-bank-pin-dot" />
+            <path
+              className="state-bank-pin-icon"
+              d="M-4-5h8v1.5h-2.5v5h-3v-5H-4V-5z"
+              fill="currentColor"
+            />
+          </g>
+        ))}
+      </svg>
+      {hover ? (
+        <div
+          className="state-bank-hover-card"
+          style={{ left: hover.left, top: hover.top }}
+          role="tooltip"
+        >
+          {(() => {
+            const { name, city, cert, metrics } = formatBankRowSnippet(hover.row);
+            return (
+              <>
+                <div className="state-bank-hover-title">{name}</div>
+                <div className="state-bank-hover-meta">
+                  {city ? <span>{city}</span> : null}
+                  {city && cert != null ? <span> · </span> : null}
+                  {cert != null ? <span>Cert {cert}</span> : null}
+                </div>
+                {metrics.length ? (
+                  <ul className="state-bank-hover-metrics">
+                    {metrics.map((t) => (
+                      <li key={t}>{t}</li>
+                    ))}
+                  </ul>
+                ) : null}
+              </>
+            );
+          })()}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function StateOverviewViz({ data, title, config }) {
-  const rows = Array.isArray(data) ? data : [];
+  const rows = useMemo(() => (Array.isArray(data) ? data : []), [data]);
   const [tooltip, setTooltip] = useState(null);
 
   const focusState = config?.state_code || config?.state || null;
@@ -147,9 +349,33 @@ export default function StateOverviewViz({ data, title, config }) {
   );
 
   const hasManyStates = stateDataMap.size > 1;
-  const singleStateData = !hasManyStates && stateDataMap.size === 1
-    ? [...stateDataMap.values()][0]
-    : null;
+
+  const effectiveStateAbbr = useMemo(() => {
+    const fromConfig = resolveStateFromConfig(config);
+    if (fromConfig) return fromConfig;
+    return resolveStateKey(rows[0]) || null;
+  }, [config, rows]);
+
+  const hasBankNameRows = useMemo(
+    () => rows.some((r) => pickInsensitive(r, 'bank_name', 'name', 'institution_name')),
+    [rows]
+  );
+
+  const allRowsMatchState = useMemo(() => {
+    if (!effectiveStateAbbr || !rows.length) return false;
+    return rows.every((r) => {
+      const k = resolveStateKey(r);
+      return !k || k === effectiveStateAbbr;
+    });
+  }, [rows, effectiveStateAbbr]);
+
+  const showSingleStateBankMap = Boolean(
+    effectiveStateAbbr &&
+      hasBankNameRows &&
+      allRowsMatchState &&
+      rows.length > 0 &&
+      !hasManyStates
+  );
 
   const kpiEntries = useMemo(() => {
     if (rows.length === 0) return [];
@@ -168,6 +394,16 @@ export default function StateOverviewViz({ data, title, config }) {
         <p className="viz-placeholder-hint">
           {config.state || ''} {config.state_code ? `(${config.state_code})` : ''}
         </p>
+      ) : null}
+
+      {showSingleStateBankMap ? (
+        <div className="state-map-container state-map-container--single">
+          <SingleStateBankMap stateAbbr={effectiveStateAbbr} rows={rows} />
+          <p className="viz-placeholder-hint state-map-hint">
+            {rows.length} bank{rows.length === 1 ? '' : 's'} — hover a pin for details. Cities without coordinates are
+            placed approximately within the state.
+          </p>
+        </div>
       ) : null}
 
       {hasManyStates ? (
@@ -243,7 +479,7 @@ export default function StateOverviewViz({ data, title, config }) {
         </div>
       ) : null}
 
-      {!hasManyStates && singleStateData === null && rows.length > 1 ? (
+      {!showSingleStateBankMap && !hasManyStates && rows.length > 1 ? (
         <div className="viz-kpi-row">
           {rows.slice(0, 12).map((row, idx) => {
             const name = pickInsensitive(row, 'bank_name', 'name', 'institution_name') || `Bank ${idx + 1}`;
