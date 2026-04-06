@@ -1,5 +1,5 @@
 import { feature } from 'topojson-client';
-import { geoMercator, geoBounds } from 'd3-geo';
+import { geoBounds, geoCentroid, geoContains, geoMercator } from 'd3-geo';
 
 export const US_STATES_TOPO_URL = 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json';
 
@@ -91,4 +91,44 @@ export function clampLonLat(lon, lat, bounds) {
     Math.min(maxLon, Math.max(minLon, lon)),
     Math.min(maxLat, Math.max(minLat, lat)),
   ];
+}
+
+/**
+ * Bbox placement is only a rough guess; many points fall outside the actual polygon (water, other states).
+ * Move [lon, lat] along the segment toward an interior anchor until geoContains is true.
+ *
+ * @param {GeoJSON.Feature} feature
+ * @param {number} lon
+ * @param {number} lat
+ * @returns {[number, number]}
+ */
+export function nudgeIntoFeature(feature, lon, lat) {
+  if (!feature || !Number.isFinite(lon) || !Number.isFinite(lat)) return [lon, lat];
+  const p = [lon, lat];
+  if (geoContains(feature, p)) return p;
+
+  const anchors = [];
+  const c = geoCentroid(feature);
+  if (Number.isFinite(c[0]) && Number.isFinite(c[1])) anchors.push(c);
+  const b = geoBounds(feature);
+  const [[minLon, minLat], [maxLon, maxLat]] = b;
+  const mid = [(minLon + maxLon) / 2, (minLat + maxLat) / 2];
+  if (Number.isFinite(mid[0]) && Number.isFinite(mid[1])) anchors.push(mid);
+
+  for (const anchor of anchors) {
+    if (geoContains(feature, anchor)) {
+      let lo = 0;
+      let hi = 1;
+      for (let k = 0; k < 28; k++) {
+        const t = (lo + hi) / 2;
+        const q = [anchor[0] + t * (lon - anchor[0]), anchor[1] + t * (lat - anchor[1])];
+        if (geoContains(feature, q)) lo = t;
+        else hi = t;
+      }
+      const t = lo;
+      return [anchor[0] + t * (lon - anchor[0]), anchor[1] + t * (lat - anchor[1])];
+    }
+  }
+
+  return p;
 }

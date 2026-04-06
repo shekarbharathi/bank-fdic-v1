@@ -10,8 +10,8 @@ import {
   approximateLonLatForCity,
   boundsFromFeature,
   buildNameByAbbr,
-  clampLonLat,
   fetchUsStatesTopo,
+  nudgeIntoFeature,
   getStateFeatureFromTopo,
   offsetForBankIndex,
   projectionForState,
@@ -201,7 +201,7 @@ function SingleStateBankMap({ stateAbbr, rows }) {
   const geoBounds = useMemo(() => (stateFeature ? boundsFromFeature(stateFeature) : null), [stateFeature]);
 
   const markers = useMemo(() => {
-    if (!projection || !geoBounds || !rows.length) return [];
+    if (!projection || !geoBounds || !stateFeature || !rows.length) return [];
     const byCity = new Map();
     rows.forEach((row, idx) => {
       const city = String(pickInsensitive(row, 'city', 'CITY') || '').trim() || 'Unknown';
@@ -217,12 +217,13 @@ function SingleStateBankMap({ stateAbbr, rows }) {
         const lon = pickInsensitive(row, 'longitude', 'lon', 'lng', 'LONGITUDE');
         let lonLat;
         if (lat != null && lon != null && Number.isFinite(Number(lat)) && Number.isFinite(Number(lon))) {
-          lonLat = clampLonLat(Number(lon), Number(lat), geoBounds);
+          lonLat = [Number(lon), Number(lat)];
         } else {
           const base = approximateLonLatForCity(geoBounds, stateAbbr, city);
           const off = offsetForBankIndex(i, list.length, geoBounds);
-          lonLat = clampLonLat(base[0] + off[0], base[1] + off[1], geoBounds);
+          lonLat = [base[0] + off[0], base[1] + off[1]];
         }
+        lonLat = nudgeIntoFeature(stateFeature, lonLat[0], lonLat[1]);
         const xy = projection(lonLat);
         if (!xy || !Number.isFinite(xy[0]) || !Number.isFinite(xy[1])) return;
         const cert = pickInsensitive(row, 'cert', 'CERT');
@@ -236,7 +237,7 @@ function SingleStateBankMap({ stateAbbr, rows }) {
       });
     }
     return out;
-  }, [projection, geoBounds, rows, stateAbbr]);
+  }, [projection, geoBounds, stateFeature, rows, stateAbbr]);
 
   const handlePinEnter = (e, row) => {
     const el = wrapRef.current;
