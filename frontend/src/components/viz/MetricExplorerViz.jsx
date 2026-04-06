@@ -1,5 +1,11 @@
 import { useMemo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  binValuesWinsorized,
+  formatBinRange,
+  formatCompactDollars,
+  inferMetricKind,
+} from './metricExplorerBinning.js';
 import './VizPlaceholder.css';
 
 const MAX_ROWS_BIN = 50_000;
@@ -87,44 +93,6 @@ function shouldUseHistogram(config, rows) {
   return false;
 }
 
-function binValues(values, binCount) {
-  const filtered = values.filter((v) => Number.isFinite(v));
-  if (filtered.length === 0) return [];
-  const min = Math.min(...filtered);
-  const max = Math.max(...filtered);
-  if (min === max) {
-    return [{ binStart: min, binEnd: max, count: filtered.length, binLabel: formatBinEdge(min, max) }];
-  }
-  const nBins = Math.min(Math.max(2, binCount), Math.max(2, filtered.length));
-  const width = (max - min) / nBins;
-  const bins = Array.from({ length: nBins }, (_, i) => ({
-    binStart: min + i * width,
-    binEnd: min + (i + 1) * width,
-    count: 0,
-  }));
-  for (const v of filtered) {
-    let idx = Math.floor((v - min) / width);
-    if (idx >= nBins) idx = nBins - 1;
-    if (idx < 0) idx = 0;
-    bins[idx].count++;
-  }
-  return bins.map((b) => ({
-    ...b,
-    binLabel: formatBinEdge(b.binStart, b.binEnd),
-  }));
-}
-
-function formatBinEdge(lo, hi) {
-  const fmt = (x) => {
-    const ax = Math.abs(x);
-    if (ax >= 1000) return x.toExponential(1);
-    if (ax >= 1) return x.toFixed(2);
-    if (ax >= 0.01) return x.toFixed(3);
-    return x.toFixed(4);
-  };
-  return `${fmt(lo)}–${fmt(hi)}`;
-}
-
 function HistogramTooltip({ active, payload, total }) {
   if (!active || !payload?.length) return null;
   const row = payload[0].payload;
@@ -149,14 +117,22 @@ export default function MetricExplorerViz({ data, title, config }) {
 
   const metric = useMemo(() => inferMetricKey(rows, config?.metric), [rows, config?.metric]);
 
+  const metricKind = useMemo(
+    () => inferMetricKind(metric, config?.metric_kind),
+    [metric, config?.metric_kind]
+  );
+
   const histogram = useMemo(() => shouldUseHistogram(config, rows), [config, rows]);
 
   const histogramData = useMemo(() => {
     if (!histogram) return [];
     const values = rows.map((r) => Number(r?.[metric])).filter(Number.isFinite);
-    const binCount = Math.min(20, Math.max(8, Math.ceil(Math.log2(values.length) + 1)));
-    return binValues(values, binCount);
-  }, [histogram, rows, metric]);
+    const bins = binValuesWinsorized(values);
+    return bins.map((b) => ({
+      ...b,
+      binLabel: formatBinRange(metricKind, b.binStart, b.binEnd),
+    }));
+  }, [histogram, rows, metric, metricKind]);
 
   const totalInBins = useMemo(
     () => histogramData.reduce((s, b) => s + (b.count || 0), 0),
@@ -173,6 +149,15 @@ export default function MetricExplorerViz({ data, title, config }) {
 
   const displayName = config?.metric_display_name || metric;
 
+  const unitHint =
+    metricKind === 'dollar' ? 'US$' : metricKind === 'percent' ? 'percent' : 'value';
+
+  const barXTickFormatter = useMemo(() => {
+    if (metricKind === 'dollar') return (v) => formatCompactDollars(Number(v));
+    if (metricKind === 'percent') return (v) => `${Number(v).toFixed(1)}%`;
+    return (v) => String(Number(v).toFixed(3));
+  }, [metricKind]);
+
   return (
     <div className="viz-placeholder" role="region" aria-label={title || 'Metric explorer'}>
       <p className="viz-placeholder-hint">
@@ -180,7 +165,8 @@ export default function MetricExplorerViz({ data, title, config }) {
         {histogram ? (
           <span className="viz-histogram-sub">
             {' '}
-            · {rows.length.toLocaleString()} bank{rows.length === 1 ? '' : 's'} (frequency by range)
+            · {rows.length.toLocaleString()} bank{rows.length === 1 ? '' : 's'} · {unitHint} · frequency by
+            range
           </span>
         ) : null}
       </p>
@@ -210,9 +196,9 @@ export default function MetricExplorerViz({ data, title, config }) {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartRows} layout="vertical" margin={{ left: 12, right: 12 }}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
+              <XAxis type="number" tickFormatter={barXTickFormatter} />
               <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 10 }} />
-              <Tooltip />
+              <Tooltip formatter={(v) => [barXTickFormatter(v), displayName]} />
               <Bar dataKey="v" fill="#2563eb" name={metric} />
             </BarChart>
           </ResponsiveContainer>
