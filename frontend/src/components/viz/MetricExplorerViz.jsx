@@ -158,8 +158,23 @@ export default function MetricExplorerViz({ data, title, config }) {
     return (v) => String(Number(v).toFixed(3));
   }, [metricKind]);
 
+  const histogramMinWidthPx = useMemo(() => {
+    const n = histogramData.length;
+    if (n === 0) return 0;
+    // Enough px per category so bars and labels are readable; scroll horizontally when needed.
+    const perBin = 56;
+    return Math.max(480, n * perBin);
+  }, [histogramData.length]);
+
+  /** Recharts: interval 0 = all ticks; 1 = every other (reduces overlap when many bins). */
+  const histogramXAxisInterval = useMemo(() => {
+    const n = histogramData.length;
+    if (n <= 14) return 0;
+    return Math.max(1, Math.floor((n - 1) / 12));
+  }, [histogramData.length]);
+
   return (
-    <div className="viz-placeholder" role="region" aria-label={title || 'Metric explorer'}>
+    <div className="viz-placeholder viz-metric-explorer" role="region" aria-label={title || 'Metric explorer'}>
       <p className="viz-placeholder-hint">
         Metric: <strong>{displayName}</strong>
         {histogram ? (
@@ -171,24 +186,35 @@ export default function MetricExplorerViz({ data, title, config }) {
         ) : null}
       </p>
       {histogram && histogramData.length > 0 ? (
-        <div className="viz-chart-wrap">
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={histogramData} margin={{ left: 8, right: 8, bottom: 48 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis
-                dataKey="binLabel"
-                type="category"
-                tick={{ fontSize: 10 }}
-                interval={0}
-                angle={-35}
-                textAnchor="end"
-                height={56}
-              />
-              <YAxis type="number" allowDecimals={false} tick={{ fontSize: 11 }} label={{ value: 'Count', angle: -90, position: 'insideLeft' }} />
-              <Tooltip content={(tipProps) => <HistogramTooltip {...tipProps} total={totalInBins} />} />
-              <Bar dataKey="count" fill="#2563eb" name="Count" />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="viz-chart-scroll" role="presentation">
+          <div
+            className="viz-chart-scroll-inner"
+            style={{ minWidth: `${histogramMinWidthPx}px` }}
+          >
+            <ResponsiveContainer width="100%" height={360}>
+              <BarChart data={histogramData} margin={{ left: 4, right: 12, bottom: 72, top: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="binLabel"
+                  type="category"
+                  tick={{ fontSize: 10 }}
+                  interval={histogramXAxisInterval}
+                  angle={-40}
+                  textAnchor="end"
+                  height={68}
+                />
+                <YAxis
+                  width={48}
+                  type="number"
+                  allowDecimals={false}
+                  tick={{ fontSize: 11 }}
+                  label={{ value: 'Count', angle: -90, position: 'insideLeft', offset: 2 }}
+                />
+                <Tooltip content={(tipProps) => <HistogramTooltip {...tipProps} total={totalInBins} />} />
+                <Bar dataKey="count" fill="#2563eb" name="Count" maxBarSize={52} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       ) : null}
       {!histogram && chartRows.length > 0 ? (

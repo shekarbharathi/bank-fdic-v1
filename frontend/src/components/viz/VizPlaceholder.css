@@ -54,6 +54,29 @@
   margin-bottom: 0.75rem;
 }
 
+/* Metric explorer: use full results width; optional horizontal scroll when many bins */
+.viz-placeholder.viz-metric-explorer {
+  max-width: none;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.viz-chart-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 0.75rem;
+}
+
+.viz-chart-scroll-inner {
+  width: 100%;
+  min-height: 320px;
+}
+
 .viz-comparison-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
