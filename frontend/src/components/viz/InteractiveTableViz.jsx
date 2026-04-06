@@ -33,14 +33,32 @@ const formatMetricValue = (metricKey, value, defs) => {
 };
 
 function inferVisibleColumns(rows, configMetrics) {
-  if (Array.isArray(configMetrics) && configMetrics.length > 0) return configMetrics;
-
   const sample = rows[0];
   if (!sample) return ['assets'];
 
   const known = new Set(Object.keys(METRIC_DEFS_DEFAULT));
-  const found = Object.keys(sample).filter((k) => known.has(k) && sample[k] !== null && sample[k] !== undefined);
-  return found.length > 0 ? found : ['assets'];
+  const fromRow = Object.keys(sample).filter(
+    (k) =>
+      k !== 'raw' &&
+      known.has(k) &&
+      sample[k] !== null &&
+      sample[k] !== undefined
+  );
+
+  if (Array.isArray(configMetrics) && configMetrics.length > 0) {
+    const byConfig = configMetrics.filter((k) => known.has(k));
+    const seen = new Set(byConfig);
+    const merged = [...byConfig];
+    for (const k of fromRow) {
+      if (!seen.has(k)) {
+        merged.push(k);
+        seen.add(k);
+      }
+    }
+    return merged.length > 0 ? merged : ['assets'];
+  }
+
+  return fromRow.length > 0 ? fromRow : ['assets'];
 }
 
 function inferSortKey(config) {

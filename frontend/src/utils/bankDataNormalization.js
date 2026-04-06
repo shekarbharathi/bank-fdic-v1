@@ -1,3 +1,4 @@
+import { METRIC_DEFS_DEFAULT } from '../constants/metricDefsDefault.js';
 import { canonicalFieldName } from './columnPickerQuery';
 
 export const pickCaseInsensitive = (row, ...candidates) => {
@@ -293,6 +294,13 @@ export const normalizeBankRows = (rawRows, options = {}) => {
       }
       const v = extractExtraMetric(row, fname, fieldMetaByName);
       if (v !== null && v !== undefined) out[fname] = v;
+    }
+
+    /** Map descriptive SQL/API column names (e.g. money_market_deposits_dollars) onto canonical metric keys (dpmmd). */
+    for (const fieldName of Object.keys(METRIC_DEFS_DEFAULT)) {
+      if (out[fieldName] !== undefined && out[fieldName] !== null) continue;
+      const v = extractExtraMetric(row, fieldName, fieldMetaByName);
+      if (v !== null && v !== undefined) out[fieldName] = v;
     }
 
     return out;
