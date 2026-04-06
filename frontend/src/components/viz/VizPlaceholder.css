@@ -77,6 +77,25 @@
   min-height: 320px;
 }
 
+.viz-comparison-charts {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.viz-comparison-chart-block {
+  width: 100%;
+  min-width: 0;
+}
+
+.viz-comparison-metric-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #374151;
+}
+
 .viz-comparison-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
