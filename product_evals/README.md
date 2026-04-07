@@ -16,7 +16,7 @@ Start the API (e.g. backend on `http://127.0.0.1:8000`).
 
 ## B1 — API structured evals
 
-Runs cases in [`cases.yaml`](cases.yaml), writes a **Markdown** summary and **JSONL** machine log under [`reports/`](reports/) (gitignored except `.gitignore`).
+Runs cases in [`cases.yaml`](cases.yaml), writes a **Markdown** summary and **JSONL** machine log under [`reports/`](reports/). The folder is tracked (see `.gitkeep`); generated `api-run-*` / `judge-run-*` files are ignored by default—remove those lines from [`reports/.gitignore`](reports/.gitignore) or `git add -f` if you want a run in version control.
 
 ```bash
 # All cases
