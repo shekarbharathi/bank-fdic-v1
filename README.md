@@ -338,3 +338,7 @@ Before deploying to production:
 - [ ] Set up alerts for pipeline failures
 - [ ] Document your schema and transformations
 - [ ] Use environment variables or secrets management for credentials
+
+## Product evals (chat app)
+
+Structured API checks and optional LLM-as-judge for the FDIC bank chat live in [`product_evals/`](product_evals/README.md). Copy-paste commands (including running evals from your laptop against a Railway API) are in [`product_evals/COMMANDS.md`](product_evals/COMMANDS.md).

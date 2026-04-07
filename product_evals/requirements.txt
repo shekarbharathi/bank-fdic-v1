@@ -1,0 +1,4 @@
+# Minimal deps for product eval runners (use backend venv or: pip install -r product_evals/requirements.txt)
+requests>=2.31.0
+PyYAML>=6.0
+openai>=1.0.0
