@@ -239,20 +239,23 @@
 .top-dataset-tabs {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem 0.4rem;
+  padding: 0 1rem;
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: flex-end;
-  gap: 1rem;
+  gap: 1.5rem;
+  /* Mild baseline spanning both tabs */
+  border-bottom: 1px solid #e8eaed;
 }
 
 .top-dataset-tab {
+  position: relative;
   border: none;
   background: transparent;
   color: #6b7280;
   font-size: 0.95rem;
   font-weight: 500;
-  padding: 0;
+  padding: 0.35rem 0.1rem 0.55rem;
   cursor: pointer;
   transition: color 180ms ease, opacity 180ms ease;
 }
@@ -264,6 +267,19 @@
 .top-dataset-tab.active {
   color: #111827;
   font-weight: 500;
+}
+
+/* Thicker active indicator, directly above the mild nav underline */
+.top-dataset-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  background: #1f2937;
+  border-radius: 2px 2px 0 0;
+  pointer-events: none;
 }
 
 .coming-soon-panel {
