@@ -265,7 +265,7 @@
 }
 
 .top-dataset-tab.active {
-  color: #111827;
+  color: #4b5563;
   font-weight: 500;
 }
 
@@ -277,7 +277,7 @@
   right: 0;
   bottom: -1px;
   height: 3px;
-  background: #1f2937;
+  background: #6b7280;
   border-radius: 2px 2px 0 0;
   pointer-events: none;
 }
