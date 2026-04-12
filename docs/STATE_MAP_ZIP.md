@@ -19,7 +19,15 @@ Bank rows from FDIC include a **USPS ZIP** on `institutions.zip`. The single-sta
 
 ## Backend data file
 
-The centroid table is loaded from `2020_Gaz_zcta_national.zip` (or `.txt`) — see `backend/data/README.txt`. If the file is missing, the API returns empty centroids and the UI uses fallbacks only.
+The centroid table is loaded from `backend/data/2020_Gaz_zcta_national.zip` (or `.txt`) — see `backend/data/README.txt`. The zip is small enough to **commit to git** so hosts like Railway receive it on every deploy without a download step.
+
+If the file is missing, the API returns empty centroids and the UI uses fallbacks only.
+
+**Verify after deploy** (from the backend app directory, e.g. Railway root `backend`):
+
+`python scripts/verify_zcta_gazetteer.py`
+
+No separate “install” runs at boot: the service reads the zip the first time `POST /api/zcta/centroids` is used (or when the verify script runs).
 
 Environment:
 

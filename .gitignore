@@ -55,6 +55,3 @@ Thumbs.db
 *.db
 *.sqlite
 *.sqlite3
-
-# Census ZCTA gazetteer (optional local file; see backend/data/README.txt)
-backend/data/*.zip
