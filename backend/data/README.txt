@@ -18,11 +18,20 @@ Download (from repo root) if you do not have the file yet:
 
   git add backend/data/2020_Gaz_zcta_national.zip && git commit -m "Add ZCTA gazetteer for map centroids"
 
-After deploy, verify on the backend (Railway: set service **Root Directory** to `backend`, then run):
+Verify with Railway CLI (runs **on your laptop** with that service’s env vars). From the **git repo root** (folder that contains backend/):
 
-  python scripts/verify_zcta_gazetteer.py
+  cd /path/to/bank-fdic-v1
+  railway run --service <your-backend-service> python3 backend/scripts/verify_zcta_gazetteer.py
 
-The API loads this file lazily on first use; the script only checks that the file is present and readable.
+Use python3 (not python). Replace <your-backend-service> with the Railway backend service name.
+
+From inside backend/ only:
+
+  railway run --service <your-backend-service> python3 scripts/verify_zcta_gazetteer.py
+
+To confirm production without CLI: POST /api/zcta/centroids with body {"zips":["90210"]}.
+
+The API loads this file lazily on first use; the script only checks that the file is present and readable **locally** when using railway run.
 
 Or set `ZCTA_GAZETTEER_PATH` to a `.zip` or unpacked `.txt` file elsewhere.
 

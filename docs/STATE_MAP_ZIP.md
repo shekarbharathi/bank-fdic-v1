@@ -23,9 +23,22 @@ The centroid table is loaded from `backend/data/2020_Gaz_zcta_national.zip` (or 
 
 If the file is missing, the API returns empty centroids and the UI uses fallbacks only.
 
-**Verify after deploy** (from the backend app directory, e.g. Railway root `backend`):
+**Verify locally with production env** (`railway run` runs on **your machine** with that service’s variables injected; it does **not** open a shell on the deployed container). **Recommended** (from the **git repo root** — the directory that contains `backend/`):
 
-`python scripts/verify_zcta_gazetteer.py`
+```bash
+cd /path/to/bank-fdic-v1
+railway run --service <your-backend-service> python3 backend/scripts/verify_zcta_gazetteer.py
+```
+
+Replace `<your-backend-service>` with your Railway backend service name (`railway service` or the dashboard; it may differ from the project/repo name). Use **`python3`** (not `python`) so the shell can find the interpreter.
+
+Optional, if your shell is already in `backend/`:
+
+```bash
+railway run --service <your-backend-service> python3 scripts/verify_zcta_gazetteer.py
+```
+
+**Verify the live deployed API** (no CLI): `curl -sS -X POST "https://<your-backend-host>/api/zcta/centroids" -H "Content-Type: application/json" -d '{"zips":["90210"]}'` — expect `90210` inside `centroids`.
 
 No separate “install” runs at boot: the service reads the zip the first time `POST /api/zcta/centroids` is used (or when the verify script runs).
 
