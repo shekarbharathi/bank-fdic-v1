@@ -106,6 +106,16 @@ export const chatAPI = {
     const response = await client.get('/api/metadata/field-groups');
     return response.data;
   },
+
+  /**
+   * Batch-resolve 5-digit ZIP/ZCTA keys to { lat, lon } (Census ZCTA internal points).
+   * @param {string[]} zips
+   * @returns {Promise<Record<string, { lat: number, lon: number }>>}
+   */
+  fetchZctaCentroids: async (zips) => {
+    const response = await client.post('/api/zcta/centroids', { zips });
+    return response.data?.centroids ?? {};
+  },
 };
 
 export default client;

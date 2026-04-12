@@ -1,6 +1,7 @@
 ### 1. browse_table
 **When:** General browsing, filtering, searching
 **Example queries:** "banks in California", "top 10 banks", "find safe banks", "top 5 banks in texas less than 50 billion in assets", "top 10 banks in California with ROA greater than 1%"
+**SQL note:** Institution lists filtered by state should include **`i.zip`** (with name, city, cert) for state-map pin placement.
 
 ### 2. compare_banks
 **When:** User wants to compare 2-4 specific banks
@@ -17,6 +18,7 @@
 ### 5. state_explorer
 **When:** User asks about banking in a specific state
 **Example queries:** "Texas banking landscape", "New York banks overview"
+**SQL note:** When returning institution rows for the map, include **`i.zip`** alongside bank name, city, and cert.
 
 ### 6. peer_group
 **When:** User wants to compare a bank to similar banks

@@ -81,6 +81,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from api import zcta
+    app.include_router(zcta.router, prefix="/api", tags=["zcta"])
+except ImportError:
+    pass
+
 
 @app.get("/")
 async def root():

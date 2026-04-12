@@ -96,6 +96,8 @@ Respond with ONLY a single JSON object (no markdown outside the JSON). Shape:
 - browse_table — DEFAULT for lists, filters, and rankings: "top N banks", "top N by assets", "show banks in CA",
   "banks with ROA above X%", "highest ROA banks" (as a ranked table), "safest banks" when the user wants a list to browse.
   Use browse_table whenever the answer is "show me banks (rows) sorted or filtered by a metric" — not a distribution analysis.
+  When listing **institutions in a state** (stalp / state filter) with **bank names** for the user or map, **include `i.zip`**
+  in SELECT when querying from `institutions i` (same as state map placement).
 - scalar — the user wants **one simple number** (a count, sum, average, or other single aggregate). SQL should return one row with one numeric column.
   Use scalar for: "how many banks in total", "how many active banks in US", "how many inactive banks",
   "how many banks in California", "how many banks in Texas", "total of all assets of all banks",
@@ -113,6 +115,8 @@ Respond with ONLY a single JSON object (no markdown outside the JSON). Shape:
   "New York banks overview", "California banking market overview". Set visualization.type to "state_overview".
   If the question is only "how many banks in [state]" or "total deposits in [state]" with no overview wording, prefer **scalar**
   (one number). If they want a **list of banks** in a state, use **browse_table**.
+  When **state_overview** returns **rows of institutions** (bank list for the map), the SELECT **must include `i.zip`** (or
+  `institutions.zip`, alias `zip` if useful) **with bank name, city, cert**, so the UI can place pins using Census ZCTA centroids.
 - peer_group — similar banks, peers, comparable to, like [bank]
 
 ### visualization.type
@@ -144,6 +148,8 @@ If the question is NOT about FDIC banking data, respond with ONLY:
 - Bank names: ILIKE '%Name%'
 - NULL handling: IS NOT NULL / COALESCE / NULLIF as needed
 - LIMIT for large lists
+- **State map / ZIP:** For **state_overview** institution lists or **browse_table** rows filtered by state with bank names,
+  always SELECT **`i.zip`** (or equivalent) from institutions so the frontend can resolve approximate locations via ZCTA centroids.
 """ + TREND_SQL_RULES + DISTRIBUTION_SQL_RULES
 
 

@@ -16,6 +16,7 @@ import {
   offsetForBankIndex,
   projectionForState,
 } from '../../utils/stateSingleMap';
+import { chatAPI } from '../../api/client';
 import './StateOverviewViz.css';
 import './VizPlaceholder.css';
 
@@ -46,6 +47,24 @@ function pickInsensitive(row, ...keys) {
     if (real !== undefined) return row[real];
   }
   return undefined;
+}
+
+/** 5-digit USPS/ZCTA key for gazetteer lookup (matches backend normalize_zip5). */
+function normalizeZip5(raw) {
+  if (raw == null || raw === '') return null;
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    if (raw < 0) return null;
+    let s = String(Math.trunc(raw));
+    if (s.length > 5) s = s.slice(0, 5);
+    return s.padStart(5, '0');
+  }
+  const s = String(raw).trim();
+  if (!s) return null;
+  const part = s.split('-')[0].trim();
+  const digits = part.replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.length <= 5) return digits.padStart(5, '0');
+  return digits.slice(0, 5);
 }
 
 function resolveStateKey(row) {
@@ -166,6 +185,8 @@ function SingleStateBankMap({ stateAbbr, rows }) {
   const [stateFeature, setStateFeature] = useState(null);
   const [loadError, setLoadError] = useState(null);
   const [hover, setHover] = useState(null);
+  /** @type {Record<string, { lat: number, lon: number }>} */
+  const [centroidByZip, setCentroidByZip] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -187,6 +208,33 @@ function SingleStateBankMap({ stateAbbr, rows }) {
     return () => { cancelled = true; };
   }, [stateAbbr]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const seen = new Set();
+    const zips = [];
+    rows.forEach((row) => {
+      const z = normalizeZip5(pickInsensitive(row, 'zip', 'ZIP'));
+      if (z && !seen.has(z)) {
+        seen.add(z);
+        zips.push(z);
+      }
+    });
+    if (zips.length === 0) {
+      setCentroidByZip({});
+      return undefined;
+    }
+    (async () => {
+      try {
+        const centroids = await chatAPI.fetchZctaCentroids(zips);
+        if (cancelled) return;
+        setCentroidByZip(centroids);
+      } catch {
+        if (!cancelled) setCentroidByZip({});
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [rows]);
+
   const projection = useMemo(() => {
     if (!stateFeature) return null;
     return projectionForState(stateFeature, MAP_W, MAP_H);
@@ -202,22 +250,27 @@ function SingleStateBankMap({ stateAbbr, rows }) {
 
   const markers = useMemo(() => {
     if (!projection || !geoBounds || !stateFeature || !rows.length) return [];
-    const byCity = new Map();
+    const byGroup = new Map();
     rows.forEach((row, idx) => {
       const city = String(pickInsensitive(row, 'city', 'CITY') || '').trim() || 'Unknown';
-      if (!byCity.has(city)) byCity.set(city, []);
-      byCity.get(city).push({ row, idx });
+      const zip5 = normalizeZip5(pickInsensitive(row, 'zip', 'ZIP'));
+      const groupKey = zip5 ? `zip:${zip5}` : `city:${city}`;
+      if (!byGroup.has(groupKey)) byGroup.set(groupKey, []);
+      byGroup.get(groupKey).push({ row, idx, city, zip5 });
     });
 
     const out = [];
-    for (const [city, list] of byCity) {
+    for (const [, list] of byGroup) {
       list.forEach((item, i) => {
-        const { row } = item;
+        const { row, city, zip5 } = item;
         const lat = pickInsensitive(row, 'latitude', 'lat', 'LATITUDE');
         const lon = pickInsensitive(row, 'longitude', 'lon', 'lng', 'LONGITUDE');
         let lonLat;
         if (lat != null && lon != null && Number.isFinite(Number(lat)) && Number.isFinite(Number(lon))) {
           lonLat = [Number(lon), Number(lat)];
+        } else if (zip5 && centroidByZip[zip5]) {
+          const c = centroidByZip[zip5];
+          lonLat = [c.lon, c.lat];
         } else {
           const base = approximateLonLatForCity(geoBounds, stateAbbr, city);
           const off = offsetForBankIndex(i, list.length, geoBounds);
@@ -237,7 +290,7 @@ function SingleStateBankMap({ stateAbbr, rows }) {
       });
     }
     return out;
-  }, [projection, geoBounds, stateFeature, rows, stateAbbr]);
+  }, [projection, geoBounds, stateFeature, rows, stateAbbr, centroidByZip]);
 
   const handlePinEnter = (e, row) => {
     const el = wrapRef.current;
@@ -401,8 +454,9 @@ export default function StateOverviewViz({ data, title, config }) {
         <div className="state-map-container state-map-container--single">
           <SingleStateBankMap stateAbbr={effectiveStateAbbr} rows={rows} />
           <p className="viz-placeholder-hint state-map-hint">
-            {rows.length} bank{rows.length === 1 ? '' : 's'} — hover a pin for details. Cities without coordinates are
-            placed approximately within the state.
+            {rows.length} bank{rows.length === 1 ? '' : 's'} — hover a pin for details. Pins use row coordinates when
+            present; otherwise approximate Census ZCTA centroids from ZIP when available, else a deterministic placement
+            inside the state outline.
           </p>
         </div>
       ) : null}
