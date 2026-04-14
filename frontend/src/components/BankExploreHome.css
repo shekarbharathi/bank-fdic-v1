@@ -195,13 +195,6 @@
   gap: 0.65rem;
 }
 
-.bank-explore-landing-example-list li:nth-child(5) {
-  grid-column: 1 / -1;
-  justify-self: center;
-  width: calc((100% - 0.65rem) / 2);
-  max-width: 100%;
-}
-
 .bank-explore-landing-example-tile {
   width: 100%;
   text-align: center;
@@ -231,12 +224,6 @@
 @media (max-width: 520px) {
   .bank-explore-landing-example-list {
     grid-template-columns: 1fr;
-  }
-
-  .bank-explore-landing-example-list li:nth-child(5) {
-    grid-column: auto;
-    width: 100%;
-    justify-self: stretch;
   }
 }
 
