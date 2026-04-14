@@ -129,15 +129,9 @@ const ChatFilterBox = forwardRef(
               disabled={!canSubmit}
               aria-label="Send message"
             >
-              {isLoading ? (
-                <span className="chat-filter-loading" aria-label="Processing">
-                  <span className="spinner" aria-hidden="true" />
-                </span>
-              ) : (
-                <span className="chat-filter-send-icon" aria-hidden="true">
-                  <SendIcon />
-                </span>
-              )}
+              <span className="chat-filter-send-icon" aria-hidden="true">
+                <SendIcon />
+              </span>
             </button>
           </form>
         </div>

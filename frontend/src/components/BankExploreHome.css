@@ -43,6 +43,18 @@
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.bank-explore-status-spinner .spinner {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+  border-color: rgba(156, 163, 175, 0.35);
+  border-top-color: #6b7280;
 }
 
 .bank-explore-examples-below-chat {

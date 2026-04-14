@@ -696,11 +696,16 @@ Limit 20.`;
                 <div className="bank-explore-results-main">
                   {statusPhase ? (
                     <div className="bank-explore-results-status" aria-live="polite">
-                      {statusPhase === 'interpreting'
-                        ? 'Interpreting...'
-                        : statusPhase === 'fetching'
-                          ? 'Fetching data...'
-                          : 'Loading visualization...'}
+                      <span>
+                        {statusPhase === 'interpreting'
+                          ? 'Interpreting...'
+                          : statusPhase === 'fetching'
+                            ? 'Fetching data...'
+                            : 'Loading visualization...'}
+                      </span>
+                      <span className="bank-explore-status-spinner" aria-hidden="true">
+                        <span className="spinner" />
+                      </span>
                     </div>
                   ) : null}
 
