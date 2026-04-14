@@ -704,7 +704,7 @@ Limit 20.`;
                             : 'Loading visualization...'}
                       </span>
                       <span className="bank-explore-status-spinner" aria-hidden="true">
-                        <span className="spinner" />
+                        <span className="bank-explore-status-spinner-icon" />
                       </span>
                     </div>
                   ) : null}
