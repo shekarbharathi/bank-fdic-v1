@@ -601,7 +601,7 @@ Limit 20.`;
                     <div className="bank-explore-below-chat-actions">
                       <button
                         type="button"
-                        className="bank-explore-footer-examples-toggle"
+                        className="bank-explore-footer-examples-toggle bank-explore-footer-manual-link"
                         onClick={() => setManualOpen(true)}
                         aria-haspopup="dialog"
                       >
@@ -620,10 +620,10 @@ Limit 20.`;
                         id={hasSubmittedQuery ? 'bank-explore-examples-link-label' : 'bank-explore-landing-examples-link-label'}
                         disabled={isLoading}
                       >
+                        <span>Examples</span>
                         <span className="bank-explore-footer-examples-chevron" aria-hidden="true">
                           {hasSubmittedQuery ? (postSubmitExamplesOpen ? 'v' : '>') : landingExamplesOpen ? 'v' : '>'}
                         </span>
-                        <span>Examples</span>
                       </button>
                     </div>
                     {!hasSubmittedQuery && landingExamplesOpen && !isLoading ? (
