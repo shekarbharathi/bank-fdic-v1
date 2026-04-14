@@ -256,7 +256,6 @@ export default function InteractiveTableViz({ data, title, config }) {
               <tr
                 key={row.cert ?? row.bank_name ?? row.__rank}
                 className={`ivt-row ${selectedRow?.cert === row.cert ? 'ivt-row--selected' : ''}`}
-                onClick={() => setSelectedRow(row)}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   setContextMenu({ x: e.clientX, y: e.clientY, row });

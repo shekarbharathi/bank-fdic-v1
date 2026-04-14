@@ -184,7 +184,7 @@
 
 /* Body */
 .ivt-row {
-  cursor: pointer;
+  cursor: default;
   transition: background 0.1s ease;
 }
 
@@ -211,7 +211,7 @@
 
 .ivt-td-name {
   font-weight: 600;
-  color: #1e40af;
+  color: #4b5563;
 }
 
 .ivt-td-metric {
