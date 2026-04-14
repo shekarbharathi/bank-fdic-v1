@@ -431,8 +431,9 @@ Limit 20.`;
   const handleChatFilterFocus = useCallback(
     (e) => {
       if (hasSubmittedQuery) return;
+      const userInitiatedFocus = Boolean(e?.nativeEvent?.isTrusted ?? e?.isTrusted);
       // Stop typewriter immediately on first user interaction (tap/click focus).
-      if (!userHasInteracted) {
+      if (userInitiatedFocus && !userHasInteracted) {
         setUserHasInteracted(true);
         setTypewriterDisplay('');
       }
