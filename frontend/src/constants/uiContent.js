@@ -10,7 +10,7 @@ export const LANDING_EXAMPLE_QUERIES = [
 export const TYPEWRITER_PHRASES = [
   'top 10 banks by total assets',
   'top 10 banks in california by total deposits',
-  'Number of employees of JPMorgan Chase over a period of time',
+  'Number of employees at JPMorgan Chase over a period of time',
   'Net interest margin of top 5 banks in New York by total assets',
   '10 banks with lowest equity capital ratio',
 ];

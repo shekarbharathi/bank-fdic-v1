@@ -558,7 +558,10 @@ Limit 20.`;
   return (
     <div className="bank-explore-page">
       <header className="bank-explore-header">
-        <div className="bank-explore-title">BankStatz</div>
+        <div className="bank-explore-brand-row">
+          <div className="bank-explore-title">BankStatz</div>
+          <div className="bank-explore-subtitle">ChatGPT for FDIC data</div>
+        </div>
       </header>
       <nav className="top-dataset-tabs" aria-label="Dataset type">
         <button

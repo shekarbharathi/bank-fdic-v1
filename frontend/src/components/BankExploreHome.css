@@ -285,6 +285,18 @@
   font-size: 1.35rem;
 }
 
+.bank-explore-brand-row {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.55rem;
+}
+
+.bank-explore-subtitle {
+  font-size: 0.84rem;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
 .top-dataset-tabs {
   max-width: 1200px;
   margin: 0 auto;
