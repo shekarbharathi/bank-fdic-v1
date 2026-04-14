@@ -74,6 +74,8 @@ const BankExploreHome = () => {
   const [vizRenderGeneration, setVizRenderGeneration] = useState(0);
   /** Collapsible Examples panel under the chatbox after the first send. */
   const [postSubmitExamplesOpen, setPostSubmitExamplesOpen] = useState(false);
+  /** Collapsible Examples panel on first load (before first submit). */
+  const [landingExamplesOpen, setLandingExamplesOpen] = useState(false);
 
   const requestStartTimeRef = useRef(0);
   const apiResolvedRef = useRef(false);
@@ -258,6 +260,7 @@ Limit 20.`;
       const requestedMetrics = extractRequestedMetrics(trimmed);
       setError(null);
       setPostSubmitExamplesOpen(false);
+      setLandingExamplesOpen(false);
       setStatusPhase('interpreting');
       setIsLoading(true);
       setDetailBank(null);
@@ -604,23 +607,47 @@ Limit 20.`;
                   </button>
                 </div>
                 {!hasSubmittedQuery ? (
-                  <section className="bank-explore-landing-examples" aria-label="Example queries">
-                    <p className="bank-explore-landing-examples-heading">Try these examples</p>
-                    <ul className="bank-explore-landing-example-list">
-                      {LANDING_EXAMPLE_QUERIES.map((q) => (
-                        <li key={q}>
-                          <button
-                            type="button"
-                            className="bank-explore-landing-example-tile"
-                            onClick={() => handleSuggestionClick(q)}
-                            disabled={isLoading}
-                          >
-                            {q}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </section>
+                  <div className="bank-explore-examples-below-chat">
+                    <div className="bank-explore-footer-examples">
+                      <button
+                        type="button"
+                        className="bank-explore-footer-examples-toggle"
+                        onClick={() => setLandingExamplesOpen((open) => !open)}
+                        aria-expanded={landingExamplesOpen}
+                        aria-controls="bank-explore-landing-examples-panel"
+                        id="bank-explore-landing-examples-link-label"
+                        disabled={isLoading}
+                      >
+                        Examples
+                      </button>
+                      {landingExamplesOpen && !isLoading ? (
+                        <div
+                          className="bank-explore-footer-examples-panel"
+                          id="bank-explore-landing-examples-panel"
+                          role="region"
+                          aria-labelledby="bank-explore-landing-examples-link-label"
+                        >
+                          <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
+                            {LANDING_EXAMPLE_QUERIES.map((q) => (
+                              <li key={q}>
+                                <button
+                                  type="button"
+                                  className="bank-explore-landing-example-tile"
+                                  onClick={() => {
+                                    setLandingExamplesOpen(false);
+                                    handleSuggestionClick(q);
+                                  }}
+                                  disabled={isLoading}
+                                >
+                                  {q}
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
                 ) : (
                   <div className="bank-explore-examples-below-chat">
                     <div className="bank-explore-footer-examples">
