@@ -429,7 +429,13 @@ Limit 20.`;
 
   const handleChatFilterFocus = useCallback(
     (e) => {
-      if (hasSubmittedQuery || userHasInteracted || (chatInput && chatInput.length > 0)) return;
+      if (hasSubmittedQuery) return;
+      // Stop typewriter immediately on first user interaction (tap/click focus).
+      if (!userHasInteracted) {
+        setUserHasInteracted(true);
+        setTypewriterDisplay('');
+      }
+      if (chatInput && chatInput.length > 0) return;
       const ta = e.target;
       if (typewriterDisplay.length > 0 && ta && typeof ta.select === 'function') {
         requestAnimationFrame(() => ta.select());
