@@ -23,6 +23,18 @@ export function inferVisibleColumns(rows, configMetrics, defs = METRIC_DEFS_DEFA
   const known = new Set(
     Object.keys(defs).map((k) => normalizeMetricKey(k))
   );
+  const dedupeNormalized = (keys) => {
+    const seen = new Set();
+    const out = [];
+    for (const key of keys) {
+      const normalized = normalizeMetricKey(key);
+      if (!known.has(normalized) || seen.has(normalized)) continue;
+      seen.add(normalized);
+      out.push(normalized);
+    }
+    return out;
+  };
+
   const fromRow = Object.keys(sample).filter(
     (k) =>
       k !== 'raw' &&
@@ -30,14 +42,13 @@ export function inferVisibleColumns(rows, configMetrics, defs = METRIC_DEFS_DEFA
       sample[k] !== null &&
       sample[k] !== undefined
   );
+  const normalizedFromRow = dedupeNormalized(fromRow);
 
   if (Array.isArray(configMetrics) && configMetrics.length > 0) {
-    const byConfig = configMetrics
-      .map((k) => normalizeMetricKey(k))
-      .filter((k) => known.has(k));
+    const byConfig = dedupeNormalized(configMetrics);
     const seen = new Set(byConfig);
     const merged = [...byConfig];
-    for (const k of fromRow) {
+    for (const k of normalizedFromRow) {
       if (!seen.has(k)) {
         merged.push(k);
         seen.add(k);
@@ -46,5 +57,5 @@ export function inferVisibleColumns(rows, configMetrics, defs = METRIC_DEFS_DEFA
     return merged.length > 0 ? merged : ['assets'];
   }
 
-  return fromRow.length > 0 ? fromRow : ['assets'];
+  return normalizedFromRow.length > 0 ? normalizedFromRow : ['assets'];
 }

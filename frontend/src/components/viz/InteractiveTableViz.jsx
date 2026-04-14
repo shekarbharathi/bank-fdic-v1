@@ -52,11 +52,36 @@ const resolveMetricLabel = (metricKey, defs, fieldMetaByName) => {
   );
 };
 
-function inferSortKey(config) {
-  if (config?.sortKey) return { key: config.sortKey, direction: config.sortDirection || 'desc' };
-  if (config?.ranking === 'profitability') return { key: 'roa', direction: 'desc' };
-  if (config?.ranking === 'safety') return { key: 'capital_ratio', direction: 'desc' };
-  return { key: 'assets', direction: 'desc' };
+const isNumericLikeValue = (value) => {
+  if (value === null || value === undefined || value === '') return false;
+  if (typeof value === 'number') return Number.isFinite(value);
+  if (typeof value === 'string') return Number.isFinite(Number(value.trim()));
+  return false;
+};
+
+const inferColumnSortKind = (rowKey, defKind, rows) => {
+  if (defKind === 'date') return 'string';
+  if (defKind === 'dollar' || defKind === 'percent' || defKind === 'number') return 'number';
+  const samples = [];
+  for (const row of rows || []) {
+    const v = row?.[rowKey];
+    if (v === null || v === undefined || v === '') continue;
+    samples.push(v);
+    if (samples.length >= 10) break;
+  }
+  if (samples.length === 0) return 'string';
+  return samples.every((v) => isNumericLikeValue(v)) ? 'number' : 'string';
+};
+
+function inferSortKey(config, defs) {
+  if (config?.sortKey) {
+    const def = defs?.[config.sortKey];
+    const kind = def?.kind === 'date' ? 'string' : 'number';
+    return { key: config.sortKey, direction: config.sortDirection || 'desc', kind };
+  }
+  if (config?.ranking === 'profitability') return { key: 'roa', direction: 'desc', kind: 'number' };
+  if (config?.ranking === 'safety') return { key: 'capital_ratio', direction: 'desc', kind: 'number' };
+  return { key: 'assets', direction: 'desc', kind: 'number' };
 }
 
 export default function InteractiveTableViz({ data, title, config }) {
@@ -72,7 +97,7 @@ export default function InteractiveTableViz({ data, title, config }) {
     [rawRows, config?.visibleMetrics, config?.fieldMetaByName]
   );
 
-  const [sortState, setSortState] = useState(() => inferSortKey(config));
+  const [sortState, setSortState] = useState(() => inferSortKey(config, defs));
   const [columnWidths, setColumnWidths] = useState({});
   const [contextMenu, setContextMenu] = useState(null);
   const [selectedRow, setSelectedRow] = useState(null);
@@ -86,7 +111,8 @@ export default function InteractiveTableViz({ data, title, config }) {
         .map((metricKey) => {
           const defKey = resolveMetricDefKey(metricKey, defs);
           if (!defs[defKey]) return null;
-          return { metricKey, defKey, rowKey: defKey };
+          const sortKind = inferColumnSortKind(defKey, defs[defKey]?.kind, normalizedRows);
+          return { metricKey, defKey, rowKey: defKey, sortKind };
         })
         .filter(Boolean),
     [normalizedRows, config?.visibleMetrics, defs]
@@ -96,13 +122,14 @@ export default function InteractiveTableViz({ data, title, config }) {
     if (!normalizedRows.length) return [];
     const dir = sortState.direction;
     const key = sortState.key;
+    const kind = sortState.kind || 'number';
     const copy = [...normalizedRows];
     copy.sort((a, b) => {
       const av = a[key];
       const bv = b[key];
       if (av === null || av === undefined) return 1;
       if (bv === null || bv === undefined) return -1;
-      if (typeof av === 'string' && typeof bv === 'string') {
+      if (kind === 'string') {
         return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
       }
       const diff = Number(av) - Number(bv);
@@ -115,7 +142,7 @@ export default function InteractiveTableViz({ data, title, config }) {
     setSortState((prev) => {
       const isSame = prev.key === key;
       const nextDir = isSame ? (prev.direction === 'desc' ? 'asc' : 'desc') : kind === 'string' ? 'asc' : 'desc';
-      return { key, direction: nextDir };
+      return { key, direction: nextDir, kind };
     });
   }, []);
 
@@ -234,12 +261,12 @@ export default function InteractiveTableViz({ data, title, config }) {
                 </button>
                 <div className="ivt-resizer" onMouseDown={(e) => startResize(e, 'bank_name')} aria-hidden="true" />
               </th>
-              {visibleColumnSpecs.map(({ metricKey, defKey, rowKey }) => (
+              {visibleColumnSpecs.map(({ metricKey, defKey, rowKey, sortKind }) => (
                 <th key={metricKey} className="ivt-th ivt-th-metric" style={{ width: columnWidths[metricKey] ?? 150 }}>
                   <button
                     type="button"
                     className="ivt-header-btn"
-                    onClick={() => handleHeaderSort(rowKey, defs[defKey]?.kind === 'date' ? 'string' : 'number')}
+                    onClick={() => handleHeaderSort(rowKey, sortKind)}
                   >
                     {resolveMetricLabel(metricKey, defs, fieldMetaByName)}
                     {sortState.key === rowKey ? <span className="ivt-sort-arrow">{sortState.direction === 'asc' ? '▲' : '▼'}</span> : null}
