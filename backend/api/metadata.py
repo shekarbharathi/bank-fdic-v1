@@ -56,6 +56,7 @@ async def get_field_groups():
                     'field_name', field_name,
                     'fdic_field_code', fdic_field_code,
                     'display_name', display_name,
+                    'synopsis', synopsis,
                     'description', description,
                     'data_type', data_type,
                     'unit', unit,
@@ -90,7 +91,7 @@ async def get_fields_by_group(group_name: str):
     Example: /api/metadata/fields/Size%20%26%20Balance%20Sheet
     """
     query = """
-    SELECT field_name, fdic_field_code, display_name, description, data_type, unit, is_ratio, is_currency
+    SELECT field_name, fdic_field_code, display_name, synopsis, description, data_type, unit, is_ratio, is_currency
     FROM field_metadata
     WHERE group_name = %s
     ORDER BY display_order

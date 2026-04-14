@@ -4,6 +4,7 @@ import ChatFilterBox from './ChatFilterBox';
 import ChatResponsePanel from './ChatResponsePanel';
 import { METRIC_DEFS_DEFAULT } from '../constants/metricDefsDefault';
 import ColumnPickerModal from './ColumnPickerModal';
+import ManualModalPopup from './ManualModalPopup';
 import {
   appendMetricsToQuery,
   canonicalFieldName,
@@ -55,6 +56,7 @@ const BankExploreHome = () => {
 
   const [fieldGroups, setFieldGroups] = useState([]);
   const [columnPickerOpen, setColumnPickerOpen] = useState(false);
+  const [manualOpen, setManualOpen] = useState(false);
   const [pickerSession, setPickerSession] = useState(0);
 
   const fieldMetaByName = useMemo(() => buildFieldMetaMap(fieldGroups), [fieldGroups]);
@@ -591,6 +593,16 @@ Limit 20.`;
                   onFocus={handleChatFilterFocus}
                   typewriterSuggestion={!hasSubmittedQuery && isTypewriterMuted}
                 />
+                <div className="bank-explore-below-chat-links">
+                  <button
+                    type="button"
+                    className="bank-explore-below-chat-link"
+                    onClick={() => setManualOpen(true)}
+                    aria-haspopup="dialog"
+                  >
+                    Manual
+                  </button>
+                </div>
                 {!hasSubmittedQuery ? (
                   <section className="bank-explore-landing-examples" aria-label="Example queries">
                     <p className="bank-explore-landing-examples-heading">Try these examples</p>
@@ -730,6 +742,7 @@ Limit 20.`;
             currentQueryText={chatInput}
             onApply={handleColumnPickerApply}
           />
+          <ManualModalPopup open={manualOpen} onClose={() => setManualOpen(false)} groups={fieldGroups} />
 
           <aside className={`detail-panel ${detailBank ? 'open' : ''}`} aria-label="Bank detail panel">
             <div className="detail-panel-shell">

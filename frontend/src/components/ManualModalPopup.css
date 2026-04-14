@@ -1,0 +1,150 @@
+.manual-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(17, 24, 39, 0.36);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.manual-dialog {
+  width: min(960px, 100%);
+  max-height: min(86vh, 920px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 24px 48px rgba(17, 24, 39, 0.18);
+}
+
+.manual-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem 1.1rem 0.8rem;
+  border-bottom: 1px solid #eef2f7;
+}
+
+.manual-title {
+  margin: 0;
+  font-size: 1.06rem;
+  font-weight: 900;
+  color: #111827;
+}
+
+.manual-subtitle {
+  margin: 0.45rem 0 0;
+  color: #4b5563;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.manual-close {
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  color: #374151;
+  border-radius: 10px;
+  padding: 0.3rem 0.6rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.manual-groups {
+  overflow: auto;
+  padding: 0.5rem 0.9rem 1rem;
+}
+
+.manual-group {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  margin-top: 0.55rem;
+  background: #fafafa;
+}
+
+.manual-group-toggle {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.75rem 0.8rem;
+  cursor: pointer;
+}
+
+.manual-toggle-symbol {
+  color: #6b7280;
+  width: 14px;
+  text-align: center;
+}
+
+.manual-group-name {
+  font-weight: 800;
+  color: #111827;
+  flex: 1;
+}
+
+.manual-group-count {
+  min-width: 1.5rem;
+  padding: 0.08rem 0.4rem;
+  border-radius: 999px;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 0.78rem;
+  text-align: center;
+  font-weight: 700;
+}
+
+.manual-fields {
+  padding: 0 0.5rem 0.55rem;
+}
+
+.manual-field {
+  border: 1px solid #ebedf1;
+  background: #ffffff;
+  border-radius: 10px;
+  margin: 0.45rem 0;
+  padding: 0.5rem 0.6rem;
+}
+
+.manual-field-toggle {
+  width: 100%;
+  border: none;
+  background: transparent;
+  text-align: left;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.manual-field-title {
+  color: #111827;
+  font-weight: 700;
+}
+
+.manual-field-code {
+  color: #9ca3af;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.manual-field-synopsis {
+  color: #374151;
+  margin: 0.3rem 0 0.1rem 1.45rem;
+  font-size: 0.9rem;
+}
+
+.manual-field-description {
+  margin: 0.35rem 0 0 1.45rem;
+  color: #4b5563;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
