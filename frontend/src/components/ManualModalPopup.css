@@ -148,3 +148,15 @@
   font-size: 0.88rem;
   line-height: 1.45;
 }
+
+.manual-attribution {
+  border-top: 1px solid #eef2f7;
+  padding: 0.6rem 1rem 0.75rem;
+  color: #9ca3af;
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.manual-attribution a {
+  color: #6b7280;
+}

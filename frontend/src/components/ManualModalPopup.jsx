@@ -120,6 +120,25 @@ export default function ManualModalPopup({ open, onClose, groups }) {
             );
           })}
         </div>
+        <div className="manual-attribution">
+          Icon made by{' '}
+          <a
+            href="https://www.flaticon.com/authors/freepik"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Freepik
+          </a>{' '}
+          from{' '}
+          <a
+            href="https://www.flaticon.com/free-icon/open-book_166088?term=open+book&related_id=166088"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Flaticon
+          </a>
+          .
+        </div>
       </div>
     </div>
   );

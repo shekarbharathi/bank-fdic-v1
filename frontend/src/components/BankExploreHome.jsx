@@ -21,6 +21,7 @@ import { stateNameByAbbr } from '../constants/states';
 import { LANDING_EXAMPLE_QUERIES, TYPEWRITER_PHRASES, SUGGESTION_OPTIONS } from '../constants/uiContent';
 import VizRenderer from './viz/VizRenderer';
 import SurprisingFactsCarousel from './viz/SurprisingFactsCarousel';
+import manualOpenBookIcon from '../assets/icons/open-book-166088.png';
 import './BankExploreHome.css';
 
 /** Set to true to show the Surprising Facts (Insights) carousel again. */
@@ -605,6 +606,7 @@ Limit 20.`;
                         onClick={() => setManualOpen(true)}
                         aria-haspopup="dialog"
                       >
+                        <img src={manualOpenBookIcon} alt="" className="bank-explore-manual-icon" aria-hidden="true" />
                         Manual
                       </button>
                       <button
