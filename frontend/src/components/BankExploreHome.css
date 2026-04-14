@@ -112,6 +112,24 @@
   width: 100%;
   margin-top: 0.65rem;
   padding-top: 0.15rem;
+  overflow: hidden;
+  transform-origin: top center;
+  transition: max-height 180ms ease, opacity 180ms ease, transform 180ms ease, margin-top 180ms ease;
+}
+
+.bank-explore-footer-examples-panel.is-open {
+  max-height: 420px;
+  opacity: 1;
+  transform: translateY(0);
+  margin-top: 0.65rem;
+}
+
+.bank-explore-footer-examples-panel.is-closed {
+  max-height: 0;
+  opacity: 0;
+  transform: translateY(-3px);
+  margin-top: 0;
+  pointer-events: none;
 }
 
 .bank-explore-footer-examples-list {

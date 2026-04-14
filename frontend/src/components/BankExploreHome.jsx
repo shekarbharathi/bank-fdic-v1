@@ -626,12 +626,15 @@ Limit 20.`;
                         </span>
                       </button>
                     </div>
-                    {!hasSubmittedQuery && landingExamplesOpen && !isLoading ? (
+                    {!hasSubmittedQuery ? (
                       <div
-                        className="bank-explore-footer-examples-panel"
+                        className={`bank-explore-footer-examples-panel ${
+                          landingExamplesOpen && !isLoading ? 'is-open' : 'is-closed'
+                        }`}
                         id="bank-explore-landing-examples-panel"
                         role="region"
                         aria-labelledby="bank-explore-landing-examples-link-label"
+                        aria-hidden={!(landingExamplesOpen && !isLoading)}
                       >
                         <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
                           {LANDING_EXAMPLE_QUERIES.map((q) => (
@@ -652,12 +655,15 @@ Limit 20.`;
                         </ul>
                       </div>
                     ) : null}
-                    {hasSubmittedQuery && postSubmitExamplesOpen && !isLoading ? (
+                    {hasSubmittedQuery ? (
                       <div
-                        className="bank-explore-footer-examples-panel"
+                        className={`bank-explore-footer-examples-panel ${
+                          postSubmitExamplesOpen && !isLoading ? 'is-open' : 'is-closed'
+                        }`}
                         id="bank-explore-post-submit-examples-panel"
                         role="region"
                         aria-labelledby="bank-explore-examples-link-label"
+                        aria-hidden={!(postSubmitExamplesOpen && !isLoading)}
                       >
                         <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
                           {LANDING_EXAMPLE_QUERIES.map((q) => (
