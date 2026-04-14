@@ -620,7 +620,10 @@ Limit 20.`;
                         id={hasSubmittedQuery ? 'bank-explore-examples-link-label' : 'bank-explore-landing-examples-link-label'}
                         disabled={isLoading}
                       >
-                        Examples
+                        <span className="bank-explore-footer-examples-chevron" aria-hidden="true">
+                          {hasSubmittedQuery ? (postSubmitExamplesOpen ? 'v' : '>') : landingExamplesOpen ? 'v' : '>'}
+                        </span>
+                        <span>Examples</span>
                       </button>
                     </div>
                     {!hasSubmittedQuery && landingExamplesOpen && !isLoading ? (
