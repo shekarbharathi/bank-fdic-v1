@@ -1,16 +1,17 @@
 export const LANDING_EXAMPLE_QUERIES = [
   'Compare JPMorgan Chase with CitiBank',
-  'Bank of America assets over time',
+  'Bank of America total assets over time',
   "What's the ROA distribution across banks",
   'Overview of banks in New York',
   'All banks in texas with more than 20 billion but less than 50 billion in assets',
+  'top 10 banks by assets with Net Interest Margin, Credit Card Loans'
 ];
 
 export const TYPEWRITER_PHRASES = [
-  'top 10 banks by assets',
-  'top 10 banks in california by deposits',
-  'poorest 5 banks by assets',
-  'top 5 banks in New York with highest net interest margin',
+  'top 10 banks by total assets',
+  'top 10 banks in california by total deposits',
+  'Number of employees of JPMorgan Chase over a period of time',
+  'Net interest margin of top 5 banks in New York by total assets',
   '10 banks with lowest equity capital ratio',
 ];
 
