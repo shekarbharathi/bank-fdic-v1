@@ -596,101 +596,87 @@ Limit 20.`;
                   onFocus={handleChatFilterFocus}
                   typewriterSuggestion={!hasSubmittedQuery && isTypewriterMuted}
                 />
-                <div className="bank-explore-below-chat-links">
-                  <button
-                    type="button"
-                    className="bank-explore-below-chat-link"
-                    onClick={() => setManualOpen(true)}
-                    aria-haspopup="dialog"
-                  >
-                    Manual
-                  </button>
+                <div className="bank-explore-examples-below-chat">
+                  <div className="bank-explore-footer-examples">
+                    <div className="bank-explore-below-chat-actions">
+                      <button
+                        type="button"
+                        className="bank-explore-footer-examples-toggle"
+                        onClick={() => setManualOpen(true)}
+                        aria-haspopup="dialog"
+                      >
+                        Manual
+                      </button>
+                      <button
+                        type="button"
+                        className="bank-explore-footer-examples-toggle"
+                        onClick={() =>
+                          hasSubmittedQuery
+                            ? setPostSubmitExamplesOpen((open) => !open)
+                            : setLandingExamplesOpen((open) => !open)
+                        }
+                        aria-expanded={hasSubmittedQuery ? postSubmitExamplesOpen : landingExamplesOpen}
+                        aria-controls={hasSubmittedQuery ? 'bank-explore-post-submit-examples-panel' : 'bank-explore-landing-examples-panel'}
+                        id={hasSubmittedQuery ? 'bank-explore-examples-link-label' : 'bank-explore-landing-examples-link-label'}
+                        disabled={isLoading}
+                      >
+                        Examples
+                      </button>
+                    </div>
+                    {!hasSubmittedQuery && landingExamplesOpen && !isLoading ? (
+                      <div
+                        className="bank-explore-footer-examples-panel"
+                        id="bank-explore-landing-examples-panel"
+                        role="region"
+                        aria-labelledby="bank-explore-landing-examples-link-label"
+                      >
+                        <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
+                          {LANDING_EXAMPLE_QUERIES.map((q) => (
+                            <li key={q}>
+                              <button
+                                type="button"
+                                className="bank-explore-landing-example-tile"
+                                onClick={() => {
+                                  setLandingExamplesOpen(false);
+                                  handleSuggestionClick(q);
+                                }}
+                                disabled={isLoading}
+                              >
+                                {q}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                    {hasSubmittedQuery && postSubmitExamplesOpen && !isLoading ? (
+                      <div
+                        className="bank-explore-footer-examples-panel"
+                        id="bank-explore-post-submit-examples-panel"
+                        role="region"
+                        aria-labelledby="bank-explore-examples-link-label"
+                      >
+                        <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
+                          {LANDING_EXAMPLE_QUERIES.map((q) => (
+                            <li key={q}>
+                              <button
+                                type="button"
+                                className="bank-explore-landing-example-tile"
+                                onClick={() => {
+                                  setPostSubmitExamplesOpen(false);
+                                  handleSuggestionClick(q);
+                                }}
+                                disabled={isLoading}
+                              >
+                                {q}
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
-                {!hasSubmittedQuery ? (
-                  <div className="bank-explore-examples-below-chat">
-                    <div className="bank-explore-footer-examples">
-                      <button
-                        type="button"
-                        className="bank-explore-footer-examples-toggle"
-                        onClick={() => setLandingExamplesOpen((open) => !open)}
-                        aria-expanded={landingExamplesOpen}
-                        aria-controls="bank-explore-landing-examples-panel"
-                        id="bank-explore-landing-examples-link-label"
-                        disabled={isLoading}
-                      >
-                        Examples
-                      </button>
-                      {landingExamplesOpen && !isLoading ? (
-                        <div
-                          className="bank-explore-footer-examples-panel"
-                          id="bank-explore-landing-examples-panel"
-                          role="region"
-                          aria-labelledby="bank-explore-landing-examples-link-label"
-                        >
-                          <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
-                            {LANDING_EXAMPLE_QUERIES.map((q) => (
-                              <li key={q}>
-                                <button
-                                  type="button"
-                                  className="bank-explore-landing-example-tile"
-                                  onClick={() => {
-                                    setLandingExamplesOpen(false);
-                                    handleSuggestionClick(q);
-                                  }}
-                                  disabled={isLoading}
-                                >
-                                  {q}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bank-explore-examples-below-chat">
-                    <div className="bank-explore-footer-examples">
-                      <button
-                        type="button"
-                        className="bank-explore-footer-examples-toggle"
-                        onClick={() => setPostSubmitExamplesOpen((open) => !open)}
-                        aria-expanded={postSubmitExamplesOpen}
-                        aria-controls="bank-explore-post-submit-examples-panel"
-                        id="bank-explore-examples-link-label"
-                        disabled={isLoading}
-                      >
-                        Examples
-                      </button>
-                      {postSubmitExamplesOpen && !isLoading ? (
-                        <div
-                          className="bank-explore-footer-examples-panel"
-                          id="bank-explore-post-submit-examples-panel"
-                          role="region"
-                          aria-labelledby="bank-explore-examples-link-label"
-                        >
-                          <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
-                            {LANDING_EXAMPLE_QUERIES.map((q) => (
-                              <li key={q}>
-                                <button
-                                  type="button"
-                                  className="bank-explore-landing-example-tile"
-                                  onClick={() => {
-                                    setPostSubmitExamplesOpen(false);
-                                    handleSuggestionClick(q);
-                                  }}
-                                  disabled={isLoading}
-                                >
-                                  {q}
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
