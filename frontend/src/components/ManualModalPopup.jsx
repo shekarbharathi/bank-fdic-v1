@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import './ManualModalPopup.css';
 
 const SUBTITLE =
-  'Every quarter, the Federal Desposit Insurance Corporation (FDIC) publishes a vast amount of data (1100+ data fields) about all insured banks (27,832 in total). The following are the most frequently analyzed data fields.';
+  'Every quarter, the Federal Desposit Insurance Corporation (FDIC) publishes a vast amount of data (1100+ data fields) about all insured banks. The following are the most frequently analyzed data fields.';
 const IDENTIFIERS_GROUP_NAME = 'Identifiers & Dates';
 
 function fieldKey(field) {
