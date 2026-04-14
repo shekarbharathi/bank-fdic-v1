@@ -21,6 +21,7 @@ const ChatFilterBox = forwardRef(
       highlightRanges = null,
       onHighlightClear,
       onFocus: onFocusProp,
+      onInteractStart,
       /** Muted text color for cycling typewriter preview (not user input). */
       typewriterSuggestion = false,
     },
@@ -114,6 +115,8 @@ const ChatFilterBox = forwardRef(
                   setIsFocused(true);
                   onFocusProp?.(e);
                 }}
+                onMouseDown={() => onInteractStart?.()}
+                onTouchStart={() => onInteractStart?.()}
                 onBlur={() => setIsFocused(false)}
                 onScroll={handleScroll}
                 placeholder={placeholder}

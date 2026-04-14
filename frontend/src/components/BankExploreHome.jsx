@@ -431,20 +431,21 @@ Limit 20.`;
   const handleChatFilterFocus = useCallback(
     (e) => {
       if (hasSubmittedQuery) return;
-      const userInitiatedFocus = Boolean(e?.nativeEvent?.isTrusted ?? e?.isTrusted);
-      // Stop typewriter immediately on first user interaction (tap/click focus).
-      if (userInitiatedFocus && !userHasInteracted) {
-        setUserHasInteracted(true);
-        setTypewriterDisplay('');
-      }
       if (chatInput && chatInput.length > 0) return;
       const ta = e.target;
       if (typewriterDisplay.length > 0 && ta && typeof ta.select === 'function') {
         requestAnimationFrame(() => ta.select());
       }
     },
-    [hasSubmittedQuery, userHasInteracted, chatInput, typewriterDisplay.length]
+    [hasSubmittedQuery, chatInput, typewriterDisplay.length]
   );
+
+  const handleChatInteractStart = useCallback(() => {
+    if (hasSubmittedQuery || userHasInteracted) return;
+    // Stop typewriter immediately on explicit user pointer interaction.
+    setUserHasInteracted(true);
+    setTypewriterDisplay('');
+  }, [hasSubmittedQuery, userHasInteracted]);
 
   const handleChatInputChange = useCallback((next) => {
     setQueryHighlightRanges(null);
@@ -602,6 +603,7 @@ Limit 20.`;
                   highlightRanges={queryHighlightRanges}
                   onHighlightClear={clearQueryHighlight}
                   onFocus={handleChatFilterFocus}
+                  onInteractStart={handleChatInteractStart}
                   typewriterSuggestion={!hasSubmittedQuery && isTypewriterMuted}
                 />
                 <div className="bank-explore-examples-below-chat">
