@@ -109,8 +109,12 @@ export default function ManualModalPopup({ open, onClose, groups }) {
                             <span className="manual-field-title">{field?.display_name || field?.field_name || 'Unnamed field'}</span>
                             <span className="manual-field-code">{field?.fdic_field_code || ''}</span>
                           </button>
-                          <div className="manual-field-synopsis">{field?.synopsis || '—'}</div>
-                          {isFieldOpen ? <div className="manual-field-description">{field?.description || '—'}</div> : null}
+                          {isFieldOpen ? (
+                            <>
+                              <div className="manual-field-synopsis">{field?.synopsis || '—'}</div>
+                              <div className="manual-field-description">{field?.description || '—'}</div>
+                            </>
+                          ) : null}
                         </article>
                       );
                     })}
