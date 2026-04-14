@@ -3,6 +3,7 @@ import './ManualModalPopup.css';
 
 const SUBTITLE =
   'Every quarter, the Federal Desposit Insurance Corporation (FDIC) publishes a vast amount of data (1100+ data fields) about all insured banks (27,832 in total). The following are the most frequently analyzed data fields.';
+const IDENTIFIERS_GROUP_NAME = 'Identifiers & Dates';
 
 function fieldKey(field) {
   return String(field?.field_name || field?.fdic_field_code || field?.display_name || Math.random());
@@ -16,6 +17,12 @@ export default function ManualModalPopup({ open, onClose, groups }) {
   const [expandedFields, setExpandedFields] = useState(() => new Set());
 
   const safeGroups = useMemo(() => (Array.isArray(groups) ? groups : []), [groups]);
+  const orderedGroups = useMemo(() => {
+    if (!safeGroups.length) return safeGroups;
+    const ident = safeGroups.filter((g) => g?.group_name === IDENTIFIERS_GROUP_NAME);
+    const rest = safeGroups.filter((g) => g?.group_name !== IDENTIFIERS_GROUP_NAME);
+    return [...rest, ...ident];
+  }, [safeGroups]);
 
   useEffect(() => {
     if (!open) return;
@@ -73,7 +80,7 @@ export default function ManualModalPopup({ open, onClose, groups }) {
         </div>
 
         <div className="manual-groups">
-          {safeGroups.map((group) => {
+          {orderedGroups.map((group) => {
             const gid = group?.group_id;
             const fields = Array.isArray(group?.fields) ? group.fields : [];
             const isGroupOpen = expandedGroups.has(gid);
