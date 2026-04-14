@@ -277,8 +277,23 @@ export const normalizeBankRows = (rawRows, options = {}) => {
       raw: row,
     };
 
+    if (extra.has('asset') || extra.has('assets')) {
+      const resolvedAssets = out.assets ?? extractExtraMetric(row, 'asset', fieldMetaByName);
+      if (resolvedAssets !== null && resolvedAssets !== undefined) {
+        out.assets = Number(resolvedAssets);
+        out.asset = Number(resolvedAssets);
+      }
+    }
+    if (extra.has('dep') || extra.has('deposits')) {
+      const resolvedDeposits = out.deposits ?? extractExtraMetric(row, 'dep', fieldMetaByName);
+      if (resolvedDeposits !== null && resolvedDeposits !== undefined) {
+        out.deposits = Number(resolvedDeposits);
+        out.dep = Number(resolvedDeposits);
+      }
+    }
+
     for (const fname of extra) {
-      if (fname === 'assets') continue;
+      if (fname === 'assets' || fname === 'asset') continue;
       if (fname === 'repdte') {
         out.repdte = out.report_date ?? pickCaseInsensitive(row, 'repdte', 'REPDTE') ?? null;
         continue;
@@ -286,10 +301,12 @@ export const normalizeBankRows = (rawRows, options = {}) => {
       if (out[fname] !== undefined && out[fname] !== null) continue;
       if (fname === 'dep') {
         out.dep = out.deposits ?? extractExtraMetric(row, 'dep', fieldMetaByName);
+        out.deposits = out.deposits ?? out.dep;
         continue;
       }
       if (fname === 'deposits') {
         out.deposits = out.deposits ?? extractExtraMetric(row, 'dep', fieldMetaByName);
+        out.dep = out.dep ?? out.deposits;
         continue;
       }
       const v = extractExtraMetric(row, fname, fieldMetaByName);

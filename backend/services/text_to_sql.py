@@ -143,6 +143,9 @@ If the question is NOT about FDIC banking data, respond with ONLY:
 
 - SELECT only; use schema tables from the context (institutions, financials, financials_kv, fdic_field_dictionary, etc.)
 - Include columns the user asked for (metrics) in SELECT
+- When query text includes picker display names (from field_metadata.display_name), map them to the matching FDIC/canonical fields and include stable aliases in SELECT.
+  Example mappings: "Total Assets" -> `f.asset * 1000 AS assets_dollars` (or alias `asset`), "Total Deposits" -> `f.dep * 1000 AS deposits_dollars` (or alias `dep`).
+  Do not drop requested picker metrics from SELECT even if ranking is by another metric.
 - Most recent quarter: use MAX(repdte) subqueries where appropriate
 - Active banks: filter institutions.active = 1 when listing banks
 - Bank names: ILIKE '%Name%'

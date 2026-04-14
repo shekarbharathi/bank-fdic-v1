@@ -32,21 +32,60 @@ const formatMetricValue = (metricKey, value, defs) => {
   return value === null || value === undefined ? 'N/A' : String(value);
 };
 
+const METRIC_KEY_ALIASES = {
+  asset: 'assets',
+  assets: 'assets',
+  dep: 'deposits',
+  deposits: 'deposits',
+};
+
+const METADATA_KEY_BY_METRIC_KEY = {
+  assets: 'asset',
+  deposits: 'dep',
+};
+
+const normalizeMetricKey = (metricKey) =>
+  METRIC_KEY_ALIASES[String(metricKey || '').toLowerCase()] || metricKey;
+
+const resolveMetricDefKey = (metricKey, defs) => {
+  const normalized = normalizeMetricKey(metricKey);
+  if (defs[normalized]) return normalized;
+  return metricKey;
+};
+
+const resolveMetricLabel = (metricKey, defs, fieldMetaByName) => {
+  if (metricKey === 'bank_name') return 'Bank Name';
+  if (metricKey === 'rank' || metricKey === '__rank') return 'Rank';
+  const defKey = resolveMetricDefKey(metricKey, defs);
+  const metadataKey = METADATA_KEY_BY_METRIC_KEY[defKey] || metricKey;
+  return (
+    fieldMetaByName?.get(metadataKey)?.display_name ||
+    fieldMetaByName?.get(defKey)?.display_name ||
+    defs[defKey]?.label ||
+    defs[metricKey]?.label ||
+    metricKey
+  );
+};
+
 function inferVisibleColumns(rows, configMetrics) {
   const sample = rows[0];
   if (!sample) return ['assets'];
 
-  const known = new Set(Object.keys(METRIC_DEFS_DEFAULT));
+  const known = new Set(
+    Object.keys(METRIC_DEFS_DEFAULT).map((k) => normalizeMetricKey(k))
+  );
   const fromRow = Object.keys(sample).filter(
     (k) =>
       k !== 'raw' &&
-      known.has(k) &&
+      known.has(normalizeMetricKey(k)) &&
       sample[k] !== null &&
       sample[k] !== undefined
   );
 
   if (Array.isArray(configMetrics) && configMetrics.length > 0) {
-    const byConfig = configMetrics.filter((k) => known.has(k));
+    const byConfig = configMetrics
+      .map((k) => normalizeMetricKey(k))
+      .filter((k) => known.has(k));
     const seen = new Set(byConfig);
     const merged = [...byConfig];
     for (const k of fromRow) {
@@ -71,6 +110,7 @@ function inferSortKey(config) {
 export default function InteractiveTableViz({ data, title, config }) {
   const rawRows = Array.isArray(data) ? data : [];
   const defs = config?.metricDefs ?? METRIC_DEFS_DEFAULT;
+  const fieldMetaByName = config?.fieldMetaByName;
 
   const normalizedRows = useMemo(
     () => normalizeBankRows(rawRows, {
@@ -88,9 +128,15 @@ export default function InteractiveTableViz({ data, title, config }) {
   const theadRef = useRef(null);
   const [headerRowPx, setHeaderRowPx] = useState(null);
 
-  const visibleColumns = useMemo(
-    () => inferVisibleColumns(normalizedRows, config?.visibleMetrics)
-      .filter((k) => Boolean(defs[k])),
+  const visibleColumnSpecs = useMemo(
+    () =>
+      inferVisibleColumns(normalizedRows, config?.visibleMetrics)
+        .map((metricKey) => {
+          const defKey = resolveMetricDefKey(metricKey, defs);
+          if (!defs[defKey]) return null;
+          return { metricKey, defKey, rowKey: defKey };
+        })
+        .filter(Boolean),
     [normalizedRows, config?.visibleMetrics, defs]
   );
 
@@ -236,15 +282,15 @@ export default function InteractiveTableViz({ data, title, config }) {
                 </button>
                 <div className="ivt-resizer" onMouseDown={(e) => startResize(e, 'bank_name')} aria-hidden="true" />
               </th>
-              {visibleColumns.map((metricKey) => (
+              {visibleColumnSpecs.map(({ metricKey, defKey, rowKey }) => (
                 <th key={metricKey} className="ivt-th ivt-th-metric" style={{ width: columnWidths[metricKey] ?? 150 }}>
                   <button
                     type="button"
                     className="ivt-header-btn"
-                    onClick={() => handleHeaderSort(metricKey, defs[metricKey]?.kind === 'date' ? 'string' : 'number')}
+                    onClick={() => handleHeaderSort(rowKey, defs[defKey]?.kind === 'date' ? 'string' : 'number')}
                   >
-                    {defs[metricKey]?.label || metricKey}
-                    {sortState.key === metricKey ? <span className="ivt-sort-arrow">{sortState.direction === 'asc' ? '▲' : '▼'}</span> : null}
+                    {resolveMetricLabel(metricKey, defs, fieldMetaByName)}
+                    {sortState.key === rowKey ? <span className="ivt-sort-arrow">{sortState.direction === 'asc' ? '▲' : '▼'}</span> : null}
                   </button>
                   <div className="ivt-resizer" onMouseDown={(e) => startResize(e, metricKey)} aria-hidden="true" />
                 </th>
@@ -263,9 +309,9 @@ export default function InteractiveTableViz({ data, title, config }) {
               >
                 <td className="ivt-td ivt-td-rank">{row.__rank}</td>
                 <td className="ivt-td ivt-td-name">{row.bank_name}</td>
-                {visibleColumns.map((metricKey) => (
+                {visibleColumnSpecs.map(({ metricKey, defKey, rowKey }) => (
                   <td key={metricKey} className="ivt-td ivt-td-metric">
-                    {formatMetricValue(metricKey, row[metricKey], defs)}
+                    {formatMetricValue(defKey, row[rowKey], defs)}
                   </td>
                 ))}
               </tr>
@@ -295,7 +341,7 @@ export default function InteractiveTableViz({ data, title, config }) {
       <div className="ivt-footer">
         <span className="ivt-row-count">{sortedRows.length} rows</span>
         <span className="ivt-sort-info">
-          Sorted by {defs[sortState.key]?.label || sortState.key} ({sortState.direction === 'asc' ? 'low → high' : 'high → low'})
+          Sorted by {resolveMetricLabel(sortState.key, defs, fieldMetaByName)} ({sortState.direction === 'asc' ? 'low → high' : 'high → low'})
         </span>
       </div>
 

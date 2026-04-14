@@ -139,7 +139,7 @@ const ColumnPickerModal = ({
   }, [toggleField]);
 
   const handleApply = useCallback(() => {
-    const selected = Array.from(localSelected);
+    const selected = Array.from(new Set(Array.from(localSelected).map(canonicalFieldName)));
     const displayNames = selected
       .map((id) => fieldMeta.get(id)?.display_name || id)
       .filter(Boolean);

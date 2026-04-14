@@ -460,8 +460,8 @@ Limit 20.`;
 
   const handleColumnPickerApply = useCallback(
     ({ selectedFieldNames }) => {
-      const canonFromModal = selectedFieldNames.map((id) => canonicalFieldName(id));
-      const prevCanon = visibleMetricIds.map((id) => canonicalFieldName(id));
+      const canonFromModal = selectedFieldNames.map((id) => canonicalFieldName(id)).filter(Boolean);
+      const prevCanon = visibleMetricIds.map((id) => canonicalFieldName(id)).filter(Boolean);
       // Union: keep columns already shown (incl. ranking/inferred metrics not in metadata) plus modal picks.
       const mergedVisible = [...new Set([...prevCanon, ...canonFromModal])];
 
@@ -777,7 +777,6 @@ Limit 20.`;
             onClose={() => setColumnPickerOpen(false)}
             groups={fieldGroups}
             selectedFieldNames={pickerSelectedFieldNames}
-            currentQueryText={chatInput}
             onApply={handleColumnPickerApply}
           />
           <ManualModalPopup open={manualOpen} onClose={() => setManualOpen(false)} groups={fieldGroups} />

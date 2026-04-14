@@ -4,6 +4,20 @@
 
 const WITH_SUFFIX_RE = /\s+with\s+.+$/is;
 
+const uniqueDisplayNames = (items) => {
+  const seen = new Set();
+  const out = [];
+  for (const item of items || []) {
+    const label = String(item || '').trim();
+    if (!label) continue;
+    const key = label.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(label);
+  }
+  return out;
+};
+
 export function stripTrailingWithClause(text) {
   return String(text || '').replace(WITH_SUFFIX_RE, '').trim();
 }
@@ -14,8 +28,9 @@ export function stripTrailingWithClause(text) {
  */
 export function appendMetricsToQuery(baseQuery, displayNames) {
   const base = stripTrailingWithClause(baseQuery);
-  if (!displayNames?.length) return base;
-  return `${base} with ${displayNames.join(', ')}`;
+  const deduped = uniqueDisplayNames(displayNames);
+  if (!deduped.length) return base;
+  return `${base} with ${deduped.join(', ')}`;
 }
 
 /**
@@ -26,7 +41,7 @@ export function appendMetricsToQuery(baseQuery, displayNames) {
  * @returns {string[]}
  */
 export function withDefaultAssetsDisplayNames(displayNames, assetLabel) {
-  const list = displayNames || [];
+  const list = uniqueDisplayNames(displayNames || []);
   if (!list.length) return list;
   const label = String(assetLabel || 'Total Assets').trim();
   if (!label) return [...list];
