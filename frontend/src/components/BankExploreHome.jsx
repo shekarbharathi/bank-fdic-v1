@@ -620,7 +620,6 @@ Limit 20.`;
                         aria-expanded={hasSubmittedQuery ? postSubmitExamplesOpen : landingExamplesOpen}
                         aria-controls={hasSubmittedQuery ? 'bank-explore-post-submit-examples-panel' : 'bank-explore-landing-examples-panel'}
                         id={hasSubmittedQuery ? 'bank-explore-examples-link-label' : 'bank-explore-landing-examples-link-label'}
-                        disabled={isLoading}
                       >
                         <span>Examples</span>
                         <span className="bank-explore-footer-examples-chevron" aria-hidden="true">
@@ -631,12 +630,12 @@ Limit 20.`;
                     {!hasSubmittedQuery ? (
                       <div
                         className={`bank-explore-footer-examples-panel ${
-                          landingExamplesOpen && !isLoading ? 'is-open' : 'is-closed'
+                          landingExamplesOpen ? 'is-open' : 'is-closed'
                         }`}
                         id="bank-explore-landing-examples-panel"
                         role="region"
                         aria-labelledby="bank-explore-landing-examples-link-label"
-                        aria-hidden={!(landingExamplesOpen && !isLoading)}
+                        aria-hidden={!landingExamplesOpen}
                       >
                         <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
                           {LANDING_EXAMPLE_QUERIES.map((q) => (
@@ -648,7 +647,6 @@ Limit 20.`;
                                   setLandingExamplesOpen(false);
                                   handleSuggestionClick(q);
                                 }}
-                                disabled={isLoading}
                               >
                                 {q}
                               </button>
@@ -660,12 +658,12 @@ Limit 20.`;
                     {hasSubmittedQuery ? (
                       <div
                         className={`bank-explore-footer-examples-panel ${
-                          postSubmitExamplesOpen && !isLoading ? 'is-open' : 'is-closed'
+                          postSubmitExamplesOpen ? 'is-open' : 'is-closed'
                         }`}
                         id="bank-explore-post-submit-examples-panel"
                         role="region"
                         aria-labelledby="bank-explore-examples-link-label"
-                        aria-hidden={!(postSubmitExamplesOpen && !isLoading)}
+                        aria-hidden={!postSubmitExamplesOpen}
                       >
                         <ul className="bank-explore-landing-example-list bank-explore-footer-examples-list">
                           {LANDING_EXAMPLE_QUERIES.map((q) => (
@@ -677,7 +675,6 @@ Limit 20.`;
                                   setPostSubmitExamplesOpen(false);
                                   handleSuggestionClick(q);
                                 }}
-                                disabled={isLoading}
                               >
                                 {q}
                               </button>
