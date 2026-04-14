@@ -14,7 +14,8 @@ import { buildFieldMetaMap, mergeMetricDefs } from '../utils/columnPickerMetrics
 import { computeDiffHighlightRanges } from '../utils/queryDiffHighlight';
 import { resolveExperience } from '../utils/vizRouting';
 import { INITIAL_VIEW_STATE, viewStateReducer } from '../reducers/viewStateReducer';
-import { pickCaseInsensitive } from '../utils/bankDataNormalization';
+import { normalizeBankRows, pickCaseInsensitive } from '../utils/bankDataNormalization';
+import { inferVisibleColumns } from '../utils/visibleMetrics';
 import { extractTopN, extractStateAbbr, extractRankingCriteria, extractRequestedMetrics } from '../utils/queryParsing';
 import { isRefusalResponse } from '../utils/responseValidation';
 import { stateNameByAbbr } from '../constants/states';
@@ -421,10 +422,25 @@ Limit 20.`;
   );
   handleChatSubmitRef.current = handleChatSubmit;
 
-  const pickerSelectedFieldNames = useMemo(
-    () => visibleMetricIds.map((id) => canonicalFieldName(id)),
-    [visibleMetricIds]
-  );
+  const pickerSelectedFieldNames = useMemo(() => {
+    if (viewMode !== 'table' || !Array.isArray(vizData) || vizData.length === 0) {
+      return [...new Set(visibleMetricIds.map((id) => canonicalFieldName(id)).filter(Boolean))];
+    }
+
+    const tableConfig = vizMeta?.config ?? {};
+    const defs = tableConfig.metricDefs ?? metricDefsMerged;
+    const configMetrics = tableConfig.visibleMetrics ?? visibleMetricIds;
+    const normalizedRows = normalizeBankRows(vizData, {
+      extraFieldNames: configMetrics || [],
+      fieldMetaByName: tableConfig.fieldMetaByName ?? fieldMetaByName,
+    });
+
+    return [...new Set(
+      inferVisibleColumns(normalizedRows, configMetrics, defs)
+        .map((id) => canonicalFieldName(id))
+        .filter(Boolean)
+    )];
+  }, [viewMode, vizData, vizMeta, metricDefsMerged, visibleMetricIds, fieldMetaByName]);
 
   const clearQueryHighlight = useCallback(() => setQueryHighlightRanges(null), []);
 

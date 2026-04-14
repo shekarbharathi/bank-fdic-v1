@@ -1,6 +1,7 @@
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { METRIC_DEFS_DEFAULT } from '../../constants/metricDefsDefault';
 import { normalizeBankRows } from '../../utils/bankDataNormalization';
+import { inferVisibleColumns, resolveMetricDefKey } from '../../utils/visibleMetrics';
 import './InteractiveTableViz.css';
 import './VizPlaceholder.css';
 
@@ -32,25 +33,9 @@ const formatMetricValue = (metricKey, value, defs) => {
   return value === null || value === undefined ? 'N/A' : String(value);
 };
 
-const METRIC_KEY_ALIASES = {
-  asset: 'assets',
-  assets: 'assets',
-  dep: 'deposits',
-  deposits: 'deposits',
-};
-
 const METADATA_KEY_BY_METRIC_KEY = {
   assets: 'asset',
   deposits: 'dep',
-};
-
-const normalizeMetricKey = (metricKey) =>
-  METRIC_KEY_ALIASES[String(metricKey || '').toLowerCase()] || metricKey;
-
-const resolveMetricDefKey = (metricKey, defs) => {
-  const normalized = normalizeMetricKey(metricKey);
-  if (defs[normalized]) return normalized;
-  return metricKey;
 };
 
 const resolveMetricLabel = (metricKey, defs, fieldMetaByName) => {
@@ -66,39 +51,6 @@ const resolveMetricLabel = (metricKey, defs, fieldMetaByName) => {
     metricKey
   );
 };
-
-function inferVisibleColumns(rows, configMetrics) {
-  const sample = rows[0];
-  if (!sample) return ['assets'];
-
-  const known = new Set(
-    Object.keys(METRIC_DEFS_DEFAULT).map((k) => normalizeMetricKey(k))
-  );
-  const fromRow = Object.keys(sample).filter(
-    (k) =>
-      k !== 'raw' &&
-      known.has(normalizeMetricKey(k)) &&
-      sample[k] !== null &&
-      sample[k] !== undefined
-  );
-
-  if (Array.isArray(configMetrics) && configMetrics.length > 0) {
-    const byConfig = configMetrics
-      .map((k) => normalizeMetricKey(k))
-      .filter((k) => known.has(k));
-    const seen = new Set(byConfig);
-    const merged = [...byConfig];
-    for (const k of fromRow) {
-      if (!seen.has(k)) {
-        merged.push(k);
-        seen.add(k);
-      }
-    }
-    return merged.length > 0 ? merged : ['assets'];
-  }
-
-  return fromRow.length > 0 ? fromRow : ['assets'];
-}
 
 function inferSortKey(config) {
   if (config?.sortKey) return { key: config.sortKey, direction: config.sortDirection || 'desc' };

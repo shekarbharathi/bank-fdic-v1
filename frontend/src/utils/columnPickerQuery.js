@@ -54,11 +54,13 @@ export function withDefaultAssetsDisplayNames(displayNames, assetLabel) {
 
 /** Map legacy visible metric ids to metadata field_name */
 export function canonicalFieldName(id) {
+  if (id === 'assets') return 'asset';
   if (id === 'deposits') return 'dep';
   return id;
 }
 
 export function denormalizeFieldNameForLegacy(id) {
+  if (id === 'asset') return ['asset', 'assets'];
   if (id === 'dep') return ['dep', 'deposits'];
   return [id];
 }
