@@ -13,7 +13,7 @@ export function fieldToMetricDef(field) {
     id,
     label: field.display_name || id,
     kind,
-    explanation: field.description || '',
+    explanation: field.synopsis || field.description || '',
     fdic_field_code: field.fdic_field_code,
   };
 }

@@ -16,7 +16,7 @@ const GROUP_ICONS = {
 
 const POPULAR_FIELDS = ['roa', 'nimy', 'dep', 'netinc', 'lncrcd', 'eq'];
 
-const SKIP_PICKER_FIELDS = new Set(['asset']);
+const SKIP_PICKER_FIELDS = new Set();
 
 const UNLOCK_STORAGE_PREFIX = 'bankstatz_unlock_group_';
 
@@ -30,33 +30,11 @@ function orderGroupsWithIdentifiersLast(list) {
   return [...rest, ...ident];
 }
 
-function getRecommendationFieldNames(queryLower, fieldNamesSet) {
-  const out = [];
-  if (/\bprofitable|profit|roa\b/i.test(queryLower)) {
-    ['roa', 'roaptx', 'nimy'].forEach((f) => {
-      if (fieldNamesSet.has(f)) out.push(f);
-    });
-  }
-  if (/\bsafe|safety|capital|risk\b/i.test(queryLower)) {
-    ['eq', 'elnatr', 'rbct'].forEach((f) => {
-      if (fieldNamesSet.has(f)) out.push(f);
-    });
-  }
-  return [...new Set(out)];
-}
-
-const PlusIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-    <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
 const ColumnPickerModal = ({
   open,
   onClose,
   groups,
   selectedFieldNames,
-  currentQueryText,
   onApply,
 }) => {
   const titleId = useId();
@@ -98,6 +76,12 @@ const ColumnPickerModal = ({
     }, 0);
     return () => clearTimeout(t);
   }, [open]);
+
+  // Always reflect currently visible columns when the modal opens.
+  useEffect(() => {
+    if (!open) return;
+    setLocalSelected(new Set((selectedFieldNames || []).map(canonicalFieldName)));
+  }, [open, selectedFieldNames]);
 
   useEffect(() => {
     if (!open) return;
@@ -166,11 +150,6 @@ const ColumnPickerModal = ({
     () => POPULAR_FIELDS.filter((f) => allFieldNames.has(f)),
     [allFieldNames]
   );
-
-  const recommendations = useMemo(() => {
-    const q = String(currentQueryText || '').toLowerCase();
-    return getRecommendationFieldNames(q, allFieldNames);
-  }, [currentQueryText, allFieldNames]);
 
   if (!open) return null;
 
@@ -244,29 +223,6 @@ const ColumnPickerModal = ({
           </div>
         )}
 
-        {recommendations.length > 0 && (
-          <div className="cpm-section">
-            <h3 className="cpm-section-title">Suggested for your query</h3>
-            <div className="cpm-quick-row">
-              {recommendations.map((name) => {
-                const field = fieldMeta.get(name);
-                const label = field?.display_name || name;
-                const checked = localSelected.has(name);
-                return (
-                  <button
-                    key={name}
-                    type="button"
-                    className={`cpm-quick-btn ${checked ? 'is-on' : ''}`}
-                    onClick={() => togglePopular(name)}
-                  >
-                    <PlusIcon /> {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         <div className="cpm-body" role="list">
           {filteredGroups.map((group) => {
             const gid = group.group_id;
@@ -307,13 +263,13 @@ const ColumnPickerModal = ({
                           />
                           <span className="cpm-field-text">
                             <span className="cpm-field-label">{field.display_name}</span>
-                            {field.description && (
+                            {field.synopsis && (
                               <>
                                 <span className="cpm-field-sep" aria-hidden="true">
                                   ·
                                 </span>
-                                <span className="cpm-field-desc" title={field.description}>
-                                  {field.description}
+                                <span className="cpm-field-desc" title={field.synopsis}>
+                                  {field.synopsis}
                                 </span>
                               </>
                             )}
