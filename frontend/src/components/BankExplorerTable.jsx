@@ -251,36 +251,23 @@ const BankExplorerTable = ({
                 }}
               >
                 <td data-label="Rank" className="be-td">
-                  <button
-                    type="button"
-                    className="be-cell-button"
-                    onClick={() => onOpenDetail?.(row)}
-                    aria-label={`Open details for rank ${row.__rank}`}
-                  >
+                  <span className="be-cell-button">
                     {row.__rank}
-                  </button>
+                  </span>
                 </td>
                 <td data-label="Bank Name" className="be-td">
-                  <button
-                    type="button"
-                    className="be-cell-button be-cell-bank"
-                    onClick={() => onOpenDetail?.(row)}
-                    aria-label={`Open details for ${row.bank_name}`}
-                  >
+                  <span className="be-cell-button be-cell-bank">
                     {row.bank_name}
-                  </button>
+                  </span>
                 </td>
 
                 <td data-label="Assets" className="be-td be-td-metric">
-                  <button
-                    type="button"
+                  <span
                     className="be-cell-button be-cell-metric"
-                    onClick={() => onOpenDetail?.(row)}
                     title={`Assets: ${formatMetricValue('assets', row.assets, defs)}`}
-                    aria-label={`Assets for ${row.bank_name}`}
                   >
                     <span className="be-cell-metric-value">{formatMetricValue('assets', row.assets, defs)}</span>
-                  </button>
+                  </span>
                 </td>
 
                 {visibleColumns
@@ -291,15 +278,12 @@ const BankExplorerTable = ({
                       data-label={defs[metricKey]?.label || metricKey}
                       className="be-td"
                     >
-                      <button
-                        type="button"
+                      <span
                         className="be-cell-button"
-                        onClick={() => onOpenDetail?.(row)}
                         title={`${defs[metricKey]?.label || metricKey}: ${formatMetricValue(metricKey, row[metricKey], defs)}`}
-                        aria-label={`${defs[metricKey]?.label || metricKey} for ${row.bank_name}`}
                       >
                         {formatMetricValue(metricKey, row[metricKey], defs)}
-                      </button>
+                      </span>
                     </td>
                   ))}
               </tr>
