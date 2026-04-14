@@ -131,7 +131,7 @@
 .bank-explore-manual-icon {
   width: 0.9rem;
   height: 0.9rem;
-  color: currentColor;
+  object-fit: contain;
   margin-right: 0.12rem;
   transform: translateY(0.01rem);
   flex-shrink: 0;
