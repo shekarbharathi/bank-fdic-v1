@@ -1013,7 +1013,9 @@ Limit 20.`;
                         </svg>
                       </button>
                       {activeFeedback ? (
-                        <span className="bank-explore-feedback-saved">Feedback saved</span>
+                        <span className="bank-explore-feedback-saved">
+                          Thank you for your feedback. We will use it to improve this product.
+                        </span>
                       ) : null}
                     </div>
                   ) : null}
