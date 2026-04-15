@@ -82,6 +82,8 @@ const BankExploreHome = () => {
   /** Bumped on each successful viz dispatch so VizRenderer remounts and onVizReady runs again. */
   const [vizRenderGeneration, setVizRenderGeneration] = useState(0);
   const [vizContentReady, setVizContentReady] = useState(false);
+  const vizReadyRaf1Ref = useRef(null);
+  const vizReadyRaf2Ref = useRef(null);
   /** Collapsible Examples panel under the chatbox after the first send. */
   const [postSubmitExamplesOpen, setPostSubmitExamplesOpen] = useState(false);
   /** Collapsible Examples panel on first load (before first submit). */
@@ -268,12 +270,32 @@ Limit 20.`;
   }, [hasSubmittedQuery, userHasInteracted, chatInput, isLoading]);
 
   const handleVizRenderComplete = useCallback(() => {
-    setVizContentReady(true);
+    if (vizReadyRaf1Ref.current != null) {
+      cancelAnimationFrame(vizReadyRaf1Ref.current);
+      vizReadyRaf1Ref.current = null;
+    }
+    if (vizReadyRaf2Ref.current != null) {
+      cancelAnimationFrame(vizReadyRaf2Ref.current);
+      vizReadyRaf2Ref.current = null;
+    }
+    // Defer feedback visibility by two paint frames so the viz mounts first.
+    vizReadyRaf1Ref.current = requestAnimationFrame(() => {
+      vizReadyRaf1Ref.current = null;
+      vizReadyRaf2Ref.current = requestAnimationFrame(() => {
+        vizReadyRaf2Ref.current = null;
+        setVizContentReady(true);
+      });
+    });
     setStatusPhase((prev) => {
       if (prev === 'loading_viz') return null;
       vizReadyPendingRef.current = true;
       return prev;
     });
+  }, []);
+
+  useEffect(() => () => {
+    if (vizReadyRaf1Ref.current != null) cancelAnimationFrame(vizReadyRaf1Ref.current);
+    if (vizReadyRaf2Ref.current != null) cancelAnimationFrame(vizReadyRaf2Ref.current);
   }, []);
 
   useEffect(() => {
@@ -328,6 +350,14 @@ Limit 20.`;
       setBranchRows([]);
       setBranchLoading(false);
       setVizContentReady(false);
+      if (vizReadyRaf1Ref.current != null) {
+        cancelAnimationFrame(vizReadyRaf1Ref.current);
+        vizReadyRaf1Ref.current = null;
+      }
+      if (vizReadyRaf2Ref.current != null) {
+        cancelAnimationFrame(vizReadyRaf2Ref.current);
+        vizReadyRaf2Ref.current = null;
+      }
       dispatchView({ type: 'RESET' });
 
       requestStartTimeRef.current = Date.now();
