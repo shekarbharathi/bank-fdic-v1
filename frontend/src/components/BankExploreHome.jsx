@@ -687,6 +687,7 @@ Limit 20.`;
     !isLoading &&
     !error &&
     vizContentReady &&
+    statusPhase === null &&
     viewMode !== 'suggestions' &&
     viewMode !== 'pending';
 
