@@ -422,30 +422,23 @@
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  padding: 0.45rem 0.6rem;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  background: #ffffff;
-  align-self: flex-start;
-}
-
-.bank-explore-feedback-label {
-  font-size: 0.82rem;
-  color: #6b7280;
-  font-weight: 600;
+  padding: 0.2rem 0;
+  align-self: center;
 }
 
 .bank-explore-feedback-btn {
-  border: 1px solid #d1d5db;
-  background: #f9fafb;
+  border: none;
+  background: transparent;
   border-radius: 8px;
-  padding: 0.18rem 0.36rem;
+  padding: 0.2rem 0.35rem;
   cursor: pointer;
   font-size: 0.88rem;
   line-height: 1;
+  color: #6b7280;
 }
 
 .bank-explore-feedback-btn:hover:not(:disabled) {
+  color: #4b5563;
   background: #f3f4f6;
 }
 
@@ -455,7 +448,7 @@
 }
 
 .bank-explore-feedback-btn.is-selected {
-  border-color: #94a3b8;
+  color: #4b5563;
   background: #eef2ff;
 }
 
