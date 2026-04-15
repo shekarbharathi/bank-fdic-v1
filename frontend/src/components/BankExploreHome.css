@@ -417,6 +417,26 @@
   color: #111827;
 }
 
+.bank-explore-viz-shell {
+  width: 100%;
+  min-height: 320px;
+}
+
+.bank-explore-viz-shell--table,
+.bank-explore-viz-shell--compare_banks {
+  min-height: 420px;
+}
+
+.bank-explore-viz-shell--state_explorer {
+  min-height: 460px;
+}
+
+.bank-explore-viz-shell--trend_tracker,
+.bank-explore-viz-shell--metric_explorer,
+.bank-explore-viz-shell--peer_group {
+  min-height: 380px;
+}
+
 .bank-explore-feedback-bar {
   margin-top: 0.15rem;
   display: inline-flex;

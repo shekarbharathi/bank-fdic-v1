@@ -1004,14 +1004,16 @@ Limit 20.`;
                     </div>
                   )}
 
-                  <VizRenderer
-                    key={vizRenderGeneration}
-                    experience={viewMode}
-                    data={vizData}
-                    title={vizMeta.title}
-                    config={vizMeta.config}
-                    onVizReady={handleVizRenderComplete}
-                  />
+                  <div className={`bank-explore-viz-shell bank-explore-viz-shell--${viewMode || 'pending'}`}>
+                    <VizRenderer
+                      key={vizRenderGeneration}
+                      experience={viewMode}
+                      data={vizData}
+                      title={vizMeta.title}
+                      config={vizMeta.config}
+                      onVizReady={handleVizRenderComplete}
+                    />
+                  </div>
                   {shouldReserveFeedbackSpace ? (
                     <div className="bank-explore-feedback-slot">
                       {canShowFeedback ? (
