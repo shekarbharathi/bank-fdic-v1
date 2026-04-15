@@ -81,6 +81,7 @@ const BankExploreHome = () => {
   const [statusPhase, setStatusPhase] = useState(null);
   /** Bumped on each successful viz dispatch so VizRenderer remounts and onVizReady runs again. */
   const [vizRenderGeneration, setVizRenderGeneration] = useState(0);
+  const [vizContentReady, setVizContentReady] = useState(false);
   /** Collapsible Examples panel under the chatbox after the first send. */
   const [postSubmitExamplesOpen, setPostSubmitExamplesOpen] = useState(false);
   /** Collapsible Examples panel on first load (before first submit). */
@@ -267,6 +268,7 @@ Limit 20.`;
   }, [hasSubmittedQuery, userHasInteracted, chatInput, isLoading]);
 
   const handleVizRenderComplete = useCallback(() => {
+    setVizContentReady(true);
     setStatusPhase((prev) => {
       if (prev === 'loading_viz') return null;
       vizReadyPendingRef.current = true;
@@ -325,6 +327,7 @@ Limit 20.`;
       setDetailBank(null);
       setBranchRows([]);
       setBranchLoading(false);
+      setVizContentReady(false);
       dispatchView({ type: 'RESET' });
 
       requestStartTimeRef.current = Date.now();
@@ -683,6 +686,7 @@ Limit 20.`;
     hasSubmittedQuery &&
     !isLoading &&
     !error &&
+    vizContentReady &&
     viewMode !== 'suggestions' &&
     viewMode !== 'pending';
 
