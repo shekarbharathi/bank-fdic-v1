@@ -16,6 +16,7 @@ import { resolveExperience } from '../utils/vizRouting';
 import { INITIAL_VIEW_STATE, viewStateReducer } from '../reducers/viewStateReducer';
 import { normalizeBankRows, pickCaseInsensitive } from '../utils/bankDataNormalization';
 import { inferVisibleColumns } from '../utils/visibleMetrics';
+import { getAnalyticsQueryText, startViewTimer, trackEvent, trackInputEdit } from '../utils/analytics';
 import { extractTopN, extractStateAbbr, extractRankingCriteria, extractRequestedMetrics } from '../utils/queryParsing';
 import { isRefusalResponse } from '../utils/responseValidation';
 import { stateNameByAbbr } from '../constants/states';
@@ -180,6 +181,38 @@ Limit 20.`;
   }, []);
 
   useEffect(() => {
+    if (activeTopTab !== 'banks') return undefined;
+    const endView = startViewTimer('banks_home', {
+      tab_name: 'banks',
+      has_results: hasSubmittedQuery ? 1 : 0,
+    });
+    return () => endView();
+  }, [activeTopTab, hasSubmittedQuery]);
+
+  useEffect(() => {
+    if (!manualOpen) return;
+    trackEvent('manual_opened', {
+      component: 'manual_modal',
+      action: 'open',
+      group_count: fieldGroups.length,
+    });
+  }, [manualOpen, fieldGroups.length]);
+
+  useEffect(() => {
+    if (isLoading || !hasSubmittedQuery) return;
+    const rowCount = Array.isArray(vizData) ? vizData.length : 0;
+    const metricCount = Array.isArray(visibleMetricIds) ? visibleMetricIds.length : 0;
+    trackEvent('results_rendered', {
+      viz_mode: viewMode,
+      row_count: rowCount,
+      metric_count: metricCount,
+      has_results: rowCount > 0 ? 1 : 0,
+      status_phase: statusPhase || 'ready',
+      error_state: error ? 'error' : 'ok',
+    });
+  }, [isLoading, hasSubmittedQuery, vizData, visibleMetricIds, viewMode, statusPhase, error]);
+
+  useEffect(() => {
     if (hasSubmittedQuery || isLoading) return;
     if (userHasInteracted || chatInput !== '') return;
 
@@ -250,6 +283,17 @@ Limit 20.`;
       if (!trimmed) return;
 
       const { visibleMetricOverride } = submitOptions;
+      const selectedMetricCount = Array.isArray(visibleMetricOverride)
+        ? visibleMetricOverride.length
+        : visibleMetricIds.length;
+      trackEvent('query_submit', {
+        input_id: 'bank-chat-filter-input',
+        char_count: trimmed.length,
+        token_estimate: Math.ceil(trimmed.split(/\s+/).filter(Boolean).length * 1.3),
+        has_with_clause: /\swith\s/i.test(trimmed) ? 1 : 0,
+        selected_metric_count: selectedMetricCount,
+        query_text: getAnalyticsQueryText(trimmed),
+      });
       lastSubmittedQueryRef.current = trimmed;
       setHasSubmittedQuery(true);
       setChatInput(raw);
@@ -396,6 +440,11 @@ Limit 20.`;
             metricDefs: metricDefsMerged,
             fieldMetaByName,
             onOpenColumnPicker: () => {
+              trackEvent('column_picker_opened', {
+                component: 'interactive_table',
+                action: 'open',
+                selected_metric_count: effectiveExtra.length,
+              });
               setPickerSession((s) => s + 1);
               setColumnPickerOpen(true);
             },
@@ -466,6 +515,14 @@ Limit 20.`;
   const handleChatInputChange = useCallback((next) => {
     setQueryHighlightRanges(null);
     setChatInput(next);
+    trackInputEdit({
+      input_id: 'bank-chat-filter-input',
+      char_count: String(next || '').length,
+      token_estimate: String(next || '').trim()
+        ? String(next || '').trim().split(/\s+/).filter(Boolean).length
+        : 0,
+      has_with_clause: /\swith\s/i.test(String(next || '')) ? 1 : 0,
+    });
     if (next === '') {
       setUserHasInteracted(false);
       setTypewriterDisplay('');
@@ -503,6 +560,11 @@ Limit 20.`;
       setQueryHighlightRanges(colRanges.length ? colRanges : null);
       setColumnPickerOpen(false);
       setUserHasInteracted(true);
+      trackEvent('column_picker_applied', {
+        component: 'column_picker_modal',
+        action: 'apply',
+        selected_metric_count: mergedVisible.length,
+      });
       handleChatSubmit(q, { visibleMetricOverride: mergedVisible });
     },
     [chatInput, handleChatSubmit, visibleMetricIds, fieldMetaByName, metricDefsMerged]
@@ -514,6 +576,11 @@ Limit 20.`;
       if (!queryText) return;
       setError(null);
       try {
+        trackEvent('ui_click', {
+          component: 'interactive_table',
+          element_id: 'expand_query',
+          action: 'expand_query',
+        });
         const expanded = await chatAPI.expandQuery(queryText);
         setUserHasInteracted(true);
         setChatInput(expanded);
@@ -631,7 +698,14 @@ Limit 20.`;
                       <button
                         type="button"
                         className="bank-explore-footer-examples-toggle bank-explore-footer-manual-link"
-                        onClick={() => setManualOpen(true)}
+                        onClick={() => {
+                          trackEvent('ui_click', {
+                            component: 'bank_explore_footer',
+                            element_id: 'manual_link',
+                            action: 'open_manual',
+                          });
+                          setManualOpen(true);
+                        }}
                         aria-haspopup="dialog"
                       >
                         <img src={manualOpenBookIcon} alt="" className="bank-explore-manual-icon" aria-hidden="true" />
@@ -640,11 +714,16 @@ Limit 20.`;
                       <button
                         type="button"
                         className="bank-explore-footer-examples-toggle"
-                        onClick={() =>
-                          hasSubmittedQuery
-                            ? setPostSubmitExamplesOpen((open) => !open)
-                            : setLandingExamplesOpen((open) => !open)
-                        }
+                        onClick={() => {
+                          const nextOpen = hasSubmittedQuery ? !postSubmitExamplesOpen : !landingExamplesOpen;
+                          trackEvent('examples_toggled', {
+                            component: 'bank_explore_footer',
+                            action: nextOpen ? 'open' : 'close',
+                            context: hasSubmittedQuery ? 'post_submit' : 'landing',
+                          });
+                          if (hasSubmittedQuery) setPostSubmitExamplesOpen(nextOpen);
+                          else setLandingExamplesOpen(nextOpen);
+                        }}
                         aria-expanded={hasSubmittedQuery ? postSubmitExamplesOpen : landingExamplesOpen}
                         aria-controls={hasSubmittedQuery ? 'bank-explore-post-submit-examples-panel' : 'bank-explore-landing-examples-panel'}
                         id={hasSubmittedQuery ? 'bank-explore-examples-link-label' : 'bank-explore-landing-examples-link-label'}

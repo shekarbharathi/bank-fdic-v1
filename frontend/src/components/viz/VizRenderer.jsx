@@ -1,4 +1,5 @@
-import { lazy, Suspense, useLayoutEffect } from 'react';
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from 'react';
+import { trackEvent } from '../../utils/analytics';
 
 const VIZ_REGISTRY = {
   table: lazy(() => import('./InteractiveTableViz')),
@@ -24,15 +25,40 @@ function VizNullNotifier({ onReady }) {
 }
 
 export default function VizRenderer({ experience, data, title, config, onVizReady }) {
+  const hasInteractedRef = useRef(false);
+
+  useEffect(() => {
+    if (!experience) return;
+    hasInteractedRef.current = false;
+    trackEvent('viz_rendered', {
+      viz_component: experience,
+      viz_type: config?.type || experience,
+      has_results: Array.isArray(data) ? (data.length > 0 ? 1 : 0) : 0,
+      row_count: Array.isArray(data) ? data.length : 0,
+    });
+  }, [experience, config?.type, data]);
+
   const Component = VIZ_REGISTRY[experience];
   if (!Component) {
     return <VizNullNotifier onReady={onVizReady} />;
   }
   return (
-    <Suspense fallback={null}>
-      <VizReadyGate onReady={onVizReady}>
-        <Component data={data} title={title} config={config} />
-      </VizReadyGate>
-    </Suspense>
+    <div
+      onPointerDownCapture={() => {
+        if (hasInteractedRef.current) return;
+        hasInteractedRef.current = true;
+        trackEvent('viz_interaction', {
+          viz_component: experience,
+          viz_type: config?.type || experience,
+          action: 'pointer_down',
+        });
+      }}
+    >
+      <Suspense fallback={null}>
+        <VizReadyGate onReady={onVizReady}>
+          <Component data={data} title={title} config={config} />
+        </VizReadyGate>
+      </Suspense>
+    </div>
   );
 }

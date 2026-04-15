@@ -2,6 +2,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { METRIC_DEFS_DEFAULT } from '../../constants/metricDefsDefault';
 import { normalizeBankRows } from '../../utils/bankDataNormalization';
 import { inferVisibleColumns, resolveMetricDefKey } from '../../utils/visibleMetrics';
+import { trackEvent } from '../../utils/analytics';
 import './InteractiveTableViz.css';
 import './VizPlaceholder.css';
 
@@ -142,6 +143,13 @@ export default function InteractiveTableViz({ data, title, config }) {
     setSortState((prev) => {
       const isSame = prev.key === key;
       const nextDir = isSame ? (prev.direction === 'desc' ? 'asc' : 'desc') : kind === 'string' ? 'asc' : 'desc';
+      trackEvent('table_sort_changed', {
+        component: 'interactive_table',
+        action: 'sort',
+        sort_key: key,
+        sort_kind: kind,
+        sort_direction: nextDir,
+      });
       return { key, direction: nextDir, kind };
     });
   }, []);
@@ -283,6 +291,12 @@ export default function InteractiveTableViz({ data, title, config }) {
                 className={`ivt-row ${selectedRow?.cert === row.cert ? 'ivt-row--selected' : ''}`}
                 onContextMenu={(e) => {
                   e.preventDefault();
+                  trackEvent('ui_click', {
+                    component: 'interactive_table',
+                    element_id: 'row_context_menu',
+                    action: 'open_context_menu',
+                    context: 'row',
+                  });
                   setContextMenu({ x: e.clientX, y: e.clientY, row });
                 }}
               >
@@ -308,7 +322,16 @@ export default function InteractiveTableViz({ data, title, config }) {
             <button
               type="button"
               className="ivt-context-item"
-              onClick={() => { setSelectedRow(contextMenu.row); setContextMenu(null); }}
+              onClick={() => {
+                trackEvent('ui_click', {
+                  component: 'interactive_table',
+                  element_id: 'view_details',
+                  action: 'open_detail_bar',
+                  context: 'context_menu',
+                });
+                setSelectedRow(contextMenu.row);
+                setContextMenu(null);
+              }}
               role="menuitem"
             >
               View Details
