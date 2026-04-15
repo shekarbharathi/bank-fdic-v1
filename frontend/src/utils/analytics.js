@@ -122,8 +122,18 @@ const flushQueue = () => {
 const sendEventInternal = (name, params) => {
   const payload = { name, params: sanitizeParams(params) };
   if (!canSendEvents()) {
+    if (name === 'query_submit') {
+      // #region agent log
+      fetch('http://127.0.0.1:7350/ingest/152fb36c-8b60-412e-91e5-51df2bbb09a0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8dccde'},body:JSON.stringify({sessionId:'8dccde',runId:'initial',hypothesisId:'H3',location:'analytics.js:sendEventInternal',message:'query_submit queued because canSendEvents=false',data:{analyticsEnabled,scriptLoaded,hasGtag:typeof window!=='undefined'&&typeof window.gtag==='function',queueSizeBefore:eventQueue.length},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+    }
     eventQueue.push(payload);
     return;
+  }
+  if (name === 'query_submit') {
+    // #region agent log
+    fetch('http://127.0.0.1:7350/ingest/152fb36c-8b60-412e-91e5-51df2bbb09a0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8dccde'},body:JSON.stringify({sessionId:'8dccde',runId:'initial',hypothesisId:'H4',location:'analytics.js:sendEventInternal',message:'query_submit sent via gtag',data:{queueSize:eventQueue.length,eventKeys:Object.keys(payload.params||{})},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
   }
   window.gtag('event', payload.name, payload.params);
 };
@@ -139,6 +149,11 @@ const totalMs = () => Math.max(0, now() - getSessionStart());
 export function trackEvent(name, params = {}, options = {}) {
   if (!name) return;
   if (options.sampleRate && Math.random() > options.sampleRate) return;
+  if (name === 'query_submit') {
+    // #region agent log
+    fetch('http://127.0.0.1:7350/ingest/152fb36c-8b60-412e-91e5-51df2bbb09a0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8dccde'},body:JSON.stringify({sessionId:'8dccde',runId:'initial',hypothesisId:'H2',location:'analytics.js:trackEvent',message:'query_submit trackEvent invoked',data:{analyticsEnabled,scriptLoaded,hasGtag:typeof window!=='undefined'&&typeof window.gtag==='function',queueSize:eventQueue.length},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
+  }
   sendEventInternal(name, params);
 }
 
@@ -227,6 +242,9 @@ export function initAnalytics() {
   initialized = true;
   measurementId = String(import.meta.env.VITE_GA4_MEASUREMENT_ID || '').trim();
   analyticsEnabled = Boolean(measurementId);
+  // #region agent log
+  fetch('http://127.0.0.1:7350/ingest/152fb36c-8b60-412e-91e5-51df2bbb09a0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8dccde'},body:JSON.stringify({sessionId:'8dccde',runId:'initial',hypothesisId:'H1',location:'analytics.js:initAnalytics',message:'initAnalytics configuration snapshot',data:{hasMeasurementId:Boolean(measurementId),captureQueryText:CAPTURE_QUERY_TEXT},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
   getUserPseudoId();
   getSessionId();
   getSessionStart();

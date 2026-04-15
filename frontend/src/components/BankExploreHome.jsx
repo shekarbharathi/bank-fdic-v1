@@ -286,6 +286,9 @@ Limit 20.`;
       const selectedMetricCount = Array.isArray(visibleMetricOverride)
         ? visibleMetricOverride.length
         : visibleMetricIds.length;
+      // #region agent log
+      fetch('http://127.0.0.1:7350/ingest/152fb36c-8b60-412e-91e5-51df2bbb09a0',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'8dccde'},body:JSON.stringify({sessionId:'8dccde',runId:'initial',hypothesisId:'H5',location:'BankExploreHome.jsx:handleChatSubmit',message:'about to emit query_submit',data:{trimmedLength:trimmed.length,selectedMetricCount,hasWithClause:/\\swith\\s/i.test(trimmed)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       trackEvent('query_submit', {
         input_id: 'bank-chat-filter-input',
         char_count: trimmed.length,
