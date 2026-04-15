@@ -428,6 +428,13 @@
   transition: opacity 320ms ease, transform 320ms ease;
 }
 
+.bank-explore-feedback-slot {
+  min-height: 2.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 .bank-explore-feedback-bar.is-hidden {
   opacity: 0;
   transform: translateY(4px);

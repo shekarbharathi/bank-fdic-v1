@@ -717,6 +717,15 @@ Limit 20.`;
     hasSubmittedQuery &&
     !isLoading &&
     !error &&
+    vizContentReady &&
+    statusPhase === null &&
+    viewMode !== 'suggestions' &&
+    viewMode !== 'pending';
+  const shouldReserveFeedbackSpace =
+    Boolean(activeResponseId) &&
+    hasSubmittedQuery &&
+    !isLoading &&
+    !error &&
     statusPhase === null &&
     viewMode !== 'suggestions' &&
     viewMode !== 'pending';
@@ -1003,59 +1012,58 @@ Limit 20.`;
                     config={vizMeta.config}
                     onVizReady={handleVizRenderComplete}
                   />
-                  {canShowFeedback ? (
-                    <div
-                      className={`bank-explore-feedback-bar ${vizContentReady ? 'is-visible' : 'is-hidden'}`}
-                      role="group"
-                      aria-label="Response feedback"
-                      aria-hidden={!vizContentReady}
-                    >
-                      <button
-                        type="button"
-                        className={`bank-explore-feedback-btn ${activeFeedback?.feedbackValue === 'up' ? 'is-selected' : ''}`}
-                        onClick={handleThumbsUp}
-                        disabled={Boolean(activeFeedback) || feedbackSubmitting}
-                        aria-label="Thumbs up"
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          aria-hidden="true"
-                        >
-                          <path
-                            d="M14.5 10V5.5C14.5 4.12 13.38 3 12 3L8.6 10.2C8.22 11 8 11.88 8 12.78V19.5C8 20.88 9.12 22 10.5 22H17.29C18.23 22 19.05 21.36 19.27 20.45L20.82 13.95C20.94 13.46 21 12.96 21 12.45C21 11.09 19.91 10 18.55 10H14.5ZM3 22H6V10H3V22Z"
-                            fill="currentColor"
-                          />
-                        </svg>
-                      </button>
-                      <button
-                        type="button"
-                        className={`bank-explore-feedback-btn ${activeFeedback?.feedbackValue === 'down' ? 'is-selected' : ''}`}
-                        onClick={handleThumbsDown}
-                        disabled={Boolean(activeFeedback) || feedbackSubmitting}
-                        aria-label="Thumbs down"
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                          aria-hidden="true"
-                        >
-                          <path
-                            d="M9.5 14V18.5C9.5 19.88 10.62 21 12 21L15.4 13.8C15.78 13 16 12.12 16 11.22V4.5C16 3.12 14.88 2 13.5 2H6.71C5.77 2 4.95 2.64 4.73 3.55L3.18 10.05C3.06 10.54 3 11.04 3 11.55C3 12.91 4.09 14 5.45 14H9.5ZM18 2H21V14H18V2Z"
-                            fill="currentColor"
-                          />
-                        </svg>
-                      </button>
-                      {activeFeedback ? (
-                        <span className="bank-explore-feedback-saved">
-                          Thank you for your feedback. We will use it to improve this product.
-                        </span>
+                  {shouldReserveFeedbackSpace ? (
+                    <div className="bank-explore-feedback-slot">
+                      {canShowFeedback ? (
+                        <div className="bank-explore-feedback-bar is-visible" role="group" aria-label="Response feedback">
+                          <button
+                            type="button"
+                            className={`bank-explore-feedback-btn ${activeFeedback?.feedbackValue === 'up' ? 'is-selected' : ''}`}
+                            onClick={handleThumbsUp}
+                            disabled={Boolean(activeFeedback) || feedbackSubmitting}
+                            aria-label="Thumbs up"
+                          >
+                            <svg
+                              width="18"
+                              height="18"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M14.5 10V5.5C14.5 4.12 13.38 3 12 3L8.6 10.2C8.22 11 8 11.88 8 12.78V19.5C8 20.88 9.12 22 10.5 22H17.29C18.23 22 19.05 21.36 19.27 20.45L20.82 13.95C20.94 13.46 21 12.96 21 12.45C21 11.09 19.91 10 18.55 10H14.5ZM3 22H6V10H3V22Z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                          </button>
+                          <button
+                            type="button"
+                            className={`bank-explore-feedback-btn ${activeFeedback?.feedbackValue === 'down' ? 'is-selected' : ''}`}
+                            onClick={handleThumbsDown}
+                            disabled={Boolean(activeFeedback) || feedbackSubmitting}
+                            aria-label="Thumbs down"
+                          >
+                            <svg
+                              width="18"
+                              height="18"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M9.5 14V18.5C9.5 19.88 10.62 21 12 21L15.4 13.8C15.78 13 16 12.12 16 11.22V4.5C16 3.12 14.88 2 13.5 2H6.71C5.77 2 4.95 2.64 4.73 3.55L3.18 10.05C3.06 10.54 3 11.04 3 11.55C3 12.91 4.09 14 5.45 14H9.5ZM18 2H21V14H18V2Z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                          </button>
+                          {activeFeedback ? (
+                            <span className="bank-explore-feedback-saved">
+                              Thank you for your feedback. We will use it to improve this product.
+                            </span>
+                          ) : null}
+                        </div>
                       ) : null}
                     </div>
                   ) : null}
