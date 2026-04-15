@@ -16,13 +16,19 @@ COPY . ./
 # Accept VITE_API_URL as a build argument
 # Railway environment variables need to be explicitly declared as ARG to be available during build
 ARG VITE_API_URL
+ARG VITE_GA4_MEASUREMENT_ID
+ARG VITE_GA4_CAPTURE_QUERY_TEXT
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_GA4_MEASUREMENT_ID=$VITE_GA4_MEASUREMENT_ID
+ENV VITE_GA4_CAPTURE_QUERY_TEXT=$VITE_GA4_CAPTURE_QUERY_TEXT
 
 # Build the application
 # Vite environment variables are replaced at build time
 # Debug: Show what VITE_API_URL is during build
 RUN echo "=== Build Environment Check ===" && \
     echo "VITE_API_URL during build: ${VITE_API_URL:-NOT SET}" && \
+    echo "VITE_GA4_MEASUREMENT_ID during build: ${VITE_GA4_MEASUREMENT_ID:+SET}" && \
+    echo "VITE_GA4_CAPTURE_QUERY_TEXT during build: ${VITE_GA4_CAPTURE_QUERY_TEXT:-NOT SET}" && \
     echo "================================"
 RUN npm run build
 
