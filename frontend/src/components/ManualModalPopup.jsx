@@ -196,7 +196,7 @@ export default function ManualModalPopup({ open, onClose, groups, onSubmitFeedba
               className="manual-feedback-textarea"
               value={feedbackText}
               onChange={(e) => setFeedbackText(e.target.value)}
-              placeholder="Let us know what data fields you want to see here"
+              placeholder=""
               rows={4}
               maxLength={4000}
             />

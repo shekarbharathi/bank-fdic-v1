@@ -1335,13 +1335,6 @@ Limit 20.`;
       ) : (
         <section className="coming-soon-panel" aria-live="polite">
           <div>Coming Soon</div>
-          <button
-            type="button"
-            className="coming-soon-feedback-link"
-            onClick={() => openGeneralFeedback('credit_unions_coming_soon')}
-          >
-            Poke us to build this faster
-          </button>
         </section>
       )}
     </div>
