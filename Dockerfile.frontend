@@ -12,6 +12,14 @@ RUN npm install --no-audit --no-fund
 # Copy frontend source
 COPY frontend/ ./
 
+# Build-time env vars for Vite (Railway Docker builds need ARG -> ENV).
+ARG VITE_API_URL
+ARG VITE_GA4_MEASUREMENT_ID
+ARG VITE_GA4_CAPTURE_QUERY_TEXT
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_GA4_MEASUREMENT_ID=$VITE_GA4_MEASUREMENT_ID
+ENV VITE_GA4_CAPTURE_QUERY_TEXT=$VITE_GA4_CAPTURE_QUERY_TEXT
+
 # Build the application
 RUN npm run build
 
