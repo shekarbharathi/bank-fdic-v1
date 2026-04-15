@@ -4,6 +4,8 @@ Chat API endpoints
 import logging
 import os
 import sys
+from uuid import uuid4
+from typing import Optional
 
 # Handle imports for both Railway (backend as root) and local dev (project root)
 if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
@@ -51,6 +53,55 @@ def get_services():
     return _db_service, _text_to_sql_service, _response_formatter
 
 
+async def persist_llm_query_event(
+    db_service: DatabaseService,
+    *,
+    response_instance_id: str,
+    session_id: Optional[str],
+    user_query: str,
+    llm_sql: Optional[str],
+    llm_intent: Optional[str],
+    llm_visualization_type: Optional[str],
+    llm_visualization_title: Optional[str],
+    data_row_count: int,
+    column_count: int,
+    status: str,
+    error_message: Optional[str],
+) -> None:
+    insert_sql = """
+        INSERT INTO llm_query_events (
+            response_instance_id,
+            session_id,
+            user_query,
+            llm_sql,
+            llm_intent,
+            llm_visualization_type,
+            llm_visualization_title,
+            data_row_count,
+            column_count,
+            status,
+            error_message
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """
+    await db_service.execute_write(
+        insert_sql,
+        (
+            response_instance_id,
+            session_id,
+            user_query,
+            llm_sql,
+            llm_intent,
+            llm_visualization_type,
+            llm_visualization_title,
+            data_row_count,
+            column_count,
+            status,
+            error_message,
+        ),
+    )
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
     """
@@ -59,6 +110,8 @@ async def chat_endpoint(request: ChatRequest):
     import time
     start_time = time.time()
     
+    response_instance_id = str(uuid4())
+
     try:
         db_service, text_to_sql_service, response_formatter = get_services()
 
@@ -104,6 +157,26 @@ async def chat_endpoint(request: ChatRequest):
         )
 
         execution_time = time.time() - start_time
+        visualization = plan.visualization or {}
+        column_count = len(results[0].keys()) if results else 0
+
+        try:
+            await persist_llm_query_event(
+                db_service,
+                response_instance_id=response_instance_id,
+                session_id=request.conversation_id,
+                user_query=request.message,
+                llm_sql=sql_query,
+                llm_intent=plan.intent,
+                llm_visualization_type=visualization.get("type"),
+                llm_visualization_title=visualization.get("title"),
+                data_row_count=len(results),
+                column_count=column_count,
+                status="success",
+                error_message=None,
+            )
+        except Exception as telemetry_error:
+            logger.warning("Failed to persist llm_query_events (success path): %s", telemetry_error)
 
         return ChatResponse(
             response=formatted_response,
@@ -113,23 +186,62 @@ async def chat_endpoint(request: ChatRequest):
             visualization=plan.visualization,
             entities=plan.entities or None,
             execution_time=execution_time,
+            response_instance_id=response_instance_id,
         )
 
     except OutOfScopeError:
         execution_time = time.time() - start_time
+        try:
+            db_service, _, _ = get_services()
+            await persist_llm_query_event(
+                db_service,
+                response_instance_id=response_instance_id,
+                session_id=request.conversation_id,
+                user_query=request.message,
+                llm_sql=None,
+                llm_intent=None,
+                llm_visualization_type=None,
+                llm_visualization_title=None,
+                data_row_count=0,
+                column_count=0,
+                status="error",
+                error_message="out_of_scope",
+            )
+        except Exception as telemetry_error:
+            logger.warning("Failed to persist llm_query_events (out_of_scope path): %s", telemetry_error)
         return ChatResponse(
             response="I only answer questions about FDIC bank data. Try asking about banks, assets, deposits, or safety metrics.",
             error="out_of_scope",
             error_code="out_of_scope",
             execution_time=execution_time,
+            response_instance_id=response_instance_id,
         )
 
     except Exception as e:
         execution_time = time.time() - start_time
+        try:
+            db_service, _, _ = get_services()
+            await persist_llm_query_event(
+                db_service,
+                response_instance_id=response_instance_id,
+                session_id=request.conversation_id,
+                user_query=request.message,
+                llm_sql=None,
+                llm_intent=None,
+                llm_visualization_type=None,
+                llm_visualization_title=None,
+                data_row_count=0,
+                column_count=0,
+                status="error",
+                error_message=str(e),
+            )
+        except Exception as telemetry_error:
+            logger.warning("Failed to persist llm_query_events (exception path): %s", telemetry_error)
         return ChatResponse(
             response=f"I encountered an error: {str(e)}",
             error=str(e),
             execution_time=execution_time,
+            response_instance_id=response_instance_id,
         )
 
 

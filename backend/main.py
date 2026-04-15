@@ -24,11 +24,13 @@ from fastapi.middleware.cors import CORSMiddleware
 try:
     from api import chat
     from api import debug_client_log
+    from api import feedback
     from config import CORS_ORIGINS
 except ImportError:
     # Fallback to absolute imports (for local development from project root)
     from backend.api import chat
     from backend.api import debug_client_log
+    from backend.api import feedback
     from backend.config import CORS_ORIGINS
 
 app = FastAPI(
@@ -50,6 +52,7 @@ app.add_middleware(
 # Note: The router already defines /chat, so with prefix="/api" it becomes /api/chat
 app.include_router(chat.router, prefix="/api", tags=["chat"])
 app.include_router(debug_client_log.router, prefix="/api", tags=["debug"])
+app.include_router(feedback.router, prefix="/api", tags=["feedback"])
 
 # Debug: List all routes and CORS configuration on startup
 @app.on_event("startup")

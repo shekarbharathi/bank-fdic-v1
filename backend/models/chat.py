@@ -22,6 +22,7 @@ class ChatResponse(BaseModel):
     visualization: Optional[Dict[str, Any]] = None
     entities: Optional[Dict[str, Any]] = None
     execution_time: Optional[float] = None
+    response_instance_id: Optional[str] = None
 
 
 class ExpandRequest(BaseModel):

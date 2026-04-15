@@ -417,6 +417,143 @@
   color: #111827;
 }
 
+.bank-explore-feedback-bar {
+  margin-top: 0.15rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #ffffff;
+  align-self: flex-start;
+}
+
+.bank-explore-feedback-label {
+  font-size: 0.82rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.bank-explore-feedback-btn {
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 0.18rem 0.36rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  line-height: 1;
+}
+
+.bank-explore-feedback-btn:hover:not(:disabled) {
+  background: #f3f4f6;
+}
+
+.bank-explore-feedback-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.bank-explore-feedback-btn.is-selected {
+  border-color: #94a3b8;
+  background: #eef2ff;
+}
+
+.bank-explore-feedback-saved {
+  font-size: 0.76rem;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.bank-explore-feedback-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(17, 24, 39, 0.28);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.bank-explore-feedback-modal {
+  width: min(420px, 100%);
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.2);
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.bank-explore-feedback-title {
+  margin: 0;
+  font-size: 0.98rem;
+  color: #1f2937;
+}
+
+.bank-explore-feedback-reason-list {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.bank-explore-feedback-reason-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.bank-explore-feedback-other-input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0.55rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.88rem;
+  color: #1f2937;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.bank-explore-feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.bank-explore-feedback-cancel,
+.bank-explore-feedback-submit {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 0.36rem 0.7rem;
+  font-size: 0.84rem;
+  font-family: inherit;
+  font-weight: 600;
+}
+
+.bank-explore-feedback-cancel {
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+}
+
+.bank-explore-feedback-submit {
+  background: #111827;
+  border-color: #111827;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.bank-explore-feedback-submit:disabled,
+.bank-explore-feedback-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .bank-explore-table-wrap {
   max-width: 1200px;
   margin: 0 auto;

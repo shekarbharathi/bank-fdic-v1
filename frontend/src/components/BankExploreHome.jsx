@@ -28,6 +28,12 @@ import './BankExploreHome.css';
 
 /** Set to true to show the Surprising Facts (Insights) carousel again. */
 const SHOW_INSIGHTS_CAROUSEL = false;
+const DOWNVOTE_REASONS = [
+  { id: 'not_factually_correct', label: 'Not factually correct' },
+  { id: 'did_not_understand_query', label: 'Did not understand my query' },
+  { id: 'data_insufficient', label: 'Data is insufficient' },
+  { id: 'other', label: 'Other' },
+];
 
 /** Minimum time to show “Interpreting…” before “Fetching data…” (if API still pending). */
 const INTERPRETING_MS = 800;
@@ -79,6 +85,13 @@ const BankExploreHome = () => {
   const [postSubmitExamplesOpen, setPostSubmitExamplesOpen] = useState(false);
   /** Collapsible Examples panel on first load (before first submit). */
   const [landingExamplesOpen, setLandingExamplesOpen] = useState(false);
+  const [currentResponseMeta, setCurrentResponseMeta] = useState(null);
+  const [feedbackByResponseId, setFeedbackByResponseId] = useState({});
+  const [downvoteModalOpen, setDownvoteModalOpen] = useState(false);
+  const [pendingDownvoteResponseId, setPendingDownvoteResponseId] = useState(null);
+  const [selectedDownReason, setSelectedDownReason] = useState('');
+  const [downReasonOtherText, setDownReasonOtherText] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
   const requestStartTimeRef = useRef(0);
   const apiResolvedRef = useRef(false);
@@ -348,15 +361,18 @@ Limit 20.`;
 
       try {
         const res = await chatAPI.sendMessage(trimmed);
+        const responseInstanceId = res?.response_instance_id || null;
 
         if (res?.error_code === 'out_of_scope' || res?.error === 'out_of_scope') {
           markApiFailure();
+          setCurrentResponseMeta(null);
           dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
 
         if (res?.error) {
           markApiFailure();
+          setCurrentResponseMeta(null);
           dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
@@ -364,12 +380,14 @@ Limit 20.`;
         const data = res?.data;
         if (!Array.isArray(data)) {
           markApiFailure();
+          setCurrentResponseMeta(null);
           dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
 
         if (isRefusalResponse(res?.response)) {
           markApiFailure();
+          setCurrentResponseMeta(null);
           dispatchView({ type: 'SHOW_SUGGESTIONS' });
           return;
         }
@@ -397,15 +415,23 @@ Limit 20.`;
           const row0 = data[0];
           if (!row0 || Object.keys(row0).length === 0) {
             markApiFailure();
+            setCurrentResponseMeta(null);
             dispatchView({ type: 'SHOW_SUGGESTIONS' });
             return;
           }
           const val = Object.values(row0)[0];
           if (isRefusalResponse(val) || isRefusalResponse(res?.response)) {
             markApiFailure();
+            setCurrentResponseMeta(null);
             dispatchView({ type: 'SHOW_SUGGESTIONS' });
             return;
           }
+          setCurrentResponseMeta({
+            responseInstanceId,
+            query: trimmed,
+            intent: res?.intent || null,
+            vizType: mergedConfig?.type || experience,
+          });
           applySuccessfulVizDispatch(() => {
             dispatchView({ type: 'SHOW_SCALAR', value: val, vizMeta: { title, config: mergedConfig } });
           });
@@ -450,17 +476,30 @@ Limit 20.`;
             },
             onExpandQuery: handleExpandClick,
           };
+          setCurrentResponseMeta({
+            responseInstanceId,
+            query: trimmed,
+            intent: res?.intent || null,
+            vizType: tableConfig?.type || experience,
+          });
           applySuccessfulVizDispatch(() => {
             dispatchView({ type: 'SHOW_VIZ', experience: 'table', data, vizMeta: { title, config: tableConfig } });
           });
           return;
         }
 
+        setCurrentResponseMeta({
+          responseInstanceId,
+          query: trimmed,
+          intent: res?.intent || null,
+          vizType: mergedConfig?.type || experience,
+        });
         applySuccessfulVizDispatch(() => {
           dispatchView({ type: 'SHOW_VIZ', experience, data, vizMeta: { title, config: mergedConfig } });
         });
       } catch {
         markApiFailure();
+        setCurrentResponseMeta(null);
         dispatchView({ type: 'SHOW_SUGGESTIONS' });
       } finally {
         setIsLoading(false);
@@ -637,6 +676,74 @@ Limit 20.`;
   }, [activeTopTab, hasSubmittedQuery]);
 
   const showChatPanel = true;
+  const activeResponseId = currentResponseMeta?.responseInstanceId || null;
+  const activeFeedback = activeResponseId ? feedbackByResponseId[activeResponseId] : null;
+  const canShowFeedback =
+    Boolean(activeResponseId) &&
+    hasSubmittedQuery &&
+    !isLoading &&
+    !error &&
+    viewMode !== 'suggestions' &&
+    viewMode !== 'pending';
+
+  const submitFeedback = useCallback(
+    async ({ responseInstanceId, feedbackValue, downReason = null, downReasonOtherTextValue = null }) => {
+      if (!responseInstanceId) return;
+      try {
+        setFeedbackSubmitting(true);
+        await chatAPI.submitLlmFeedback({
+          response_instance_id: responseInstanceId,
+          feedback_value: feedbackValue,
+          down_reason: downReason ?? undefined,
+          down_reason_other_text: downReasonOtherTextValue ?? undefined,
+        });
+        setFeedbackByResponseId((prev) => ({
+          ...prev,
+          [responseInstanceId]: {
+            feedbackValue,
+            downReason,
+            downReasonOtherText: downReasonOtherTextValue,
+          },
+        }));
+      } catch (e) {
+        setError(e?.response?.data?.detail || e?.message || 'Failed to submit feedback');
+      } finally {
+        setFeedbackSubmitting(false);
+      }
+    },
+    []
+  );
+
+  const handleThumbsUp = useCallback(() => {
+    if (!activeResponseId || feedbackSubmitting || activeFeedback) return;
+    submitFeedback({
+      responseInstanceId: activeResponseId,
+      feedbackValue: 'up',
+    });
+  }, [activeResponseId, feedbackSubmitting, activeFeedback, submitFeedback]);
+
+  const handleThumbsDown = useCallback(() => {
+    if (!activeResponseId || feedbackSubmitting || activeFeedback) return;
+    setPendingDownvoteResponseId(activeResponseId);
+    setSelectedDownReason('');
+    setDownReasonOtherText('');
+    setDownvoteModalOpen(true);
+  }, [activeResponseId, feedbackSubmitting, activeFeedback]);
+
+  const submitDownvote = useCallback(async () => {
+    if (!pendingDownvoteResponseId || !selectedDownReason) return;
+    if (selectedDownReason === 'other' && !downReasonOtherText.trim()) return;
+    await submitFeedback({
+      responseInstanceId: pendingDownvoteResponseId,
+      feedbackValue: 'down',
+      downReason: selectedDownReason,
+      downReasonOtherTextValue: selectedDownReason === 'other' ? downReasonOtherText.trim() : null,
+    });
+    setDownvoteModalOpen(false);
+    setPendingDownvoteResponseId(null);
+    setSelectedDownReason('');
+    setDownReasonOtherText('');
+  }, [pendingDownvoteResponseId, selectedDownReason, downReasonOtherText, submitFeedback]);
 
   return (
     <div className="bank-explore-page">
@@ -861,6 +968,32 @@ Limit 20.`;
                     config={vizMeta.config}
                     onVizReady={handleVizRenderComplete}
                   />
+                  {canShowFeedback ? (
+                    <div className="bank-explore-feedback-bar" role="group" aria-label="Response feedback">
+                      <span className="bank-explore-feedback-label">Was this response helpful?</span>
+                      <button
+                        type="button"
+                        className={`bank-explore-feedback-btn ${activeFeedback?.feedbackValue === 'up' ? 'is-selected' : ''}`}
+                        onClick={handleThumbsUp}
+                        disabled={Boolean(activeFeedback) || feedbackSubmitting}
+                        aria-label="Thumbs up"
+                      >
+                        👍
+                      </button>
+                      <button
+                        type="button"
+                        className={`bank-explore-feedback-btn ${activeFeedback?.feedbackValue === 'down' ? 'is-selected' : ''}`}
+                        onClick={handleThumbsDown}
+                        disabled={Boolean(activeFeedback) || feedbackSubmitting}
+                        aria-label="Thumbs down"
+                      >
+                        👎
+                      </button>
+                      {activeFeedback ? (
+                        <span className="bank-explore-feedback-saved">Feedback saved</span>
+                      ) : null}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             ) : null}
@@ -875,6 +1008,61 @@ Limit 20.`;
             onApply={handleColumnPickerApply}
           />
           <ManualModalPopup open={manualOpen} onClose={() => setManualOpen(false)} groups={fieldGroups} />
+          {downvoteModalOpen ? (
+            <div
+              className="bank-explore-feedback-overlay"
+              role="presentation"
+              onMouseDown={(e) => e.target === e.currentTarget && setDownvoteModalOpen(false)}
+            >
+              <div className="bank-explore-feedback-modal" role="dialog" aria-modal="true" aria-label="Downvote reason">
+                <h3 className="bank-explore-feedback-title">What went wrong?</h3>
+                <div className="bank-explore-feedback-reason-list">
+                  {DOWNVOTE_REASONS.map((reason) => (
+                    <label key={reason.id} className="bank-explore-feedback-reason-row">
+                      <input
+                        type="radio"
+                        name="downvote-reason"
+                        checked={selectedDownReason === reason.id}
+                        onChange={() => setSelectedDownReason(reason.id)}
+                      />
+                      <span>{reason.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {selectedDownReason === 'other' ? (
+                  <textarea
+                    className="bank-explore-feedback-other-input"
+                    value={downReasonOtherText}
+                    onChange={(e) => setDownReasonOtherText(e.target.value)}
+                    placeholder="Please share more details"
+                    rows={3}
+                  />
+                ) : null}
+                <div className="bank-explore-feedback-actions">
+                  <button
+                    type="button"
+                    className="bank-explore-feedback-cancel"
+                    onClick={() => setDownvoteModalOpen(false)}
+                    disabled={feedbackSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="bank-explore-feedback-submit"
+                    onClick={submitDownvote}
+                    disabled={
+                      feedbackSubmitting ||
+                      !selectedDownReason ||
+                      (selectedDownReason === 'other' && !downReasonOtherText.trim())
+                    }
+                  >
+                    Submit
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <aside className={`detail-panel ${detailBank ? 'open' : ''}`} aria-label="Bank detail panel">
             <div className="detail-panel-shell">

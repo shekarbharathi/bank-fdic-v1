@@ -58,6 +58,7 @@ export function sendClientDebugLog(payload) {
  * @property {{ type?: string, title?: string, config?: Record<string, unknown> }} [visualization]
  * @property {Record<string, unknown>} [entities] - Optional extracted entities
  * @property {number} [execution_time]
+ * @property {string} [response_instance_id]
  */
 
 export const chatAPI = {
@@ -115,6 +116,16 @@ export const chatAPI = {
   fetchZctaCentroids: async (zips) => {
     const response = await client.post('/api/zcta/centroids', { zips });
     return response.data?.centroids ?? {};
+  },
+
+  /**
+   * Submit thumbs up/down feedback for one response instance.
+   * @param {{response_instance_id: string, feedback_value: 'up'|'down', down_reason?: string, down_reason_other_text?: string}} payload
+   * @returns {Promise<{success: boolean, response_instance_id: string, feedback_value: string}>}
+   */
+  submitLlmFeedback: async (payload) => {
+    const response = await client.post('/api/feedback/llm-response', payload);
+    return response.data;
   },
 };
 

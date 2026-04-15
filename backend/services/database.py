@@ -76,6 +76,16 @@ class DatabaseService:
         return await loop.run_in_executor(
             None, self._execute_query_sync, sql
         )
+
+    async def execute_write(self, sql: str, params: Optional[tuple] = None) -> None:
+        """Execute INSERT/UPDATE/DELETE statements."""
+        loop = asyncio.get_event_loop()
+        await loop.run_in_executor(None, self._execute_write_sync, sql, params)
+
+    async def execute_fetchone(self, sql: str, params: Optional[tuple] = None) -> Optional[Dict[str, Any]]:
+        """Execute query and return one row as dict."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self._execute_fetchone_sync, sql, params)
     
     def _execute_query_sync(self, sql: str) -> List[Dict[str, Any]]:
         """Synchronous query execution"""
@@ -119,6 +129,40 @@ class DatabaseService:
             logger.error(f"Query execution error: {e}")
             if conn:
                 self.connection_pool.putconn(conn)
+            raise
+
+    def _execute_write_sync(self, sql: str, params: Optional[tuple] = None) -> None:
+        conn = None
+        try:
+            conn = self.connection_pool.getconn()
+            cur = conn.cursor()
+            cur.execute(sql, params)
+            conn.commit()
+            cur.close()
+            self.connection_pool.putconn(conn)
+        except Exception as e:
+            if conn:
+                conn.rollback()
+                self.connection_pool.putconn(conn)
+            logger.error(f"Write execution error: {e}")
+            raise
+
+    def _execute_fetchone_sync(self, sql: str, params: Optional[tuple] = None) -> Optional[Dict[str, Any]]:
+        conn = None
+        try:
+            conn = self.connection_pool.getconn()
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            cur.execute(sql, params)
+            row = cur.fetchone()
+            conn.commit()
+            cur.close()
+            self.connection_pool.putconn(conn)
+            return dict(row) if row else None
+        except Exception as e:
+            if conn:
+                conn.rollback()
+                self.connection_pool.putconn(conn)
+            logger.error(f"Fetch-one execution error: {e}")
             raise
     
     async def get_schema_info(self) -> Dict[str, Any]:
