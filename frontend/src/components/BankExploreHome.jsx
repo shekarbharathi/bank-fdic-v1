@@ -827,6 +827,21 @@ Limit 20.`;
     }
   }, [generalFeedbackText, generalFeedbackSource]);
 
+  const submitManualInlineFeedback = useCallback(async (message) => {
+    try {
+      await chatAPI.submitGeneralFeedback({
+        message,
+        source: 'manual_data_fields',
+      });
+      return { ok: true };
+    } catch (e) {
+      return {
+        ok: false,
+        error: e?.response?.data?.detail || e?.message || 'Failed to submit feedback',
+      };
+    }
+  }, []);
+
   return (
     <div className="bank-explore-page">
       <header className="bank-explore-header">
@@ -1124,7 +1139,7 @@ Limit 20.`;
             open={manualOpen}
             onClose={() => setManualOpen(false)}
             groups={fieldGroups}
-            onRequestFeedback={openGeneralFeedback}
+            onSubmitFeedback={submitManualInlineFeedback}
           />
           {generalFeedbackOpen ? (
             <div

@@ -158,6 +158,14 @@
   gap: 0.75rem;
 }
 
+.manual-feedback-inline {
+  color: #6b7280;
+  font-size: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+}
+
 .manual-feedback-link {
   border: none;
   background: transparent;
@@ -165,13 +173,71 @@
   color: #4b5563;
   font-size: 0.78rem;
   font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
 }
 
 .manual-feedback-link:hover {
   color: #111827;
+}
+
+.manual-feedback-chevron {
+  font-size: 0.74rem;
+  color: #6b7280;
+  transition: transform 140ms ease;
+}
+
+.manual-feedback-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.manual-feedback-expand {
+  border-top: 1px solid #eef2f7;
+  padding: 0.55rem 1rem 0.8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.manual-feedback-textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  padding: 0.55rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.86rem;
+  color: #1f2937;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.manual-feedback-status {
+  color: #4b5563;
+  font-size: 0.78rem;
+}
+
+.manual-feedback-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.manual-feedback-send {
+  border-radius: 8px;
+  border: 1px solid #111827;
+  background: #111827;
+  color: #ffffff;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.82rem;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.manual-feedback-send:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .manual-attribution {

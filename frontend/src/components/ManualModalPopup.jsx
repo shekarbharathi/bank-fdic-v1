@@ -9,12 +9,16 @@ function fieldKey(field) {
   return String(field?.field_name || field?.fdic_field_code || field?.display_name || Math.random());
 }
 
-export default function ManualModalPopup({ open, onClose, groups, onRequestFeedback }) {
+export default function ManualModalPopup({ open, onClose, groups, onSubmitFeedback }) {
   const titleId = useId();
   const subtitleId = useId();
   const closeBtnRef = useRef(null);
   const [expandedGroups, setExpandedGroups] = useState(() => new Set());
   const [expandedFields, setExpandedFields] = useState(() => new Set());
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState('');
 
   const safeGroups = useMemo(() => (Array.isArray(groups) ? groups : []), [groups]);
   const orderedGroups = useMemo(() => {
@@ -42,7 +46,34 @@ export default function ManualModalPopup({ open, onClose, groups, onRequestFeedb
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open) {
+      setFeedbackOpen(false);
+      setFeedbackText('');
+      setFeedbackSubmitting(false);
+      setFeedbackStatus('');
+    }
+  }, [open]);
+
   if (!open) return null;
+
+  const submitFeedback = async () => {
+    const text = feedbackText.trim();
+    if (!text || feedbackSubmitting || !onSubmitFeedback) return;
+    try {
+      setFeedbackSubmitting(true);
+      setFeedbackStatus('');
+      const result = await onSubmitFeedback(text);
+      if (result?.ok) {
+        setFeedbackText('');
+        setFeedbackStatus('Your feedback has been sent');
+      } else {
+        setFeedbackStatus(result?.error || 'Failed to submit feedback');
+      }
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
 
   const toggleGroup = (groupId) => {
     setExpandedGroups((prev) => {
@@ -125,13 +156,20 @@ export default function ManualModalPopup({ open, onClose, groups, onRequestFeedb
           })}
         </div>
         <div className="manual-attribution-row">
-          <button
-            type="button"
-            className="manual-feedback-link"
-            onClick={() => onRequestFeedback?.('manual_data_fields')}
-          >
-            If you want more data fields to be added, let us know
-          </button>
+          <div className="manual-feedback-inline">
+            <span>If you want more data fields to be added, </span>
+            <button
+              type="button"
+              className="manual-feedback-link"
+              onClick={() => setFeedbackOpen((v) => !v)}
+              aria-expanded={feedbackOpen}
+            >
+              let us know
+              <span className={`manual-feedback-chevron ${feedbackOpen ? 'is-open' : ''}`} aria-hidden="true">
+                ▸
+              </span>
+            </button>
+          </div>
           <div className="manual-attribution">
             Icon made by{' '}
             <a
@@ -152,6 +190,29 @@ export default function ManualModalPopup({ open, onClose, groups, onRequestFeedb
             .
           </div>
         </div>
+        {feedbackOpen ? (
+          <div className="manual-feedback-expand">
+            <textarea
+              className="manual-feedback-textarea"
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Let us know what data fields you want to see here"
+              rows={4}
+              maxLength={4000}
+            />
+            {feedbackStatus ? <div className="manual-feedback-status">{feedbackStatus}</div> : null}
+            <div className="manual-feedback-actions">
+              <button
+                type="button"
+                className="manual-feedback-send"
+                onClick={submitFeedback}
+                disabled={feedbackSubmitting || !feedbackText.trim()}
+              >
+                Send
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
