@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Triangular bank pediment / roof -->
+  <polygon points="32,6 8,26 56,26" fill="#1f2937"/>
+  <!-- Horizontal entablature bar -->
+  <rect x="8" y="26" width="48" height="4" rx="1" fill="#374151"/>
+  <!-- Three columns doubling as ascending bar-chart bars -->
+  <rect x="13" y="38" width="8" height="20" rx="1.5" fill="#6b7280"/>
+  <rect x="28" y="34" width="8" height="24" rx="1.5" fill="#4b5563"/>
+  <rect x="43" y="30" width="8" height="28" rx="1.5" fill="#1f2937"/>
+  <!-- Base / foundation -->
+  <rect x="8" y="58" width="48" height="3" rx="1" fill="#374151"/>
+  <!-- Upward trend line across bars -->
+  <polyline points="17,50 32,44 47,36" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
