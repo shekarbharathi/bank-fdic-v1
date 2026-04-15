@@ -37,6 +37,7 @@ const DOWNVOTE_REASONS = [
 
 /** Minimum time to show “Interpreting…” before “Fetching data…” (if API still pending). */
 const INTERPRETING_MS = 800;
+const FEEDBACK_REVEAL_DELAY_MS = 1000;
 
 /** Merge API `entities` (e.g. state) into viz config so components like StateOverviewViz can resolve geography when rows omit stalp. */
 function mergeVizEntities(config, entities) {
@@ -82,8 +83,8 @@ const BankExploreHome = () => {
   /** Bumped on each successful viz dispatch so VizRenderer remounts and onVizReady runs again. */
   const [vizRenderGeneration, setVizRenderGeneration] = useState(0);
   const [vizContentReady, setVizContentReady] = useState(false);
-  const vizReadyRaf1Ref = useRef(null);
-  const vizReadyRaf2Ref = useRef(null);
+  const vizReadyRafRef = useRef(null);
+  const feedbackRevealTimerRef = useRef(null);
   /** Collapsible Examples panel under the chatbox after the first send. */
   const [postSubmitExamplesOpen, setPostSubmitExamplesOpen] = useState(false);
   /** Collapsible Examples panel on first load (before first submit). */
@@ -270,21 +271,21 @@ Limit 20.`;
   }, [hasSubmittedQuery, userHasInteracted, chatInput, isLoading]);
 
   const handleVizRenderComplete = useCallback(() => {
-    if (vizReadyRaf1Ref.current != null) {
-      cancelAnimationFrame(vizReadyRaf1Ref.current);
-      vizReadyRaf1Ref.current = null;
+    if (vizReadyRafRef.current != null) {
+      cancelAnimationFrame(vizReadyRafRef.current);
+      vizReadyRafRef.current = null;
     }
-    if (vizReadyRaf2Ref.current != null) {
-      cancelAnimationFrame(vizReadyRaf2Ref.current);
-      vizReadyRaf2Ref.current = null;
+    if (feedbackRevealTimerRef.current != null) {
+      clearTimeout(feedbackRevealTimerRef.current);
+      feedbackRevealTimerRef.current = null;
     }
-    // Defer feedback visibility by two paint frames so the viz mounts first.
-    vizReadyRaf1Ref.current = requestAnimationFrame(() => {
-      vizReadyRaf1Ref.current = null;
-      vizReadyRaf2Ref.current = requestAnimationFrame(() => {
-        vizReadyRaf2Ref.current = null;
+    // Wait until the next paint, then hold for a fixed delay before revealing feedback.
+    vizReadyRafRef.current = requestAnimationFrame(() => {
+      vizReadyRafRef.current = null;
+      feedbackRevealTimerRef.current = window.setTimeout(() => {
+        feedbackRevealTimerRef.current = null;
         setVizContentReady(true);
-      });
+      }, FEEDBACK_REVEAL_DELAY_MS);
     });
     setStatusPhase((prev) => {
       if (prev === 'loading_viz') return null;
@@ -294,8 +295,8 @@ Limit 20.`;
   }, []);
 
   useEffect(() => () => {
-    if (vizReadyRaf1Ref.current != null) cancelAnimationFrame(vizReadyRaf1Ref.current);
-    if (vizReadyRaf2Ref.current != null) cancelAnimationFrame(vizReadyRaf2Ref.current);
+    if (vizReadyRafRef.current != null) cancelAnimationFrame(vizReadyRafRef.current);
+    if (feedbackRevealTimerRef.current != null) clearTimeout(feedbackRevealTimerRef.current);
   }, []);
 
   useEffect(() => {
@@ -350,13 +351,13 @@ Limit 20.`;
       setBranchRows([]);
       setBranchLoading(false);
       setVizContentReady(false);
-      if (vizReadyRaf1Ref.current != null) {
-        cancelAnimationFrame(vizReadyRaf1Ref.current);
-        vizReadyRaf1Ref.current = null;
+      if (vizReadyRafRef.current != null) {
+        cancelAnimationFrame(vizReadyRafRef.current);
+        vizReadyRafRef.current = null;
       }
-      if (vizReadyRaf2Ref.current != null) {
-        cancelAnimationFrame(vizReadyRaf2Ref.current);
-        vizReadyRaf2Ref.current = null;
+      if (feedbackRevealTimerRef.current != null) {
+        clearTimeout(feedbackRevealTimerRef.current);
+        feedbackRevealTimerRef.current = null;
       }
       dispatchView({ type: 'RESET' });
 
@@ -716,7 +717,6 @@ Limit 20.`;
     hasSubmittedQuery &&
     !isLoading &&
     !error &&
-    vizContentReady &&
     statusPhase === null &&
     viewMode !== 'suggestions' &&
     viewMode !== 'pending';
@@ -1004,7 +1004,12 @@ Limit 20.`;
                     onVizReady={handleVizRenderComplete}
                   />
                   {canShowFeedback ? (
-                    <div className="bank-explore-feedback-bar" role="group" aria-label="Response feedback">
+                    <div
+                      className={`bank-explore-feedback-bar ${vizContentReady ? 'is-visible' : 'is-hidden'}`}
+                      role="group"
+                      aria-label="Response feedback"
+                      aria-hidden={!vizContentReady}
+                    >
                       <button
                         type="button"
                         className={`bank-explore-feedback-btn ${activeFeedback?.feedbackValue === 'up' ? 'is-selected' : ''}`}

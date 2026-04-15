@@ -424,6 +424,19 @@
   gap: 0.45rem;
   padding: 0.2rem 0;
   align-self: center;
+  min-height: 2rem;
+  transition: opacity 320ms ease, transform 320ms ease;
+}
+
+.bank-explore-feedback-bar.is-hidden {
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+}
+
+.bank-explore-feedback-bar.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .bank-explore-feedback-btn {
