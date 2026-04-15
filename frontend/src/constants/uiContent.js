@@ -1,11 +1,11 @@
 export const LANDING_EXAMPLE_QUERIES = [
-  'Compare Net Interest Margin of JPMorgan Chase with CitiBank for last 3 years',
+  'Show me the top 10 banks by total assets',
   'Bank of America total assets over time',
   "What's the ROA distribution across banks",
   'Overview of banks in New York',
   'All banks in texas with more than 20 billion but less than 50 billion in assets',
   'top 10 banks by assets with Net Interest Margin, Credit Card Loans',
-  'Show me the top 10 banks by total assets',
+  'Compare Net Interest Margin of JPMorgan Chase with CitiBank for last 3 years',
   'Number of employees at JPMorgan Chase over a period of time'
 ];
 
