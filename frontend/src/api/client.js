@@ -127,6 +127,16 @@ export const chatAPI = {
     const response = await client.post('/api/feedback/llm-response', payload);
     return response.data;
   },
+
+  /**
+   * Submit lightweight general feedback (no DB persistence).
+   * @param {{message: string, source?: string}} payload
+   * @returns {Promise<{success: boolean}>}
+   */
+  submitGeneralFeedback: async (payload) => {
+    const response = await client.post('/api/feedback/simple', payload);
+    return response.data;
+  },
 };
 
 export default client;

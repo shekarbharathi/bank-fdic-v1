@@ -96,6 +96,11 @@ const BankExploreHome = () => {
   const [selectedDownReason, setSelectedDownReason] = useState('');
   const [downReasonOtherText, setDownReasonOtherText] = useState('');
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [generalFeedbackOpen, setGeneralFeedbackOpen] = useState(false);
+  const [generalFeedbackText, setGeneralFeedbackText] = useState('');
+  const [generalFeedbackSource, setGeneralFeedbackSource] = useState('general');
+  const [generalFeedbackSubmitting, setGeneralFeedbackSubmitting] = useState(false);
+  const [generalFeedbackStatus, setGeneralFeedbackStatus] = useState('');
 
   const requestStartTimeRef = useRef(0);
   const apiResolvedRef = useRef(false);
@@ -789,6 +794,39 @@ Limit 20.`;
     setDownReasonOtherText('');
   }, [pendingDownvoteResponseId, selectedDownReason, downReasonOtherText, submitFeedback]);
 
+  const openGeneralFeedback = useCallback((source) => {
+    setGeneralFeedbackSource(source || 'general');
+    setGeneralFeedbackText('');
+    setGeneralFeedbackStatus('');
+    setGeneralFeedbackOpen(true);
+  }, []);
+
+  const closeGeneralFeedback = useCallback(() => {
+    if (generalFeedbackSubmitting) return;
+    setGeneralFeedbackOpen(false);
+    setGeneralFeedbackText('');
+    setGeneralFeedbackStatus('');
+  }, [generalFeedbackSubmitting]);
+
+  const submitGeneralFeedback = useCallback(async () => {
+    const message = generalFeedbackText.trim();
+    if (!message) return;
+    try {
+      setGeneralFeedbackSubmitting(true);
+      setGeneralFeedbackStatus('');
+      await chatAPI.submitGeneralFeedback({
+        message,
+        source: generalFeedbackSource,
+      });
+      setGeneralFeedbackStatus('Thanks for sharing your feedback.');
+      setGeneralFeedbackText('');
+    } catch (e) {
+      setGeneralFeedbackStatus(e?.response?.data?.detail || e?.message || 'Failed to submit feedback');
+    } finally {
+      setGeneralFeedbackSubmitting(false);
+    }
+  }, [generalFeedbackText, generalFeedbackSource]);
+
   return (
     <div className="bank-explore-page">
       <header className="bank-explore-header">
@@ -1082,7 +1120,54 @@ Limit 20.`;
             selectedFieldNames={pickerSelectedFieldNames}
             onApply={handleColumnPickerApply}
           />
-          <ManualModalPopup open={manualOpen} onClose={() => setManualOpen(false)} groups={fieldGroups} />
+          <ManualModalPopup
+            open={manualOpen}
+            onClose={() => setManualOpen(false)}
+            groups={fieldGroups}
+            onRequestFeedback={openGeneralFeedback}
+          />
+          {generalFeedbackOpen ? (
+            <div
+              className="bank-explore-general-feedback-overlay"
+              role="presentation"
+              onMouseDown={(e) => e.target === e.currentTarget && closeGeneralFeedback()}
+            >
+              <div className="bank-explore-general-feedback-modal" role="dialog" aria-modal="true" aria-label="Share feedback">
+                <h3 className="bank-explore-general-feedback-title">Share feedback</h3>
+                <textarea
+                  className="bank-explore-general-feedback-textarea"
+                  value={generalFeedbackText}
+                  onChange={(e) => setGeneralFeedbackText(e.target.value)}
+                  placeholder="Type your feedback here"
+                  rows={5}
+                  maxLength={4000}
+                />
+                {generalFeedbackStatus ? (
+                  <div className="bank-explore-general-feedback-status" aria-live="polite">
+                    {generalFeedbackStatus}
+                  </div>
+                ) : null}
+                <div className="bank-explore-general-feedback-actions">
+                  <button
+                    type="button"
+                    className="bank-explore-feedback-cancel"
+                    onClick={closeGeneralFeedback}
+                    disabled={generalFeedbackSubmitting}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="bank-explore-feedback-submit"
+                    onClick={submitGeneralFeedback}
+                    disabled={generalFeedbackSubmitting || !generalFeedbackText.trim()}
+                  >
+                    Send
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {downvoteModalOpen ? (
             <div
               className="bank-explore-feedback-overlay"
@@ -1234,7 +1319,14 @@ Limit 20.`;
         </>
       ) : (
         <section className="coming-soon-panel" aria-live="polite">
-          Coming Soon
+          <div>Coming Soon</div>
+          <button
+            type="button"
+            className="coming-soon-feedback-link"
+            onClick={() => openGeneralFeedback('credit_unions_coming_soon')}
+          >
+            Poke us to build this faster
+          </button>
         </section>
       )}
     </div>

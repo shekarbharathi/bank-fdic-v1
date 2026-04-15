@@ -3,6 +3,7 @@ Feedback API endpoints for LLM response quality.
 """
 import os
 import sys
+import asyncio
 from typing import Optional
 
 if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
@@ -11,6 +12,7 @@ if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+import requests
 
 try:
     from services.database import DatabaseService
@@ -42,6 +44,15 @@ class LlmFeedbackResponse(BaseModel):
     feedback_value: str
 
 
+class SimpleFeedbackRequest(BaseModel):
+    message: str
+    source: Optional[str] = None
+
+
+class SimpleFeedbackResponse(BaseModel):
+    success: bool
+
+
 ALLOWED_FEEDBACK = {"up", "down"}
 ALLOWED_DOWN_REASONS = {
     "not_factually_correct",
@@ -49,6 +60,36 @@ ALLOWED_DOWN_REASONS = {
     "data_insufficient",
     "other",
 }
+
+
+def _send_feedback_email_via_resend(message: str, source: Optional[str]) -> None:
+    api_key = os.getenv("RESEND_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(status_code=500, detail="RESEND_API_KEY is not configured")
+
+    to_email = os.getenv("FEEDBACK_TO_EMAIL", "niide.kyojo@gmail.com").strip()
+    from_email = os.getenv("FEEDBACK_FROM_EMAIL", "onboarding@resend.dev").strip()
+    source_safe = (source or "general").strip()[:80]
+
+    payload = {
+        "from": from_email,
+        "to": [to_email],
+        "subject": f"BankStatz feedback ({source_safe})",
+        "text": f"Source: {source_safe}\n\nMessage:\n{message}",
+    }
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+
+    resp = requests.post(
+        "https://api.resend.com/emails",
+        json=payload,
+        headers=headers,
+        timeout=15,
+    )
+    if resp.status_code >= 300:
+        raise HTTPException(status_code=502, detail="Failed to send feedback email")
 
 
 @router.post("/feedback/llm-response", response_model=LlmFeedbackResponse)
@@ -109,3 +150,15 @@ async def submit_llm_feedback(payload: LlmFeedbackRequest):
         response_instance_id=payload.response_instance_id,
         feedback_value=feedback_value,
     )
+
+
+@router.post("/feedback/simple", response_model=SimpleFeedbackResponse)
+async def submit_simple_feedback(payload: SimpleFeedbackRequest):
+    message = (payload.message or "").strip()
+    if not message:
+        raise HTTPException(status_code=400, detail="message is required")
+    if len(message) > 4000:
+        raise HTTPException(status_code=400, detail="message is too long")
+
+    await asyncio.to_thread(_send_feedback_email_via_resend, message, payload.source)
+    return SimpleFeedbackResponse(success=True)

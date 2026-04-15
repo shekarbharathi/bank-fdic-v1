@@ -9,7 +9,7 @@ function fieldKey(field) {
   return String(field?.field_name || field?.fdic_field_code || field?.display_name || Math.random());
 }
 
-export default function ManualModalPopup({ open, onClose, groups }) {
+export default function ManualModalPopup({ open, onClose, groups, onRequestFeedback }) {
   const titleId = useId();
   const subtitleId = useId();
   const closeBtnRef = useRef(null);
@@ -124,24 +124,33 @@ export default function ManualModalPopup({ open, onClose, groups }) {
             );
           })}
         </div>
-        <div className="manual-attribution">
-          Icon made by{' '}
-          <a
-            href="https://www.flaticon.com/authors/freepik"
-            target="_blank"
-            rel="noreferrer"
+        <div className="manual-attribution-row">
+          <button
+            type="button"
+            className="manual-feedback-link"
+            onClick={() => onRequestFeedback?.('manual_data_fields')}
           >
-            Freepik
-          </a>{' '}
-          from{' '}
-          <a
-            href="https://www.flaticon.com/free-icon/open-book_166088?term=open+book&related_id=166088"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Flaticon
-          </a>
-          .
+            If you want more data fields to be added, let us know
+          </button>
+          <div className="manual-attribution">
+            Icon made by{' '}
+            <a
+              href="https://www.flaticon.com/authors/freepik"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Freepik
+            </a>{' '}
+            from{' '}
+            <a
+              href="https://www.flaticon.com/free-icon/open-book_166088?term=open+book&related_id=166088"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Flaticon
+            </a>
+            .
+          </div>
         </div>
       </div>
     </div>
