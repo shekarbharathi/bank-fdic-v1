@@ -1,17 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
-  <!-- Bank building base -->
-  <rect x="20" y="40" width="24" height="20" fill="#6b7280" rx="2"/>
-  <!-- Bank columns -->
-  <rect x="24" y="32" width="3" height="8" fill="#6b7280"/>
-  <rect x="30" y="28" width="3" height="12" fill="#6b7280"/>
-  <rect x="36" y="32" width="3" height="8" fill="#6b7280"/>
-  <!-- Chart/graph overlay -->
-  <path d="M12 48 L18 44 L24 46 L30 40 L36 42 L42 38 L48 40" stroke="#3b82f6" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Chart dots -->
-  <circle cx="18" cy="44" r="2" fill="#3b82f6"/>
-  <circle cx="24" cy="46" r="2" fill="#3b82f6"/>
-  <circle cx="30" cy="40" r="2" fill="#3b82f6"/>
-  <circle cx="36" cy="42" r="2" fill="#3b82f6"/>
-  <circle cx="42" cy="38" r="2" fill="#3b82f6"/>
-  <circle cx="48" cy="40" r="2" fill="#3b82f6"/>
+  <!-- Triangular bank pediment / roof -->
+  <polygon points="32,6 8,26 56,26" fill="#1f2937"/>
+  <!-- Horizontal entablature bar -->
+  <rect x="8" y="26" width="48" height="4" rx="1" fill="#374151"/>
+  <!-- Three columns doubling as ascending bar-chart bars -->
+  <rect x="13" y="38" width="8" height="20" rx="1.5" fill="#6b7280"/>
+  <rect x="28" y="34" width="8" height="24" rx="1.5" fill="#4b5563"/>
+  <rect x="43" y="30" width="8" height="28" rx="1.5" fill="#1f2937"/>
+  <!-- Base / foundation -->
+  <rect x="8" y="58" width="48" height="3" rx="1" fill="#374151"/>
+  <!-- Upward trend line across bars -->
+  <polyline points="17,50 32,44 47,36" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 </svg>
