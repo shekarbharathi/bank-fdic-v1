@@ -387,6 +387,16 @@ Limit 20.`;
         setStatusPhase(null);
       };
 
+      const showSuggestionsWithFeedback = (responseInstanceIdValue) => {
+        setCurrentResponseMeta({
+          responseInstanceId: responseInstanceIdValue || null,
+          query: trimmed,
+          intent: 'unsupported_input',
+          vizType: 'suggestions',
+        });
+        dispatchView({ type: 'SHOW_SUGGESTIONS' });
+      };
+
       const applySuccessfulVizDispatch = (dispatchFn) => {
         apiResolvedRef.current = true;
         pendingLoadingVizRef.current = true;
@@ -404,30 +414,26 @@ Limit 20.`;
 
         if (res?.error_code === 'out_of_scope' || res?.error === 'out_of_scope') {
           markApiFailure();
-          setCurrentResponseMeta(null);
-          dispatchView({ type: 'SHOW_SUGGESTIONS' });
+          showSuggestionsWithFeedback(responseInstanceId);
           return;
         }
 
         if (res?.error) {
           markApiFailure();
-          setCurrentResponseMeta(null);
-          dispatchView({ type: 'SHOW_SUGGESTIONS' });
+          showSuggestionsWithFeedback(responseInstanceId);
           return;
         }
 
         const data = res?.data;
         if (!Array.isArray(data)) {
           markApiFailure();
-          setCurrentResponseMeta(null);
-          dispatchView({ type: 'SHOW_SUGGESTIONS' });
+          showSuggestionsWithFeedback(responseInstanceId);
           return;
         }
 
         if (isRefusalResponse(res?.response)) {
           markApiFailure();
-          setCurrentResponseMeta(null);
-          dispatchView({ type: 'SHOW_SUGGESTIONS' });
+          showSuggestionsWithFeedback(responseInstanceId);
           return;
         }
 
@@ -454,15 +460,13 @@ Limit 20.`;
           const row0 = data[0];
           if (!row0 || Object.keys(row0).length === 0) {
             markApiFailure();
-            setCurrentResponseMeta(null);
-            dispatchView({ type: 'SHOW_SUGGESTIONS' });
+            showSuggestionsWithFeedback(responseInstanceId);
             return;
           }
           const val = Object.values(row0)[0];
           if (isRefusalResponse(val) || isRefusalResponse(res?.response)) {
             markApiFailure();
-            setCurrentResponseMeta(null);
-            dispatchView({ type: 'SHOW_SUGGESTIONS' });
+            showSuggestionsWithFeedback(responseInstanceId);
             return;
           }
           setCurrentResponseMeta({
@@ -724,7 +728,6 @@ Limit 20.`;
     !error &&
     vizContentReady &&
     statusPhase === null &&
-    viewMode !== 'suggestions' &&
     viewMode !== 'pending';
   const shouldReserveFeedbackSpace =
     Boolean(activeResponseId) &&
@@ -732,7 +735,6 @@ Limit 20.`;
     !isLoading &&
     !error &&
     statusPhase === null &&
-    viewMode !== 'suggestions' &&
     viewMode !== 'pending';
 
   const submitFeedback = useCallback(
