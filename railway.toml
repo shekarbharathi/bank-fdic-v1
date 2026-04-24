@@ -1,9 +1,13 @@
 # Railway configuration file for backend service
 # This helps Railway understand your project structure
 # NOTE: If Root Directory is set to "backend", the startCommand should NOT include "cd backend"
+#
+# Build with Dockerfile.backend (repo root context) so `pip` is available. Nixpacks can fail with
+# exit 127 on `pip install` when `pip` is not on PATH in the generated image.
 
 [build]
-builder = "NIXPACKS"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.backend"
 
 [deploy]
 # If Root Directory is set to "backend", use this:
