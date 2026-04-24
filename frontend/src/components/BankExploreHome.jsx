@@ -38,6 +38,8 @@ const DOWNVOTE_REASONS = [
 /** Minimum time to show “Interpreting…” before “Fetching data…” (if API still pending). */
 const INTERPRETING_MS = 800;
 const FEEDBACK_REVEAL_DELAY_MS = 1000;
+/** After the user clears the landing chatbox following real input, wait before cycling typewriter again. */
+const TYPEWRITER_RESTART_AFTER_CLEAR_MS = 7000;
 
 /** Merge API `entities` (e.g. state) into viz config so components like StateOverviewViz can resolve geography when rows omit stalp. */
 function mergeVizEntities(config, entities) {
@@ -107,6 +109,7 @@ const BankExploreHome = () => {
   const pendingLoadingVizRef = useRef(false);
   const vizReadyPendingRef = useRef(false);
   const phase800TimerRef = useRef(null);
+  const typewriterResumeTimerRef = useRef(null);
 
   const hasSubmittedQueryRef = useRef(hasSubmittedQuery);
   const userHasInteractedRef = useRef(userHasInteracted);
@@ -312,6 +315,17 @@ Limit 20.`;
     }
   }, [statusPhase]);
 
+  const clearTypewriterResumeTimer = useCallback(() => {
+    if (typewriterResumeTimerRef.current != null) {
+      clearTimeout(typewriterResumeTimerRef.current);
+      typewriterResumeTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => {
+    clearTypewriterResumeTimer();
+  }, [clearTypewriterResumeTimer]);
+
   const clearPhase800Timer = useCallback(() => {
     if (phase800TimerRef.current != null) {
       clearTimeout(phase800TimerRef.current);
@@ -324,6 +338,8 @@ Limit 20.`;
       const raw = String(text ?? '');
       const trimmed = raw.trim();
       if (!trimmed) return;
+
+      clearTypewriterResumeTimer();
 
       const { visibleMetricOverride } = submitOptions;
       const selectedMetricCount = Array.isArray(visibleMetricOverride)
@@ -549,7 +565,7 @@ Limit 20.`;
         shouldFocusAfterLoad.current = true;
       }
     },
-    [updateConfirmationFromIntent, visibleMetricIds, fieldMetaByName, clearPhase800Timer]
+    [updateConfirmationFromIntent, visibleMetricIds, fieldMetaByName, clearPhase800Timer, clearTypewriterResumeTimer]
   );
   handleChatSubmitRef.current = handleChatSubmit;
 
@@ -594,24 +610,41 @@ Limit 20.`;
     setTypewriterDisplay('');
   }, [hasSubmittedQuery, userHasInteracted]);
 
-  const handleChatInputChange = useCallback((next) => {
-    setQueryHighlightRanges(null);
-    setChatInput(next);
-    trackInputEdit({
-      input_id: 'bank-chat-filter-input',
-      char_count: String(next || '').length,
-      token_estimate: String(next || '').trim()
-        ? String(next || '').trim().split(/\s+/).filter(Boolean).length
-        : 0,
-      has_with_clause: /\swith\s/i.test(String(next || '')) ? 1 : 0,
-    });
-    if (next === '') {
-      setUserHasInteracted(false);
-      setTypewriterDisplay('');
-    } else {
-      setUserHasInteracted(true);
-    }
-  }, []);
+  const handleChatInputChange = useCallback(
+    (next) => {
+      setQueryHighlightRanges(null);
+      const prevHadText = String(chatInputRef.current || '').length > 0;
+      setChatInput(next);
+      trackInputEdit({
+        input_id: 'bank-chat-filter-input',
+        char_count: String(next || '').length,
+        token_estimate: String(next || '').trim()
+          ? String(next || '').trim().split(/\s+/).filter(Boolean).length
+          : 0,
+        has_with_clause: /\swith\s/i.test(String(next || '')) ? 1 : 0,
+      });
+      if (next === '') {
+        setTypewriterDisplay('');
+        if (!hasSubmittedQueryRef.current && prevHadText) {
+          clearTypewriterResumeTimer();
+          setUserHasInteracted(true);
+          typewriterResumeTimerRef.current = window.setTimeout(() => {
+            typewriterResumeTimerRef.current = null;
+            if (!hasSubmittedQueryRef.current && chatInputRef.current === '') {
+              setUserHasInteracted(false);
+            }
+          }, TYPEWRITER_RESTART_AFTER_CLEAR_MS);
+        } else {
+          clearTypewriterResumeTimer();
+          setUserHasInteracted(false);
+        }
+      } else {
+        clearTypewriterResumeTimer();
+        setUserHasInteracted(true);
+      }
+    },
+    [clearTypewriterResumeTimer]
+  );
 
   const handleColumnPickerApply = useCallback(
     ({ selectedFieldNames }) => {
