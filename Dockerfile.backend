@@ -1,4 +1,5 @@
-# Backend Dockerfile for Railway
+# Backend Dockerfile when the Docker build context is the repository root (not `backend/` alone).
+# Railway: set service Root Directory to the monorepo root and dockerfilePath to Dockerfile.backend.
 FROM python:3.9-slim
 
 WORKDIR /app
