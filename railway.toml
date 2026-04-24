@@ -1,6 +1,11 @@
+# Backend service only. Do not rely on this file for the **frontend** service: when the frontend
+# service Root Directory is `frontend/`, Railway should load `frontend/railway.toml` instead
+# (or set Config-as-code to `railway.frontend.toml`), or the frontend may inherit this [build]
+# and try to build the backend image (e.g. COPY requirements.txt fails).
+
 # Railway configuration file for backend service
 # This helps Railway understand your project structure
-# NOTE: If Root Directory is set to "backend", the startCommand should NOT include "cd backend"
+# NOTE: If Root Directory is set to "backend", the startCommand should NOT include `cd backend`
 #
 # Docker build (not Nixpacks): avoids Nixpacks `pip` exit 127. Match dockerfilePath to your
 # Railway service Root Directory — see comments on [build].dockerfilePath.

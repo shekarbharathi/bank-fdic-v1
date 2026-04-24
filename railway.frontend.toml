@@ -1,9 +1,13 @@
 # Railway configuration for frontend service using Dockerfile
-# This file helps Railway understand how to build and deploy the frontend
+# Assign this file to the **frontend** service in Railway (Config as code), not the backend.
+# Root `railway.json` must not pin a backend Dockerfile or every service will use it.
+#
+# dockerfilePath is relative to the **repository root**. Service Root Directory should be `frontend`
+# so the build context is the frontend app; `frontend/Dockerfile` matches that layout.
 
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.frontend"
+dockerfilePath = "frontend/Dockerfile"
 
 [deploy]
 startCommand = ""
