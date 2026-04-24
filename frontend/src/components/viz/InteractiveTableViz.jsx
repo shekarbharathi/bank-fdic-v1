@@ -108,7 +108,7 @@ export default function InteractiveTableViz({ data, title, config }) {
 
   const visibleColumnSpecs = useMemo(
     () =>
-      inferVisibleColumns(normalizedRows, config?.visibleMetrics)
+      inferVisibleColumns(normalizedRows, config?.visibleMetrics, defs)
         .map((metricKey) => {
           const defKey = resolveMetricDefKey(metricKey, defs);
           if (!defs[defKey]) return null;

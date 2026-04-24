@@ -24,6 +24,20 @@ export const METRIC_DEFS_DEFAULT = {
     kind: 'dollar',
     explanation: 'Total deposits (latest report). Helpful for understanding funding strength.',
   },
+  /** FDIC DEPDOM — API often returns domestic_deposits_dollars (see bankDataNormalization EXTRA_FIELD_JSON_ALIASES). */
+  depdom: {
+    id: 'depdom',
+    label: 'Domestic Deposits',
+    kind: 'dollar',
+    explanation: 'Domestic office deposits (FDIC DEPDOM); merged with field_metadata display name when available.',
+  },
+  /** FDIC EQTOT — API often returns total_equity_capital_dollars. */
+  eqtot: {
+    id: 'eqtot',
+    label: 'Total Equity Capital',
+    kind: 'dollar',
+    explanation: 'Total equity capital (FDIC EQTOT); merged with field_metadata display name when available.',
+  },
   netinc: {
     id: 'netinc',
     label: 'Net Income',
