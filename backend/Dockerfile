@@ -17,4 +17,5 @@ COPY . .
 
 EXPOSE 8000
 
-CMD python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}
+# JSON form still runs via sh for variable expansion when the container starts
+CMD ["sh", "-c", "exec python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

@@ -17,10 +17,11 @@ builder = "DOCKERFILE"
 dockerfilePath = "backend/Dockerfile"
 
 [deploy]
+# Use a shell so $PORT is expanded (Railway may invoke startCommand without a shell otherwise).
 # If Root Directory is set to "backend", use this:
-startCommand = "python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+startCommand = "sh -c 'exec python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}'"
 # If Root Directory is NOT set (project root), use this instead:
-# startCommand = "cd backend && python -m uvicorn main:app --host 0.0.0.0 --port $PORT"
+# startCommand = "sh -c 'cd backend && exec python -m uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}'"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
