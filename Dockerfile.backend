@@ -17,6 +17,8 @@ RUN python -m pip install --upgrade pip setuptools wheel \
 # Copy backend code
 COPY backend/ ./backend/
 COPY config.py ./
+# Monorepo refresh entrypoint (WORKDIR /app): railway ssh python railway_data_ingestion.py
+COPY railway_data_ingestion.py ./
 
 # Expose port (Railway will set PORT env var)
 EXPOSE 8000

@@ -32,11 +32,52 @@ Pull the **latest FDIC quarters** into the optimized `financials` table (35 fiel
 
    - Set `FDIC_MAX_LOOKBACK_YEARS=4`, run refresh once, then set back to `5` if desired.
 
-4. Run the job (pick **backend** when prompted):
+4. Run the refresh using **one** of the methods below.
 
-   ```bash
-   railway run python railway_data_ingestion.py
-   ```
+### Important: `railway run` is local, not remote
+
+`railway run` executes on **your laptop** with Railway env vars (e.g. `DATABASE_URL`). It does **not** open the deployed container. On macOS, `python` is often missing (only `python3`), which causes:
+
+`No such file or directory (os error 2)`
+
+#### Option A — Local refresh (needs Python 3 + deps on your machine)
+
+From the **repo root**, linked to your backend service:
+
+```bash
+railway run python3 backend/railway_data_ingestion.py
+```
+
+Or use the helper script:
+
+```bash
+chmod +x scripts/railway_refresh_local.sh
+./scripts/railway_refresh_local.sh
+```
+
+Install deps once locally if imports fail: `pip install -r requirements.txt`
+
+#### Option B — Run inside the deployed container (recommended if local Python is awkward)
+
+Uses the same image as production (Python + deps already there):
+
+```bash
+# Backend service Root Directory = `backend`
+railway ssh --service <your-backend-service-name> -- python railway_data_ingestion.py
+
+# Monorepo root + Dockerfile.backend (code under /app/backend)
+railway ssh --service <your-backend-service-name> -- sh -c 'cd backend && python railway_data_ingestion.py'
+# or, after redeploy with COPY railway_data_ingestion.py at /app:
+railway ssh --service <your-backend-service-name> -- python railway_data_ingestion.py
+```
+
+#### Option C — HTTP (no CLI)
+
+```bash
+curl -X POST "https://YOUR-BACKEND.up.railway.app/api/data/ingest"
+```
+
+May timeout on large databases; Options A/B are safer for long jobs.
 
 5. Confirm in logs:
 

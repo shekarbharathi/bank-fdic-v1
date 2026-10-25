@@ -1,8 +1,12 @@
 """
 Railway one-off job: refresh FDIC data with fixed retention (storage-neutral).
 
-Usage (backend service root on Railway):
-  railway run python railway_data_ingestion.py
+Usage:
+  # Local machine (Railway env vars); use python3 on macOS — NOT `python` unless installed:
+  railway run python3 railway_data_ingestion.py
+
+  # Inside deployed container (recommended):
+  railway ssh -- python railway_data_ingestion.py
 
 Recommended env on the backend service:
   FDIC_API_KEY=...
