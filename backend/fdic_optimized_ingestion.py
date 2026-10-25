@@ -8,6 +8,11 @@ Optimized FDIC financial ingestion for 500MB target.
 
 Usage:
     FDIC_MAX_LOOKBACK_YEARS=5 python3 backend/fdic_optimized_ingestion.py
+
+Railway (storage-neutral refresh):
+    FDIC_PRUNE_ON_INGEST=true FDIC_INGEST_MIN_REPDTE=2026-01-01 railway run python railway_data_ingestion.py
+
+See docs/RAILWAY_DATA_REFRESH.md for env vars (including FDIC_DROP_FINANCIALS_KV when disk is tight).
 """
 
 from __future__ import annotations
@@ -28,6 +33,42 @@ except ImportError:
 
 LOOKBACK_YEARS = int(os.getenv("FDIC_MAX_LOOKBACK_YEARS", "5"))
 WRITE_BATCH_SIZE = int(os.getenv("FDIC_WRITE_BATCH_SIZE", "5000"))
+
+
+def _env_truthy(name: str, default: str = "true") -> bool:
+    return os.getenv(name, default).strip().lower() in ("1", "true", "yes", "on")
+
+
+def retention_cutoff_date() -> date:
+    """Oldest report date to keep in Postgres (aligned with ingest window)."""
+    return date.today() - timedelta(days=365 * LOOKBACK_YEARS)
+
+
+def retention_cutoff_iso() -> str:
+    return retention_cutoff_date().isoformat()
+
+
+def resolve_fetch_cutoff_iso() -> str:
+    """
+    Lower bound for FDIC API REPDTE filter.
+    Defaults to retention window; FDIC_INGEST_MIN_REPDTE can narrow the fetch (e.g. only new quarters).
+    """
+    floor = retention_cutoff_iso()
+    override = (os.getenv("FDIC_INGEST_MIN_REPDTE") or "").strip()
+    if not override:
+        return floor
+    try:
+        requested = date.fromisoformat(override)
+    except ValueError:
+        print(f"[warn] Invalid FDIC_INGEST_MIN_REPDTE={override!r}; using {floor}")
+        return floor
+    effective = max(requested, date.fromisoformat(floor))
+    if effective.isoformat() != override:
+        print(
+            f"[info] FDIC_INGEST_MIN_REPDTE raised to {effective.isoformat()} "
+            f"(within {LOOKBACK_YEARS}y retention floor {floor})"
+        )
+    return effective.isoformat()
 
 # FDIC API field codes; some have fallbacks if primary not available
 FIELD_GROUPS = {
@@ -171,8 +212,77 @@ def build_fields_string() -> str:
     return ",".join(codes)
 
 
+def read_financials_repdte_bounds(conn_string: str) -> tuple[Optional[str], Optional[str], int]:
+    with psycopg2.connect(conn_string) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT MIN(repdte)::text, MAX(repdte)::text, COUNT(*)::bigint FROM financials"
+            )
+            row = cur.fetchone()
+    if not row or row[2] == 0:
+        return None, None, 0
+    return row[0], row[1], int(row[2])
+
+
+def prune_historical_data(conn_string: str, cutoff_iso: str) -> dict:
+    """
+    Delete rows older than cutoff to keep storage flat when new quarters are loaded.
+    Controlled by FDIC_PRUNE_ON_INGEST (default true).
+    """
+    stats: dict = {"cutoff": cutoff_iso}
+    drop_kv = _env_truthy("FDIC_DROP_FINANCIALS_KV", "false")
+    prune_kv = _env_truthy("FDIC_PRUNE_FINANCIALS_KV", "true")
+
+    with psycopg2.connect(conn_string) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT 1 FROM information_schema.tables
+                WHERE table_schema = 'public' AND table_name = 'financials_kv'
+                """
+            )
+            has_kv = cur.fetchone() is not None
+
+            if drop_kv and has_kv:
+                cur.execute("DROP TABLE IF EXISTS financials_kv CASCADE")
+                stats["financials_kv_dropped"] = True
+                has_kv = False
+
+            cur.execute("DELETE FROM financials WHERE repdte < %s", (cutoff_iso,))
+            stats["financials_deleted"] = cur.rowcount
+
+            if has_kv and prune_kv:
+                cur.execute("DELETE FROM financials_kv WHERE repdte < %s", (cutoff_iso,))
+                stats["financials_kv_deleted"] = cur.rowcount
+
+        conn.commit()
+
+    if _env_truthy("FDIC_VACUUM_AFTER_PRUNE", "true"):
+        vacuum_allowlist(conn_string, ["financials"] + (["financials_kv"] if not drop_kv else []))
+
+    return stats
+
+
+def vacuum_allowlist(conn_string: str, tables: List[str]) -> None:
+    import psycopg2.extensions
+
+    allowed = {"financials", "financials_kv", "institutions"}
+    to_vacuum = [t for t in tables if t in allowed]
+    if not to_vacuum:
+        return
+    conn = psycopg2.connect(conn_string)
+    try:
+        conn.set_isolation_level(psycopg2.extensions.ISOLATION_LEVEL_AUTOCOMMIT)
+        with conn.cursor() as cur:
+            for table in to_vacuum:
+                cur.execute(f"VACUUM ANALYZE {table}")
+        print(f"[info] VACUUM ANALYZE completed for: {', '.join(to_vacuum)}")
+    finally:
+        conn.close()
+
+
 def ingest(conn_string: str, api_key: Optional[str] = None) -> None:
-    cutoff = (date.today() - timedelta(days=365 * LOOKBACK_YEARS)).strftime("%Y-%m-%d")
+    cutoff = resolve_fetch_cutoff_iso()
     filters = f"ACTIVE:1 AND REPDTE:[{cutoff} TO *]"
     fields = build_fields_string()
 
@@ -268,12 +378,42 @@ def ingest_institutions(conn_string: str, api_key: Optional[str] = None) -> None
     print(f"[info] Upserted {len(values)} institutions (ACTIVE:1).")
 
 
-def main() -> None:
-    conn_string = build_db_connection()
-    api_key = os.getenv("FDIC_API_KEY") or None
+def run_refresh(conn_string: Optional[str] = None, api_key: Optional[str] = None) -> dict:
+    """Prune (optional), refresh institutions + financials; return summary for operators."""
+    conn_string = conn_string or build_db_connection()
+    api_key = api_key if api_key is not None else (os.getenv("FDIC_API_KEY") or None)
     ensure_migration(conn_string)
+
+    min_before, max_before, count_before = read_financials_repdte_bounds(conn_string)
+    print(f"[info] financials before: rows={count_before} min_repdte={min_before} max_repdte={max_before}")
+
+    prune_stats: dict = {}
+    retention = retention_cutoff_iso()
+    if _env_truthy("FDIC_PRUNE_ON_INGEST", "true"):
+        print(f"[info] Pruning data with repdte < {retention} (FDIC_MAX_LOOKBACK_YEARS={LOOKBACK_YEARS})")
+        prune_stats = prune_historical_data(conn_string, retention)
+        print(f"[info] Prune result: {prune_stats}")
+    else:
+        print("[info] FDIC_PRUNE_ON_INGEST=false; skipping delete (storage may grow)")
+
     ingest_institutions(conn_string, api_key=api_key)
     ingest(conn_string, api_key=api_key)
+
+    min_after, max_after, count_after = read_financials_repdte_bounds(conn_string)
+    print(f"[info] financials after: rows={count_after} min_repdte={min_after} max_repdte={max_after}")
+
+    return {
+        "retention_cutoff": retention,
+        "fetch_cutoff": resolve_fetch_cutoff_iso(),
+        "lookback_years": LOOKBACK_YEARS,
+        "before": {"min_repdte": min_before, "max_repdte": max_before, "row_count": count_before},
+        "after": {"min_repdte": min_after, "max_repdte": max_after, "row_count": count_after},
+        "prune": prune_stats,
+    }
+
+
+def main() -> None:
+    run_refresh()
 
 
 if __name__ == "__main__":

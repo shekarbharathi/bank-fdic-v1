@@ -29,101 +29,35 @@ logger.info(f"Python path: {sys.path[:3]}")
 @router.post("/api/data/ingest")
 async def ingest_data() -> Dict[str, Any]:
     """
-    Trigger FDIC data ingestion
-    This endpoint runs the data ingestion script
+    Trigger optimized FDIC refresh (prune + upsert). Prefer `railway run python railway_data_ingestion.py`
+    for long jobs; this endpoint may hit HTTP timeouts on large databases.
     """
+    import asyncio
+
     try:
-        # Import fdic_to_postgres (now in backend/ directory)
-        # Try backend directory first, then parent directory as fallback
         try:
-            from fdic_to_postgres import FDICAPIClient, PostgresLoader
+            from fdic_optimized_ingestion import run_refresh
         except ImportError:
-            # Fallback: try importing from parent directory
-            parent_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            if parent_dir not in sys.path:
-                sys.path.insert(0, parent_dir)
-            from fdic_to_postgres import FDICAPIClient, PostgresLoader
-        
-        logger.info("Starting data ingestion via API endpoint...")
-        
-        # Get database connection from environment
-        # Railway provides DATABASE_URL automatically when PostgreSQL is connected
-        DATABASE_URL = os.getenv('DATABASE_URL', '')
-        
-        # Also check for individual database environment variables as fallback
-        if not DATABASE_URL:
-            # Try to construct from individual variables
-            db_name = os.getenv('PGDATABASE') or os.getenv('DB_NAME', 'railway')
-            db_user = os.getenv('PGUSER') or os.getenv('DB_USER', 'postgres')
-            db_password = os.getenv('PGPASSWORD') or os.getenv('DB_PASSWORD', '')
-            db_host = os.getenv('PGHOST') or os.getenv('DB_HOST', '')
-            db_port = os.getenv('PGPORT') or os.getenv('DB_PORT', '5432')
-            
-            if db_host:
-                # Construct DATABASE_URL from individual variables
-                DATABASE_URL = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
-                logger.info(f"Constructed DATABASE_URL from individual variables")
-            else:
-                # Log all available env vars for debugging (without sensitive data)
-                env_vars = {k: v for k, v in os.environ.items() if 'DATABASE' in k or 'DB_' in k or 'PG' in k}
-                logger.error(f"DATABASE_URL not found. Available DB-related env vars: {list(env_vars.keys())}")
-                raise ValueError(
-                    "DATABASE_URL not found. Make sure PostgreSQL service is connected to backend service in Railway. "
-                    "Go to Railway Dashboard → Backend Service → Settings → Variables to check if DATABASE_URL exists."
-                )
-        
-        # Parse DATABASE_URL
-        import re
-        match = re.match(r'postgresql://([^:]+):([^@]+)@([^:]+):(\d+)/(.+)', DATABASE_URL)
-        if match:
-            user, password, host, port, dbname = match.groups()
-            DB_CONNECTION = (
-                f"dbname={dbname} "
-                f"user={user} "
-                f"password={password} "
-                f"host={host} "
-                f"port={port}"
+            from backend.fdic_optimized_ingestion import run_refresh
+
+        if not os.getenv("DATABASE_URL", "").strip():
+            env_vars = {k: v for k, v in os.environ.items() if "DATABASE" in k or "DB_" in k or "PG" in k}
+            logger.error("DATABASE_URL not found. Available DB-related env vars: %s", list(env_vars.keys()))
+            raise ValueError(
+                "DATABASE_URL not found. Connect PostgreSQL to the backend service in Railway."
             )
-            logger.info(f"Connected to database: {dbname} on {host}:{port}")
-        else:
-            logger.error(f"Invalid DATABASE_URL format: {DATABASE_URL[:50]}...")
-            raise ValueError(f"Invalid DATABASE_URL format. Expected: postgresql://user:password@host:port/dbname")
-        
-        API_KEY = os.getenv('FDIC_API_KEY', None)
-        
-        # Initialize clients
-        api_client = FDICAPIClient(api_key=API_KEY)
-        db_loader = PostgresLoader(DB_CONNECTION)
-        
-        # Create database schema
-        logger.info("Creating database schema...")
-        db_loader.create_tables()
-        
-        # Fetch and load all institutions
-        logger.info("Fetching all institutions...")
-        institutions = api_client.get_institutions(
-            filters="",
-            fields="CERT,NAME,CITY,STALP,STNAME,ZIP,ASSET,DEP,DEPDOM,BKCLASS,CHARTER,DATEUPDT,ACTIVE,FED_RSSD"
-        )
-        db_loader.upsert_institutions(institutions)
-        
-        # Fetch recent financial data (last 2 years)
-        logger.info("Fetching recent financial data...")
-        financials = api_client.get_financials(
-            filters="REPDTE:[2022-01-01 TO *]",
-            fields="CERT,REPDTE,ASSET,DEP,DEPDOM,EQTOT,ROA,ROAPTX,NETINC,NIMY,LNLSNET,ELNATR"
-        )
-        db_loader.upsert_financials(financials)
-        
-        logger.info("Data ingestion completed successfully!")
-        
+
+        logger.info("Starting optimized FDIC refresh via API (prune + ingest)...")
+        loop = asyncio.get_event_loop()
+        summary = await loop.run_in_executor(None, run_refresh)
+        logger.info("Data refresh completed: max_repdte=%s", summary.get("after", {}).get("max_repdte"))
+
         return {
             "status": "success",
-            "message": "Data ingestion completed successfully",
-            "institutions_loaded": len(institutions),
-            "financials_loaded": len(financials)
+            "message": "Optimized FDIC refresh completed (see prune/after in response)",
+            **summary,
         }
-        
+
     except Exception as e:
         logger.error(f"Error during data ingestion: {str(e)}", exc_info=True)
         raise HTTPException(
