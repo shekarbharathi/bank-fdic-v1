@@ -131,16 +131,11 @@ DB_COLUMNS = [
 
 
 def build_db_connection() -> str:
-    url = os.getenv("DATABASE_URL", "").strip()
-    if url:
-        return url
-    return (
-        f"dbname={os.getenv('DB_NAME', 'fdic')} "
-        f"user={os.getenv('DB_USER', 'postgres')} "
-        f"password={os.getenv('DB_PASSWORD', '')} "
-        f"host={os.getenv('DB_HOST', 'localhost')} "
-        f"port={os.getenv('DB_PORT', '5432')}"
-    )
+    try:
+        from db_env import resolve_database_url
+    except ImportError:
+        from backend.db_env import resolve_database_url
+    return resolve_database_url()
 
 
 def _get_val(data: Dict[str, Any], db_col: str):
@@ -413,7 +408,11 @@ def run_refresh(conn_string: Optional[str] = None, api_key: Optional[str] = None
 
 
 def main() -> None:
-    run_refresh()
+    try:
+        run_refresh()
+    except RuntimeError as exc:
+        print(f"[error] {exc}")
+        raise SystemExit(1) from exc
 
 
 if __name__ == "__main__":

@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
-# Run FDIC refresh locally with Railway-injected DATABASE_URL (not inside the deployed container).
+# Run FDIC refresh locally with Railway env vars (NOT inside the deployed container).
+#
+# DATABASE_URL often uses postgres.railway.internal — unreachable from your Mac unless
+# DATABASE_PUBLIC_URL is set on the backend. Prefer in-container refresh:
+#   railway ssh --service <backend> -- python railway_data_ingestion.py
+#
 # Usage from repo root:
 #   ./scripts/railway_refresh_local.sh
-#   railway run -- ./scripts/railway_refresh_local.sh   # redundant; script already calls railway run
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"

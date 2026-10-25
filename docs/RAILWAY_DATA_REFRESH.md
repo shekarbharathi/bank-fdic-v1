@@ -40,36 +40,31 @@ Pull the **latest FDIC quarters** into the optimized `financials` table (35 fiel
 
 `No such file or directory (os error 2)`
 
-#### Option A — Local refresh (needs Python 3 + deps on your machine)
+#### Option A — Run inside the deployed container (**recommended**)
 
-From the **repo root**, linked to your backend service:
-
-```bash
-railway run python3 backend/railway_data_ingestion.py
-```
-
-Or use the helper script:
-
-```bash
-chmod +x scripts/railway_refresh_local.sh
-./scripts/railway_refresh_local.sh
-```
-
-Install deps once locally if imports fail: `pip install -r requirements.txt`
-
-#### Option B — Run inside the deployed container (recommended if local Python is awkward)
-
-Uses the same image as production (Python + deps already there):
+`DATABASE_URL` on Railway often uses **`postgres.railway.internal`**. That hostname only works **inside** Railway’s network, not from your Mac. Running locally with `railway run` will fail with “could not translate host name postgres.railway.internal” unless you also configure a public DB URL (Option B).
 
 ```bash
 # Backend service Root Directory = `backend`
 railway ssh --service <your-backend-service-name> -- python railway_data_ingestion.py
 
-# Monorepo root + Dockerfile.backend (code under /app/backend)
+# Monorepo root + Dockerfile.backend
 railway ssh --service <your-backend-service-name> -- sh -c 'cd backend && python railway_data_ingestion.py'
-# or, after redeploy with COPY railway_data_ingestion.py at /app:
-railway ssh --service <your-backend-service-name> -- python railway_data_ingestion.py
 ```
+
+#### Option B — Local refresh (only if `DATABASE_PUBLIC_URL` is set)
+
+1. Railway → **Postgres** → enable **Public networking** / TCP proxy (if not already).
+2. Copy the **public** connection URL into the **backend** service as `DATABASE_PUBLIC_URL` (reference from Postgres variables, or paste the proxy URL).
+3. From repo root:
+
+```bash
+railway run python3 backend/railway_data_ingestion.py
+```
+
+Install deps once locally if imports fail: `pip install -r requirements.txt`
+
+The refresh script auto-uses `DATABASE_PUBLIC_URL` when `DATABASE_URL` is a `.railway.internal` host and you are not on Railway.
 
 #### Option C — HTTP (no CLI)
 
@@ -77,7 +72,7 @@ railway ssh --service <your-backend-service-name> -- python railway_data_ingesti
 curl -X POST "https://YOUR-BACKEND.up.railway.app/api/data/ingest"
 ```
 
-May timeout on large databases; Options A/B are safer for long jobs.
+May timeout on large databases; Option A is safer for long jobs.
 
 5. Confirm in logs:
 
